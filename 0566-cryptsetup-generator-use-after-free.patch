@@ -1,0 +1,28 @@
+From ae554d506040559c2dbf972ecf4a33be4fb6d869 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Tue, 31 Oct 2017 12:59:02 +0100
+Subject: [PATCH] cryptsetup-generator: use after free
+
+rhel-only
+
+Related: #1477757
+---
+ src/cryptsetup/cryptsetup-generator.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/src/cryptsetup/cryptsetup-generator.c b/src/cryptsetup/cryptsetup-generator.c
+index 82a280d86..c387e2104 100644
+--- a/src/cryptsetup/cryptsetup-generator.c
++++ b/src/cryptsetup/cryptsetup-generator.c
+@@ -214,10 +214,8 @@ static int create_disk(
+                         return log_oom();
+ 
+                 mkdir_parents_label(to, 0755);
+-                if (symlink(from, to) < 0) {
+-                        free(to);
++                if (symlink(from, to) < 0)
+                         return log_error_errno(errno, "Failed to create symlink %s: %m", to);
+-                }
+         }
+ 
+         free(to);

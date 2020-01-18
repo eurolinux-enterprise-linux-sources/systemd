@@ -1,0 +1,79 @@
+From fdc7b6b2af0b80e13bebae8d2f461f54cb71c9d2 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Fri, 27 Apr 2018 08:57:08 +0200
+Subject: [PATCH] doc: fix links to binfmt_misc kernel documentation
+
+Resolves: #1572244
+---
+ man/binfmt.d.xml                        | 2 +-
+ src/test/test-util.c                    | 2 +-
+ units/proc-sys-fs-binfmt_misc.automount | 2 +-
+ units/proc-sys-fs-binfmt_misc.mount     | 2 +-
+ units/systemd-binfmt.service.in         | 2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/man/binfmt.d.xml b/man/binfmt.d.xml
+index 5b63cfb4c..1a57517d0 100644
+--- a/man/binfmt.d.xml
++++ b/man/binfmt.d.xml
+@@ -67,7 +67,7 @@
+ 
+     <para>Each file contains a list of binfmt_misc kernel binary
+     format rules. Consult <ulink
+-    url="https://www.kernel.org/doc/Documentation/binfmt_misc.txt">binfmt_misc.txt</ulink>
++    url="https://www.kernel.org/doc/Documentation/admin-guide/binfmt-misc.rst">binfmt_misc.rst</ulink>
+     for more information on registration of additional binary formats
+     and how to write rules.</para>
+ 
+diff --git a/src/test/test-util.c b/src/test/test-util.c
+index fcf5416c0..f2c52edce 100644
+--- a/src/test/test-util.c
++++ b/src/test/test-util.c
+@@ -1213,7 +1213,7 @@ static void test_files_same(void) {
+ 
+ static void test_is_valid_documentation_url(void) {
+         assert_se(documentation_url_is_valid("http://www.freedesktop.org/wiki/Software/systemd"));
+-        assert_se(documentation_url_is_valid("https://www.kernel.org/doc/Documentation/binfmt_misc.txt"));
++        assert_se(documentation_url_is_valid("https://www.kernel.org/doc/Documentation/admin-guide/binfmt-misc.rst"));
+         assert_se(documentation_url_is_valid("file:/foo/foo"));
+         assert_se(documentation_url_is_valid("man:systemd.special(7)"));
+         assert_se(documentation_url_is_valid("info:bar"));
+diff --git a/units/proc-sys-fs-binfmt_misc.automount b/units/proc-sys-fs-binfmt_misc.automount
+index 6be38937b..b28bf9bb8 100644
+--- a/units/proc-sys-fs-binfmt_misc.automount
++++ b/units/proc-sys-fs-binfmt_misc.automount
+@@ -7,7 +7,7 @@
+ 
+ [Unit]
+ Description=Arbitrary Executable File Formats File System Automount Point
+-Documentation=https://www.kernel.org/doc/Documentation/binfmt_misc.txt
++Documentation=https://www.kernel.org/doc/Documentation/admin-guide/binfmt-misc.rst
+ Documentation=http://www.freedesktop.org/wiki/Software/systemd/APIFileSystems
+ DefaultDependencies=no
+ Before=sysinit.target
+diff --git a/units/proc-sys-fs-binfmt_misc.mount b/units/proc-sys-fs-binfmt_misc.mount
+index 8c7c38631..8d22dc908 100644
+--- a/units/proc-sys-fs-binfmt_misc.mount
++++ b/units/proc-sys-fs-binfmt_misc.mount
+@@ -7,7 +7,7 @@
+ 
+ [Unit]
+ Description=Arbitrary Executable File Formats File System
+-Documentation=https://www.kernel.org/doc/Documentation/binfmt_misc.txt
++Documentation=https://www.kernel.org/doc/Documentation/admin-guide/binfmt-misc.rst
+ Documentation=http://www.freedesktop.org/wiki/Software/systemd/APIFileSystems
+ DefaultDependencies=no
+ 
+diff --git a/units/systemd-binfmt.service.in b/units/systemd-binfmt.service.in
+index 02dfe774d..e066f7fec 100644
+--- a/units/systemd-binfmt.service.in
++++ b/units/systemd-binfmt.service.in
+@@ -8,7 +8,7 @@
+ [Unit]
+ Description=Set Up Additional Binary Formats
+ Documentation=man:systemd-binfmt.service(8) man:binfmt.d(5)
+-Documentation=https://www.kernel.org/doc/Documentation/binfmt_misc.txt
++Documentation=https://www.kernel.org/doc/Documentation/admin-guide/binfmt-misc.rst
+ DefaultDependencies=no
+ Conflicts=shutdown.target
+ After=systemd-readahead-collect.service systemd-readahead-replay.service proc-sys-fs-binfmt_misc.automount

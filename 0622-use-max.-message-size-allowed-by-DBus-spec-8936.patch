@@ -1,0 +1,27 @@
+From 191e504e9847ba3f46fe579922bbee64f02a04c1 Mon Sep 17 00:00:00 2001
+From: David Tardon <dtardon@redhat.com>
+Date: Wed, 9 May 2018 10:33:28 +0200
+Subject: [PATCH] use max. message size allowed by DBus spec (#8936)
+
+C.f. https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-messages.
+
+(cherry picked from commit 33d8fe60573dd3e88fe98e368437bb4d29534b5a)
+
+Related: #1446095
+---
+ src/libsystemd/sd-bus/bus-internal.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/libsystemd/sd-bus/bus-internal.h b/src/libsystemd/sd-bus/bus-internal.h
+index 6a106862e..9c1e5a35b 100644
+--- a/src/libsystemd/sd-bus/bus-internal.h
++++ b/src/libsystemd/sd-bus/bus-internal.h
+@@ -329,7 +329,7 @@ struct sd_bus {
+ #define BUS_WQUEUE_MAX (192*1024)
+ #define BUS_RQUEUE_MAX (192*1024)
+ 
+-#define BUS_MESSAGE_SIZE_MAX (64*1024*1024)
++#define BUS_MESSAGE_SIZE_MAX (128*1024*1024)
+ #define BUS_AUTH_SIZE_MAX (64*1024)
+ 
+ #define BUS_CONTAINER_DEPTH 128

@@ -1,0 +1,34 @@
+From d46ca2a3ed881bc9324ebd9da0a66af1133d43a7 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekletar@users.noreply.github.com>
+Date: Wed, 1 Nov 2017 02:25:48 -0700
+Subject: [PATCH] manager: fix connecting to bus when dbus is actually around
+ (#7205)
+
+manager_connect_bus() is called *before* manager_coldplug(). As a last
+thing in service_coldplug() we set service state to
+s->deserialized_state, and thus before we do that all services are
+inactive and try_connect always evaluates to false. To fix that we must
+look at deserialized state instead of current unit state.
+
+Fixes #7146
+
+(cherry picked from commit 41dfa61d35c51a584437481d20541d5c3ccfa93d)
+
+Related: #1465737
+---
+ src/core/manager.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/core/manager.c b/src/core/manager.c
+index 041fac46b..47b09e1e9 100644
+--- a/src/core/manager.c
++++ b/src/core/manager.c
+@@ -809,7 +809,7 @@ static int manager_connect_bus(Manager *m, bool reexecuting) {
+         u = manager_get_unit(m, SPECIAL_DBUS_SERVICE);
+ 
+         try_bus_connect =
+-                (u && UNIT_IS_ACTIVE_OR_RELOADING(unit_active_state(u))) &&
++                (u && SERVICE(u)->deserialized_state == SERVICE_RUNNING) &&
+                 (reexecuting ||
+                 (m->running_as == SYSTEMD_USER && getenv("DBUS_SESSION_BUS_ADDRESS")));
+ 

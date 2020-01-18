@@ -1,0 +1,54 @@
+From 8d166597076d87aae9d5f98144103386c79d6446 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Fri, 31 Mar 2017 09:47:46 +0200
+Subject: [PATCH] namespace: don't fail on masked mounts
+
+Before this patch, a service file with ReadWriteDirectories=/file...
+could fail if the file exists but is not a mountpoint, despite being
+listed in /proc/self/mountinfo. It could happen with masked mounts.
+
+(cherry picked from commit 98df8089bea1b2407c46495b6c2eb76dda46c658)
+
+Resolves: #1433687
+---
+ src/shared/util.c | 23 +++++++++++------------
+ 1 file changed, 11 insertions(+), 12 deletions(-)
+
+diff --git a/src/shared/util.c b/src/shared/util.c
+index 1070e32c4..3e13cc1fd 100644
+--- a/src/shared/util.c
++++ b/src/shared/util.c
+@@ -7332,22 +7332,21 @@ int bind_remount_recursive(const char *prefix, bool ro) {
+                         if (r < 0)
+                                 return r;
+ 
+-                        /* Try to reuse the original flag set, but
+-                         * don't care for errors, in case of
+-                         * obstructed mounts */
++                        /* Deal with mount points that are obstructed by a
++                         * later mount */
++                        r = path_is_mount_point(x, 0);
++                        if (r == -ENOENT || r == 0)
++                                continue;
++                        if (r < 0)
++                                return r;
++
++                        /* Try to reuse the original flag set */
+                         orig_flags = 0;
+                         (void) get_mount_flags(x, &orig_flags);
+                         orig_flags &= ~MS_RDONLY;
+ 
+-                        if (mount(NULL, x, NULL, orig_flags|MS_BIND|MS_REMOUNT|(ro ? MS_RDONLY : 0), NULL) < 0) {
+-
+-                                /* Deal with mount points that are
+-                                 * obstructed by a later mount */
+-
+-                                if (errno != ENOENT)
+-                                        return -errno;
+-                        }
+-
++                        if (mount(NULL, x, NULL, orig_flags|MS_BIND|MS_REMOUNT|(ro ? MS_RDONLY : 0), NULL) < 0)
++                                return -errno;
+                 }
+         }
+ }

@@ -1,0 +1,26 @@
+From efd1250249494b7501578da7de7830659b65c98b Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Tue, 16 Feb 2016 13:18:36 +0100
+Subject: [PATCH] core: fix assertion check
+
+Fixes: #2632
+
+Cherry-picked from: 3f51aec8647fe13f4b1e46b2f75ff635403adf91
+Resolves: #1396312
+---
+ src/core/timer.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/core/timer.c b/src/core/timer.c
+index 972dd73df..f318dc6f4 100644
+--- a/src/core/timer.c
++++ b/src/core/timer.c
+@@ -321,7 +321,7 @@ static void add_random(Timer *t, usec_t *v) {
+         usec_t add;
+ 
+         assert(t);
+-        assert(*v);
++        assert(v);
+ 
+         if (t->random_usec == 0)
+                 return;

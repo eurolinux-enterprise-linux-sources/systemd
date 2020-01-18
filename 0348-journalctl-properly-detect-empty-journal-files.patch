@@ -1,0 +1,31 @@
+From 8290b73eeb8da4f8f0076f3bb7e23990af734de0 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 24 Jul 2015 02:10:32 +0200
+Subject: [PATCH] journalctl: properly detect empty journal files
+
+When we encounter a journal file with exactly zero entries, print a nice
+message and exit, and don't print a weird error message.
+
+Cherry-picked from: 02ab86c732576a71179ce12e97d44c289833236d
+Related: #1350232
+---
+ src/journal/journalctl.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
+index 6948ed689..904aae99e 100644
+--- a/src/journal/journalctl.c
++++ b/src/journal/journalctl.c
+@@ -2141,6 +2141,12 @@ int main(int argc, char *argv[]) {
+                 return EXIT_FAILURE;
+         }
+ 
++        if (r == 0) {
++                printf("-- No entries --\n");
++                return EXIT_SUCCESS;
++        }
++
++
+         if (!arg_follow)
+                 pager_open_if_enabled();
+ 

@@ -1,0 +1,33 @@
+From 61a6ce79defd59fee00cd2bc28d58f7c3e637ae2 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Thu, 23 Apr 2015 13:37:03 +0200
+Subject: [PATCH] sd-bus: don't inherit connection creds into message creds
+ when we have a direct connection
+
+It's never a good idea, let's just not do it, not even on dierct
+connections.
+
+Conflicts:
+	src/libsystemd/sd-bus/bus-socket.c
+
+Cherry-picked from: 038f9863
+Related: #1230190
+---
+ src/libsystemd/sd-bus/bus-socket.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/libsystemd/sd-bus/bus-socket.c b/src/libsystemd/sd-bus/bus-socket.c
+index d00cd014e..a3c3a45b4 100644
+--- a/src/libsystemd/sd-bus/bus-socket.c
++++ b/src/libsystemd/sd-bus/bus-socket.c
+@@ -900,8 +900,8 @@ static int bus_socket_make_message(sd_bus *bus, size_t size) {
+         r = bus_message_from_malloc(bus,
+                                     bus->rbuffer, size,
+                                     bus->fds, bus->n_fds,
+-                                    !bus->bus_client && bus->ucred_valid ? &bus->ucred : NULL,
+-                                    !bus->bus_client && bus->label[0] ? bus->label : NULL,
++                                    NULL,
++                                    NULL,
+                                     &t);
+         if (r < 0) {
+                 free(b);

@@ -1,0 +1,55 @@
+From 9592604df60795ad8b58aa11311a26f267385bae Mon Sep 17 00:00:00 2001
+From: Karel Zak <kzak@redhat.com>
+Date: Tue, 28 Jul 2015 11:31:45 +0200
+Subject: [PATCH] mount: remove obsolete -n
+
+It seems that systemd still uses legacy -n option. The option has been
+originally designed to avoid write to /etc/mtab during boot when root
+FS is not ready or read-only.
+
+This is not necessary for long time, because /etc/mtab is not a real
+file (it's symlink) and write to the file is impossible. All utils
+should be able to detect the symlink and ignore mtab. This concept is
+supported for very long time before systemd.
+
+The userspase mount options are currently maintained by libmount
+(mount(8) and mount.nfs) in /run/mount) which is tmpfs initialized
+during early boot.
+
+(cherry picked from commit 6f20f850f79df365c2533195214127142013d317)
+Resolves: #1339721
+---
+ src/core/mount.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/src/core/mount.c b/src/core/mount.c
+index 23f63ce32..fe967bc03 100644
+--- a/src/core/mount.c
++++ b/src/core/mount.c
+@@ -881,8 +881,6 @@ static void mount_enter_unmounting(Mount *m) {
+         m->control_command = m->exec_command + MOUNT_EXEC_UNMOUNT;
+ 
+         r = exec_command_set(m->control_command, "/bin/umount", m->where, NULL);
+-        if (r >= 0 && UNIT(m)->manager->running_as == SYSTEMD_SYSTEM)
+-                r = exec_command_append(m->control_command, "-n", NULL);
+         if (r < 0)
+                 goto fail;
+ 
+@@ -935,8 +933,6 @@ static void mount_enter_mounting(Mount *m) {
+ 
+                 r = exec_command_set(m->control_command, "/bin/mount",
+                                      m->parameters_fragment.what, m->where, NULL);
+-                if (r >= 0 && UNIT(m)->manager->running_as == SYSTEMD_SYSTEM)
+-                        r = exec_command_append(m->control_command, "-n", NULL);
+                 if (r >= 0 && m->sloppy_options)
+                         r = exec_command_append(m->control_command, "-s", NULL);
+                 if (r >= 0 && m->parameters_fragment.fstype)
+@@ -985,8 +981,6 @@ static void mount_enter_remounting(Mount *m) {
+                 r = exec_command_set(m->control_command, "/bin/mount",
+                                      m->parameters_fragment.what, m->where,
+                                      "-o", o, NULL);
+-                if (r >= 0 && UNIT(m)->manager->running_as == SYSTEMD_SYSTEM)
+-                        r = exec_command_append(m->control_command, "-n", NULL);
+                 if (r >= 0 && m->sloppy_options)
+                         r = exec_command_append(m->control_command, "-s", NULL);
+                 if (r >= 0 && m->parameters_fragment.fstype)

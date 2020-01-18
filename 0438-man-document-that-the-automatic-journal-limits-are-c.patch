@@ -1,0 +1,26 @@
+From 4464cd08f503af0459d779d92fb943aa3ef3f9a5 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Sat, 3 Oct 2015 11:34:11 +0200
+Subject: [PATCH] man: document that the automatic journal limits are capped to
+ 4G by default
+
+(cherry picked from commit 32252660954804747ae6b64c3921d5cb9a1c09c9)
+Resolves: #1418547
+---
+ man/journald.conf.xml | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/man/journald.conf.xml b/man/journald.conf.xml
+index c4f71e887..46a498b67 100644
+--- a/man/journald.conf.xml
++++ b/man/journald.conf.xml
+@@ -210,7 +210,8 @@
+         and use the smaller of the two values.</para>
+ 
+         <para>The first pair defaults to 10% and the second to 15% of
+-        the size of the respective file system. If the file system is
++        the size of the respective file system, but each value
++        is capped to 4G. If the file system is
+         nearly full and either <varname>SystemKeepFree=</varname> or
+         <varname>RuntimeKeepFree=</varname> is violated when
+         systemd-journald is started, the value will be raised to

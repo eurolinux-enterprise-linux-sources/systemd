@@ -1,0 +1,248 @@
+From fd8580a8f42b1e10d75f43229b203fb889260b71 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Luk=C3=A1=C5=A1=20Nykr=C3=BDn?= <lnykryn@redhat.com>
+Date: Sat, 16 Jul 2016 21:04:13 +0200
+Subject: [PATCH] manager: don't skip sigchld handler for main and control pid
+ for services (#3738)
+
+During stop when service has one "regular" pid one main pid and one
+control pid and the sighld for the regular one is processed first the
+unit_tidy_watch_pids will skip the main and control pid and does not
+remove them from u->pids(). But then we skip the sigchld event because we
+already did one in the iteration and there are two pids in u->pids.
+
+v2: Use general unit_main_pid() and unit_control_pid() instead of
+reaching directly to service structure.
+Cherry-picked from: ccc2c98e1b0c06861577632440b996ca16cefd53
+Resolves: #1342173
+---
+ src/core/busname.c | 10 ++++++++++
+ src/core/manager.c |  5 ++++-
+ src/core/mount.c   | 10 ++++++++++
+ src/core/service.c | 19 +++++++++++++++++++
+ src/core/socket.c  | 10 ++++++++++
+ src/core/swap.c    | 10 ++++++++++
+ src/core/unit.c    | 18 ++++++++++++++++++
+ src/core/unit.h    |  9 +++++++++
+ 8 files changed, 90 insertions(+), 1 deletion(-)
+
+diff --git a/src/core/busname.c b/src/core/busname.c
+index 43d7607a3..f626ba96d 100644
+--- a/src/core/busname.c
++++ b/src/core/busname.c
+@@ -997,6 +997,14 @@ static const char* const busname_state_table[_BUSNAME_STATE_MAX] = {
+ 
+ DEFINE_STRING_TABLE_LOOKUP(busname_state, BusNameState);
+ 
++static int busname_control_pid(Unit *u) {
++        BusName *n = BUSNAME(u);
++
++        assert(n);
++
++        return n->control_pid;
++}
++
+ static const char* const busname_result_table[_BUSNAME_RESULT_MAX] = {
+         [BUSNAME_SUCCESS] = "success",
+         [BUSNAME_FAILURE_RESOURCES] = "resources",
+@@ -1047,6 +1055,8 @@ const UnitVTable busname_vtable = {
+ 
+         .supported = busname_supported,
+ 
++        .control_pid = busname_control_pid,
++
+         .bus_interface = "org.freedesktop.systemd1.BusName",
+         .bus_vtable = bus_busname_vtable,
+ 
+diff --git a/src/core/manager.c b/src/core/manager.c
+index d168777d2..5da836593 100644
+--- a/src/core/manager.c
++++ b/src/core/manager.c
+@@ -1760,7 +1760,10 @@ static void invoke_sigchld_event(Manager *m, Unit *u, siginfo_t *si) {
+         unit_unwatch_pid(u, si->si_pid);
+ 
+         if (UNIT_VTABLE(u)->sigchld_event) {
+-                if (set_size(u->pids) <= 1 || iteration != u->sigchldgen) {
++                if (set_size(u->pids) <= 1 ||
++                    iteration != u->sigchldgen ||
++                    unit_main_pid(u) == si->si_pid ||
++                    unit_control_pid(u) == si->si_pid) {
+                         UNIT_VTABLE(u)->sigchld_event(u, si->si_pid, si->si_code, si->si_status);
+                         u->sigchldgen = iteration;
+                 } else
+diff --git a/src/core/mount.c b/src/core/mount.c
+index fe967bc03..3fbdb7daf 100644
+--- a/src/core/mount.c
++++ b/src/core/mount.c
+@@ -1877,6 +1877,14 @@ static const char* const mount_state_table[_MOUNT_STATE_MAX] = {
+ 
+ DEFINE_STRING_TABLE_LOOKUP(mount_state, MountState);
+ 
++static int mount_control_pid(Unit *u) {
++        Mount *m = MOUNT(u);
++
++        assert(m);
++
++        return m->control_pid;
++}
++
+ static const char* const mount_exec_command_table[_MOUNT_EXEC_COMMAND_MAX] = {
+         [MOUNT_EXEC_MOUNT] = "ExecMount",
+         [MOUNT_EXEC_UNMOUNT] = "ExecUnmount",
+@@ -1938,6 +1946,8 @@ const UnitVTable mount_vtable = {
+ 
+         .reset_failed = mount_reset_failed,
+ 
++        .control_pid = mount_control_pid,
++
+         .bus_interface = "org.freedesktop.systemd1.Mount",
+         .bus_vtable = bus_mount_vtable,
+         .bus_set_property = bus_mount_set_property,
+diff --git a/src/core/service.c b/src/core/service.c
+index c76713b1c..babd3c52a 100644
+--- a/src/core/service.c
++++ b/src/core/service.c
+@@ -3068,6 +3068,22 @@ static const char* const service_state_table[_SERVICE_STATE_MAX] = {
+ 
+ DEFINE_STRING_TABLE_LOOKUP(service_state, ServiceState);
+ 
++static int service_main_pid(Unit *u) {
++        Service *s = SERVICE(u);
++
++        assert(s);
++
++        return s->main_pid;
++}
++
++static int service_control_pid(Unit *u) {
++        Service *s = SERVICE(u);
++
++        assert(s);
++
++        return s->control_pid;
++}
++
+ static const char* const service_restart_table[_SERVICE_RESTART_MAX] = {
+         [SERVICE_RESTART_NO] = "no",
+         [SERVICE_RESTART_ON_SUCCESS] = "on-success",
+@@ -3178,6 +3194,9 @@ const UnitVTable service_vtable = {
+         .notify_cgroup_empty = service_notify_cgroup_empty_event,
+         .notify_message = service_notify_message,
+ 
++        .main_pid = service_main_pid,
++        .control_pid = service_control_pid,
++
+         .bus_name_owner_change = service_bus_name_owner_change,
+ 
+         .bus_interface = "org.freedesktop.systemd1.Service",
+diff --git a/src/core/socket.c b/src/core/socket.c
+index bc677a20f..771af0d24 100644
+--- a/src/core/socket.c
++++ b/src/core/socket.c
+@@ -2648,6 +2648,14 @@ static const char* const socket_state_table[_SOCKET_STATE_MAX] = {
+ 
+ DEFINE_STRING_TABLE_LOOKUP(socket_state, SocketState);
+ 
++static int socket_control_pid(Unit *u) {
++        Socket *s = SOCKET(u);
++
++        assert(s);
++
++        return s->control_pid;
++}
++
+ static const char* const socket_exec_command_table[_SOCKET_EXEC_COMMAND_MAX] = {
+         [SOCKET_EXEC_START_PRE] = "StartPre",
+         [SOCKET_EXEC_START_CHOWN] = "StartChown",
+@@ -2713,6 +2721,8 @@ const UnitVTable socket_vtable = {
+ 
+         .reset_failed = socket_reset_failed,
+ 
++        .control_pid = socket_control_pid,
++
+         .bus_interface = "org.freedesktop.systemd1.Socket",
+         .bus_vtable = bus_socket_vtable,
+         .bus_set_property = bus_socket_set_property,
+diff --git a/src/core/swap.c b/src/core/swap.c
+index 34a2c406d..42f995990 100644
+--- a/src/core/swap.c
++++ b/src/core/swap.c
+@@ -1426,6 +1426,14 @@ static const char* const swap_state_table[_SWAP_STATE_MAX] = {
+ 
+ DEFINE_STRING_TABLE_LOOKUP(swap_state, SwapState);
+ 
++static int swap_control_pid(Unit *u) {
++        Swap *s = SWAP(u);
++
++        assert(s);
++
++        return s->control_pid;
++}
++
+ static const char* const swap_exec_command_table[_SWAP_EXEC_COMMAND_MAX] = {
+         [SWAP_EXEC_ACTIVATE] = "ExecActivate",
+         [SWAP_EXEC_DEACTIVATE] = "ExecDeactivate",
+@@ -1487,6 +1495,8 @@ const UnitVTable swap_vtable = {
+ 
+         .reset_failed = swap_reset_failed,
+ 
++        .control_pid = swap_control_pid,
++
+         .bus_interface = "org.freedesktop.systemd1.Swap",
+         .bus_vtable = bus_swap_vtable,
+         .bus_set_property = bus_swap_set_property,
+diff --git a/src/core/unit.c b/src/core/unit.c
+index d62135d87..0e90d130a 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -3674,6 +3674,24 @@ int unit_setup_exec_runtime(Unit *u) {
+         return exec_runtime_make(rt, unit_get_exec_context(u), u->id);
+ }
+ 
++pid_t unit_control_pid(Unit *u) {
++        assert(u);
++
++        if (UNIT_VTABLE(u)->control_pid)
++                return UNIT_VTABLE(u)->control_pid(u);
++
++        return 0;
++}
++
++pid_t unit_main_pid(Unit *u) {
++        assert(u);
++
++        if (UNIT_VTABLE(u)->main_pid)
++                return UNIT_VTABLE(u)->main_pid(u);
++
++        return 0;
++}
++
+ static const char* const unit_active_state_table[_UNIT_ACTIVE_STATE_MAX] = {
+         [UNIT_ACTIVE] = "active",
+         [UNIT_RELOADING] = "reloading",
+diff --git a/src/core/unit.h b/src/core/unit.h
+index d93645777..35287a5b7 100644
+--- a/src/core/unit.h
++++ b/src/core/unit.h
+@@ -399,6 +399,12 @@ struct UnitVTable {
+ 
+         int (*get_timeout)(Unit *u, uint64_t *timeout);
+ 
++        /* Returns the main PID if there is any defined, or 0. */
++        pid_t (*main_pid)(Unit *u);
++
++        /* Returns the main PID if there is any defined, or 0. */
++        pid_t (*control_pid)(Unit *u);
++
+         /* This is called for each unit type and should be used to
+          * enumerate existing devices and load them. However,
+          * everything that is loaded here should still stay in
+@@ -610,6 +616,9 @@ int unit_make_transient(Unit *u);
+ 
+ int unit_require_mounts_for(Unit *u, const char *path);
+ 
++pid_t unit_control_pid(Unit *u);
++pid_t unit_main_pid(Unit *u);
++
+ const char *unit_active_state_to_string(UnitActiveState i) _const_;
+ UnitActiveState unit_active_state_from_string(const char *s) _pure_;
+ 

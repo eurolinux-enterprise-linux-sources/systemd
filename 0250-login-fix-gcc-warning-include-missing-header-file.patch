@@ -1,0 +1,22 @@
+From 440b7696cac45584d110ed974ad8670624d756ab Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Wed, 23 Sep 2015 11:25:52 +0200
+Subject: [PATCH] login: fix gcc warning, include missing header file
+
+Related: #1264073
+---
+ src/login/user-sessions.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/login/user-sessions.c b/src/login/user-sessions.c
+index d1d429c0d..9710524da 100644
+--- a/src/login/user-sessions.c
++++ b/src/login/user-sessions.c
+@@ -26,6 +26,7 @@
+ #include "log.h"
+ #include "util.h"
+ #include "fileio.h"
++#include "fileio-label.h"
+ #include "selinux-util.h"
+ 
+ int main(int argc, char*argv[]) {

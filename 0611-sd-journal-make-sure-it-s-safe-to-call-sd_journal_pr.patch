@@ -1,0 +1,36 @@
+From efd523764efcd39340fb62875716c8c8b79f0de9 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 9 Feb 2018 22:38:46 +0100
+Subject: [PATCH] sd-journal: make sure it's safe to call sd_journal_process()
+ before the first sd_journal_wait()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+In that case we have no inotify fd yet, and there's nothing to process
+hence. Let's make the call a NOP.
+
+(Previously, without this change we'd end up trying to read off inotify
+fd -1, which is quite a problem... 😢)
+
+(cherry picked from commit 10c4d6405f74258ea4fac5db4888c1bf49ad5399)
+
+Related: #1540538
+---
+ src/journal/sd-journal.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/journal/sd-journal.c b/src/journal/sd-journal.c
+index 9186f5188..e1cde6e1c 100644
+--- a/src/journal/sd-journal.c
++++ b/src/journal/sd-journal.c
+@@ -2329,6 +2329,9 @@ _public_ int sd_journal_process(sd_journal *j) {
+         assert_return(j, -EINVAL);
+         assert_return(!journal_pid_changed(j), -ECHILD);
+ 
++        if (j->inotify_fd < 0) /* We have no inotify fd yet? Then there's noting to process. */
++                return 0;
++
+         j->last_process_usec = now(CLOCK_MONOTONIC);
+         j->last_invalidate_counter = j->current_invalidate_counter;
+ 

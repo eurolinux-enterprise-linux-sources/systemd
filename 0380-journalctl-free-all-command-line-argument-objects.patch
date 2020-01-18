@@ -1,0 +1,45 @@
+From 4cbe0933587385ed0d811ce11264d65d15b05cfd Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Mon, 18 May 2015 23:54:05 +0200
+Subject: [PATCH] journalctl: free all command line argument objects
+
+let's try to be valgrind clean
+
+Cherry-picked from: d52da2057f06c49d50ed99300dc407c0227b1a32
+Related: #1318994
+---
+ src/journal/journalctl.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
+index 31da357c1..92ee3fb27 100644
+--- a/src/journal/journalctl.c
++++ b/src/journal/journalctl.c
+@@ -39,7 +39,6 @@
+ 
+ #include "sd-journal.h"
+ #include "sd-bus.h"
+-
+ #include "log.h"
+ #include "logs-show.h"
+ #include "util.h"
+@@ -2003,9 +2002,6 @@ int main(int argc, char *argv[]) {
+                 goto finish;
+ 
+         r = add_units(j);
+-        strv_free(arg_system_units);
+-        strv_free(arg_user_units);
+-
+         if (r < 0) {
+                 log_error_errno(r, "Failed to add filter for units: %m");
+                 goto finish;
+@@ -2283,5 +2279,9 @@ finish:
+ 
+         strv_free(arg_file);
+ 
++        strv_free(arg_syslog_identifier);
++        strv_free(arg_system_units);
++        strv_free(arg_user_units);
++
+         return r < 0 ? EXIT_FAILURE : EXIT_SUCCESS;
+ }

@@ -1,0 +1,37 @@
+From b3207925388c6423a7665b9363eea90f41a30576 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 22 Apr 2016 17:30:08 +0200
+Subject: [PATCH] core: don't dispatch load queue when setting Slice= for
+ transient units
+
+Let's be more careful when setting up the Slice= property of transient units:
+let's use manager_load_unit_prepare() instead of manager_load_unit(), so that
+the load queue isn't dispatched right away, because our own transient unit is
+in it, and we don#t want to have it loaded until we finished initializing it.
+
+(cherry picked from commit aea529e5b2c864d536941ee18220abcc1a9015a0)
+Resolves: #1343904
+---
+ src/core/dbus-unit.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/core/dbus-unit.c b/src/core/dbus-unit.c
+index 227915efc..49770bfda 100644
+--- a/src/core/dbus-unit.c
++++ b/src/core/dbus-unit.c
+@@ -930,10 +930,14 @@ static int bus_unit_set_transient_property(
+                 } else {
+                         Unit *slice;
+ 
+-                        r = manager_load_unit(u->manager, s, NULL, error, &slice);
++                        /* Note that we do not dispatch the load queue here yet, as we don't want our own transient unit to be
++                         * loaded while we are still setting it up. Or in other words, we use manager_load_unit_prepare()
++                         * instead of manager_load_unit() on purpose, here. */
++                        r = manager_load_unit_prepare(u->manager, s, NULL, error, &slice);
+                         if (r < 0)
+                                 return r;
+ 
++
+                         if (slice->type != UNIT_SLICE)
+                                 return -EINVAL;
+ 

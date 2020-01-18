@@ -1,0 +1,54 @@
+From 285bd714e050c189f6e5e9aa6b59173997ae550e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Mon, 29 Jun 2015 20:19:56 -0400
+Subject: [PATCH] man: information about available properties
+
+https://bugzilla.redhat.com/show_bug.cgi?id=1144496
+(cherry picked from commit ea539eb65950bea7a9734424e660ef84f6f30e6c)
+
+Cherry-picked from: ea539eb
+Resolves: #1222517
+---
+ man/systemctl.xml | 28 +++++++++++++++++++++++-----
+ 1 file changed, 23 insertions(+), 5 deletions(-)
+
+diff --git a/man/systemctl.xml b/man/systemctl.xml
+index 44ec0d7bc..6b29b8cd0 100644
+--- a/man/systemctl.xml
++++ b/man/systemctl.xml
+@@ -111,12 +111,30 @@
+ 
+         <listitem>
+           <para>When showing unit/job/manager properties with the
+-          <command>show</command> command, limit display to certain
+-          properties as specified as argument. If not specified, all
+-          set properties are shown. The argument should be a
++          <command>show</command> command, limit display to properties
++          specified in the argument. The argument should be a
+           comma-separated list of property names, such as
+-          <literal>MainPID</literal>. If specified more than once, all
+-          properties with the specified names are shown.</para>
++          <literal>MainPID</literal>. Unless specified, all known
++          properties are shown. If specified more than once, all
++          properties with the specified names are shown. Shell
++          completion is implemented for property names.</para>
++
++          <para>For the manager itself,
++          <command>systemctl show</command> will show all available
++          properties. Those properties are documented in
++          <citerefentry><refentrytitle>systemd-system.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
++          </para>
++
++          <para>Properties for units vary by unit type, so showing any
++          unit (even a non-existent one) is a way to list properties
++          pertaining to this type. Similarly showing any job will list
++          properties pertaining to all jobs. Properties for units are
++          documented in
++          <citerefentry><refentrytitle>systemd.unit</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
++          and the pages for individual unit types
++          <citerefentry><refentrytitle>systemd.service</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
++          <citerefentry><refentrytitle>systemd.socket</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
++          etc.</para>
+         </listitem>
+       </varlistentry>
+ 

@@ -1,0 +1,33 @@
+From a932c70a76846aa7dbb4b783291b44bfc8cbd76c Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Mon, 1 Feb 2016 09:25:22 +0100
+Subject: [PATCH] journalctl: show friendly info when using -b on runtime
+ journal only
+
+Make it clear that specifing boot when there is actually only one has no
+effect. This cosmetic patch improves user experience a bit.
+
+Cherry-picked from: 0f1a9a830c87d8accdc3a44d0a93ad343e52a7bd
+Resolves: #1082179
+---
+ src/journal/journalctl.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
+index 964f849ee..836d7d214 100644
+--- a/src/journal/journalctl.c
++++ b/src/journal/journalctl.c
+@@ -1905,6 +1905,13 @@ int main(int argc, char *argv[]) {
+                 goto finish;
+         }
+ 
++        if (arg_boot_offset != 0 &&
++            sd_journal_has_runtime_files(j) > 0 &&
++            sd_journal_has_persistent_files(j) == 0) {
++                log_info("Specifying boot ID has no effect, no persistent journal was found");
++                r = 0;
++                goto finish;
++        }
+         /* add_boot() must be called first!
+          * It may need to seek the journal to find parent boot IDs. */
+         r = add_boot(j);

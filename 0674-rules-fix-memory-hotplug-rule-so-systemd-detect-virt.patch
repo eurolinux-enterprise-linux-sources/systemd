@@ -1,0 +1,27 @@
+From 8ed83533ae34ad1836fa82f70c08eb075aa8578f Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Wed, 30 Jan 2019 10:20:57 +0100
+Subject: [PATCH] rules: fix memory hotplug rule so systemd-detect-virt does
+ not run too often
+
+Fixes a bug introduced in commit c50b7bcbebcfebfce3a7e7fb77f88f4b590fb2b5.
+
+Resolves: #1701230
+---
+ rules/40-redhat.rules | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/rules/40-redhat.rules b/rules/40-redhat.rules
+index 1b10e173d..2c690e522 100644
+--- a/rules/40-redhat.rules
++++ b/rules/40-redhat.rules
+@@ -4,7 +4,8 @@
+ SUBSYSTEM=="cpu", ACTION=="add", TEST=="online", ATTR{online}=="0", ATTR{online}="1"
+ 
+ # Memory hotadd request
+-SUBSYSTEM!="memory", ACTION!="add", GOTO="memory_hotplug_end"
++SUBSYSTEM!="memory", GOTO="memory_hotplug_end"
++ACTION!="add", GOTO="memory_hotplug_end"
+ PROGRAM="/bin/uname -p", RESULT=="s390*", GOTO="memory_hotplug_end"
+ 
+ ENV{.state}="online"

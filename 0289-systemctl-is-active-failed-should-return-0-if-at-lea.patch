@@ -1,0 +1,45 @@
+From f3b1b4ae42a2d0d6383c6587a842418abad645a9 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Mon, 25 Jan 2016 15:21:28 +0100
+Subject: [PATCH] systemctl: is-active/failed should return 0 if at least one
+ unit is in given state
+
+Previously we have return the not-found code, in the case that we found a
+unit which does not belong to set active (resp. failed), which is the
+opposite than what is written in man page.
+
+Cherry-picked from: d60f6ad0cb690d920b8acbfb545bad29554609f1
+Resolves: #1254650
+---
+ src/systemctl/systemctl.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
+index 5d3a85fd9..bf5bb398b 100644
+--- a/src/systemctl/systemctl.c
++++ b/src/systemctl/systemctl.c
+@@ -3002,6 +3002,7 @@ static int check_unit_generic(sd_bus *bus, int code, const char *good_states, ch
+         _cleanup_strv_free_ char **names = NULL;
+         char **name;
+         int r;
++        bool found = false;
+ 
+         assert(bus);
+         assert(args);
+@@ -3016,11 +3017,13 @@ static int check_unit_generic(sd_bus *bus, int code, const char *good_states, ch
+                 state = check_one_unit(bus, *name, good_states, arg_quiet);
+                 if (state < 0)
+                         return state;
+-                if (state == 0)
+-                        r = code;
++                if (state > 0)
++                        found = true;
+         }
+ 
+-        return r;
++        /* use the given return code for the case that we won't find
++         * any unit which matches the list */
++        return found ? 0 : code;
+ }
+ 
+ static int check_unit_active(sd_bus *bus, char **args) {

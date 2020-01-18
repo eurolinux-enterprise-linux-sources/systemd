@@ -1,0 +1,118 @@
+From 510ba7ebe71c8e4e64ead26a44b330d2e4375d9c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Thu, 26 Nov 2015 16:32:41 -0500
+Subject: [PATCH] core: rename Random* to RandomizedDelay*
+
+The name RandomSec is too generic: "Sec" just specifies the default
+unit type, and "Random" by itself is not enough. Rename to something
+that should give the user general idea what the setting does without
+looking at documentation.
+
+Cherry-picked from: 6f5d79986a9c98b9cacc83f865fed957e4e6e4e6
+Resolves: #1305279
+---
+ man/systemd.timer.xml                 | 8 ++++----
+ src/core/dbus-timer.c                 | 6 +++---
+ src/core/load-fragment-gperf.gperf.m4 | 2 +-
+ src/libsystemd/sd-bus/bus-util.c      | 6 +++---
+ 4 files changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/man/systemd.timer.xml b/man/systemd.timer.xml
+index bdd14d888..ab83b2c9c 100644
+--- a/man/systemd.timer.xml
++++ b/man/systemd.timer.xml
+@@ -195,7 +195,7 @@
+       </varlistentry>
+ 
+       <varlistentry>
+-        <term><varname>RandomSec=</varname></term>
++        <term><varname>RandomizedDelaySec=</varname></term>
+ 
+         <listitem><para>Delay the timer by a randomly selected, evenly
+         distributed amount of time between 0 and the specified time
+@@ -212,16 +212,16 @@
+         time range in order to minimize wakeups, the former does the
+         opposite: it stretches timer events over a time range, to make
+         it unlikely that they fire simultaneously. If
+-        <varname>RandomSec=</varname> and
++        <varname>RandomizedDelaySec=</varname> and
+         <varname>AccuracySec=</varname> are used in conjunction, first
+         the a randomized time is added, and the result is then
+         possibly shifted further to coalesce it with other timer
+         events possibly happening on the system. As mentioned above
+         <varname>AccuracySec=</varname> defaults to 1min and
+-        <varname>RandomSec=</varname> to 0, thus encouraging
++        <varname>RandomizedDelaySec=</varname> to 0, thus encouraging
+         coalescing of timer events. In order to optimally stretch
+         timer events over a certain range of time, make sure to set
+-        <varname>RandomSec=</varname> to a higher value, and
++        <varname>RandomizedDelaySec=</varname> to a higher value, and
+         <varname>AccuracySec=1us</varname>.</para></listitem>
+       </varlistentry>
+ 
+diff --git a/src/core/dbus-timer.c b/src/core/dbus-timer.c
+index cd7bf44ba..478905acc 100644
+--- a/src/core/dbus-timer.c
++++ b/src/core/dbus-timer.c
+@@ -181,7 +181,7 @@ const sd_bus_vtable bus_timer_vtable[] = {
+         BUS_PROPERTY_DUAL_TIMESTAMP("LastTriggerUSec", offsetof(Timer, last_trigger), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+         SD_BUS_PROPERTY("Result", "s", property_get_result, offsetof(Timer, result), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+         SD_BUS_PROPERTY("AccuracyUSec", "t", bus_property_get_usec, offsetof(Timer, accuracy_usec), SD_BUS_VTABLE_PROPERTY_CONST),
+-        SD_BUS_PROPERTY("RandomUSec", "t", bus_property_get_usec, offsetof(Timer, random_usec), SD_BUS_VTABLE_PROPERTY_CONST),
++        SD_BUS_PROPERTY("RandomizedDelayUSec", "t", bus_property_get_usec, offsetof(Timer, random_usec), SD_BUS_VTABLE_PROPERTY_CONST),
+         SD_BUS_PROPERTY("Persistent", "b", bus_property_get_bool, offsetof(Timer, persistent), SD_BUS_VTABLE_PROPERTY_CONST),
+         SD_BUS_PROPERTY("WakeSystem", "b", bus_property_get_bool, offsetof(Timer, wake_system), SD_BUS_VTABLE_PROPERTY_CONST),
+         SD_BUS_VTABLE_END
+@@ -285,7 +285,7 @@ static int bus_timer_set_transient_property(
+ 
+                 return 1;
+ 
+-        } else if (streq(name, "RandomUSec")) {
++        } else if (streq(name, "RandomizedDelayUSec")) {
+                 usec_t u = 0;
+ 
+                 r = sd_bus_message_read(message, "t", &u);
+@@ -296,7 +296,7 @@ static int bus_timer_set_transient_property(
+                         char time[FORMAT_TIMESPAN_MAX];
+ 
+                         t->random_usec = u;
+-                        unit_write_drop_in_private_format(UNIT(t), mode, name, "RandomSec=%s\n", format_timespan(time, sizeof(time), u, USEC_PER_MSEC));
++                        unit_write_drop_in_private_format(UNIT(t), mode, name, "RandomizedDelaySec=%s\n", format_timespan(time, sizeof(time), u, USEC_PER_MSEC));
+                 }
+ 
+                 return 1;
+diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
+index 5106a98ee..85d979751 100644
+--- a/src/core/load-fragment-gperf.gperf.m4
++++ b/src/core/load-fragment-gperf.gperf.m4
+@@ -336,7 +336,7 @@ Timer.OnUnitInactiveSec,         config_parse_timer,                 0,
+ Timer.Persistent,                config_parse_bool,                  0,                             offsetof(Timer, persistent)
+ Timer.WakeSystem,                config_parse_bool,                  0,                             offsetof(Timer, wake_system)
+ Timer.AccuracySec,               config_parse_sec,                   0,                             offsetof(Timer, accuracy_usec)
+-Timer.RandomSec,                 config_parse_sec,                   0,                             offsetof(Timer, random_usec)
++Timer.RandomizedDelaySec,        config_parse_sec,                   0,                             offsetof(Timer, random_usec)
+ Timer.Unit,                      config_parse_trigger_unit,          0,                             0
+ m4_dnl
+ Path.PathExists,                 config_parse_path_spec,             0,                             0
+diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
+index 5ecb3bea4..3a918361b 100644
+--- a/src/libsystemd/sd-bus/bus-util.c
++++ b/src/libsystemd/sd-bus/bus-util.c
+@@ -1364,14 +1364,14 @@ int bus_append_unit_property_assignment(sd_bus_message *m, const char *assignmen
+                         return bus_log_create_error(r);
+ 
+                 return 0;
+-        } else if (streq(field, "RandomSec")) {
++        } else if (streq(field, "RandomizedDelaySec")) {
+                 usec_t t;
+ 
+                 r = parse_sec(eq, &t);
+                 if (r < 0)
+-                        return log_error_errno(r, "Failed to parse RandomSec= parameter: %s", eq);
++                        return log_error_errno(r, "Failed to parse RandomizedDelaySec= parameter: %s", eq);
+ 
+-                r = sd_bus_message_append_basic(m, SD_BUS_TYPE_STRING, "RandomUSec");
++                r = sd_bus_message_append_basic(m, SD_BUS_TYPE_STRING, "RandomizedDelayUSec");
+                 if (r < 0)
+                         return bus_log_create_error(r);
+ 

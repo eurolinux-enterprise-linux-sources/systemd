@@ -1,0 +1,1694 @@
+From b4bfb025f7ab0878e8e7e980dbad5b0a5bed1555 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Thu, 10 Dec 2015 12:40:04 +0100
+Subject: [PATCH] importd: drop dkr support
+
+The current code is not compatible with current dkr protocols anyway,
+and dkr has a different focus ("microservices") than nspawn anyway
+("whole machine containers"), hence drop support for it, we cannot
+reasonably keep this up to date, and it creates the impression we'd
+actually care for the microservices usecase.
+
+Cherry-picked from: b43d75c
+Related: #1284974
+---
+ Makefile.am                             |   2 -
+ TODO                                    |   4 -
+ configure.ac                            |   9 -
+ man/machinectl.xml                      |  58 --
+ src/import/import-dkr.c                 | 891 ------------------------
+ src/import/import-dkr.h                 |  36 -
+ src/import/importd.c                    | 111 +--
+ src/import/org.freedesktop.import1.conf |   4 -
+ src/import/pull.c                       | 119 +---
+ src/machine/machinectl.c                |  90 +--
+ src/shared/import-util.c                |  31 -
+ src/shared/import-util.h                |   4 -
+ 12 files changed, 5 insertions(+), 1354 deletions(-)
+ delete mode 100644 src/import/import-dkr.c
+ delete mode 100644 src/import/import-dkr.h
+
+diff --git a/Makefile.am b/Makefile.am
+index 3a09e0a62..b0a34b212 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -5369,8 +5369,6 @@ systemd_pull_SOURCES = \
+ 	src/import/import-raw.h \
+ 	src/import/import-tar.c \
+ 	src/import/import-tar.h \
+-	src/import/import-dkr.c \
+-	src/import/import-dkr.h \
+ 	src/import/import-job.c \
+ 	src/import/import-job.h \
+ 	src/import/import-common.c \
+diff --git a/TODO b/TODO
+index 90b2c4b30..d96d2bf0e 100644
+--- a/TODO
++++ b/TODO
+@@ -126,10 +126,6 @@ Features:
+ 
+ * rework journald sigbus stuff to use mutex
+ 
+-* import-dkr: support tarsum checksum verification, if it becomes reality one day...
+-
+-* import-dkr: convert json bits to nspawn configuration
+-
+ * import: support import from local files, and export to local files
+ 
+ * core/cgroup: support net_cls modules, and support automatically allocating class ids, then add support for making firewall changes depending on it, to implement a per-service firewall
+diff --git a/configure.ac b/configure.ac
+index 9103f9b92..2734368dc 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1389,14 +1389,6 @@ AC_ARG_ENABLE([split-usr],
+                 enable_split_usr=no
+         ])])
+ 
+-AC_ARG_WITH([dkr-index-url],
+-        [AS_HELP_STRING([--dkr-index-url=URL], [Specify the default index URL to use for image downloads])],
+-        [DEFAULT_DKR_INDEX_URL="\"$withval\""],
+-        [DEFAULT_DKR_INDEX_URL="NULL"])
+-
+-AC_DEFINE_UNQUOTED(DEFAULT_DKR_INDEX_URL, [$DEFAULT_DKR_INDEX_URL], [Default index URL to use for image downloads])
+-AC_SUBST(DEFAULT_DKR_INDEX_URL)
+-
+ AS_IF([test "x${enable_split_usr}" = "xyes"], [
+         AC_DEFINE(HAVE_SPLIT_USR, 1, [Define if /bin, /sbin aren't symlinks into /usr])
+ ])
+@@ -1564,7 +1556,6 @@ AC_MSG_RESULT([
+         Maximum System UID:      ${SYSTEM_UID_MAX}
+         Maximum System GID:      ${SYSTEM_GID_MAX}
+         Certificate root:        ${CERTIFICATEROOT}
+-        Default dkr Index        ${DEFAULT_DKR_INDEX_URL}
+ 
+         CFLAGS:                  ${OUR_CFLAGS} ${CFLAGS}
+         CPPFLAGS:                ${OUR_CPPFLAGS} ${CPPFLAGS}
+diff --git a/man/machinectl.xml b/man/machinectl.xml
+index 640cb8b7d..b0a7f2ae4 100644
+--- a/man/machinectl.xml
++++ b/man/machinectl.xml
+@@ -204,16 +204,6 @@
+         image.</para></listitem>
+       </varlistentry>
+ 
+-      <varlistentry>
+-        <term><option>--dkr-index-url</option></term>
+-
+-        <listitem><para>Specifies the index server to use for
+-        downloading <literal>dkr</literal> images with the
+-        <command>pull-dkr</command>. Takes a
+-        <literal>http://</literal>, <literal>https://</literal>
+-        URL.</para></listitem>
+-      </varlistentry>
+-
+       <xi:include href="user-system-options.xml" xpointer="host" />
+       <xi:include href="user-system-options.xml" xpointer="machine" />
+ 
+@@ -602,42 +592,6 @@
+         below.</para></listitem>
+       </varlistentry>
+ 
+-      <varlistentry>
+-        <term><command>pull-dkr</command> <replaceable>REMOTE</replaceable> [<replaceable>NAME</replaceable>]</term>
+-
+-        <listitem><para>Downloads a <literal>dkr</literal> container
+-        image and makes it available locally. The remote name refers
+-        to a <literal>dkr</literal> container name. If omitted, the
+-        local machine name is derived from the <literal>dkr</literal>
+-        container name.</para>
+-
+-        <para>Image verification is not available for
+-        <literal>dkr</literal> containers, and thus
+-        <option>--verify=no</option> must always be specified with
+-        this command.</para>
+-
+-        <para>This command downloads all (missing) layers for the
+-        specified container and places them in read-only subvolumes in
+-        <filename>/var/lib/machines/</filename>. A writable snapshot
+-        of the newest layer is then created under the specified local
+-        machine name. To omit creation of this writable snapshot, pass
+-        <literal>-</literal> as local machine name.</para>
+-
+-        <para>The read-only layer subvolumes are prefixed with
+-        <filename>.dkr-</filename>, and thus now shown by
+-        <command>list-images</command>, unless <option>--all</option>
+-        is passed.</para>
+-
+-        <para>To specify the <literal>dkr</literal> index server to
+-        use for looking up the specified container, use
+-        <option>--dkr-index-url=</option>.</para>
+-
+-        <para>Note that pressing C-c during execution of this command
+-        will not abort the download. Use
+-        <command>cancel-transfer</command>, described
+-        below.</para></listitem>
+-      </varlistentry>
+-
+       <varlistentry>
+         <term><command>list-transfers</command></term>
+ 
+@@ -728,18 +682,6 @@
+       the machine started as system service. With the last command a
+       login prompt into the container is requested.</para>
+     </example>
+-
+-    <example>
+-      <title>Download a Fedora <literal>dkr</literal> image</title>
+-
+-      <programlisting># machinectl pull-dkr --verify=no mattdm/fedora
+-# systemd-nspawn -M fedora</programlisting>
+-
+-      <para>Downloads a <literal>dkr</literal> image and opens a shell
+-      in it. Note that the specified download command might require an
+-      index server to be specified with the
+-      <literal>--dkr-index-url=</literal>.</para>
+-    </example>
+   </refsect1>
+ 
+   <refsect1>
+diff --git a/src/import/import-dkr.c b/src/import/import-dkr.c
+deleted file mode 100644
+index fb72f6cee..000000000
+--- a/src/import/import-dkr.c
++++ /dev/null
+@@ -1,891 +0,0 @@
+-/*-*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*-*/
+-
+-/***
+-  This file is part of systemd.
+-
+-  Copyright 2014 Lennart Poettering
+-
+-  systemd is free software; you can redistribute it and/or modify it
+-  under the terms of the GNU Lesser General Public License as published by
+-  the Free Software Foundation; either version 2.1 of the License, or
+-  (at your option) any later version.
+-
+-  systemd is distributed in the hope that it will be useful, but
+-  WITHOUT ANY WARRANTY; without even the implied warranty of
+-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+-  Lesser General Public License for more details.
+-
+-  You should have received a copy of the GNU Lesser General Public License
+-  along with systemd; If not, see <http://www.gnu.org/licenses/>.
+-***/
+-
+-#include <curl/curl.h>
+-#include <sys/prctl.h>
+-
+-#include "sd-daemon.h"
+-#include "json.h"
+-#include "strv.h"
+-#include "btrfs-util.h"
+-#include "utf8.h"
+-#include "mkdir.h"
+-#include "import-util.h"
+-#include "curl-util.h"
+-#include "aufs-util.h"
+-#include "import-job.h"
+-#include "import-common.h"
+-#include "import-dkr.h"
+-
+-typedef enum DkrProgress {
+-        DKR_SEARCHING,
+-        DKR_RESOLVING,
+-        DKR_METADATA,
+-        DKR_DOWNLOADING,
+-        DKR_COPYING,
+-} DkrProgress;
+-
+-struct DkrImport {
+-        sd_event *event;
+-        CurlGlue *glue;
+-
+-        char *index_url;
+-        char *image_root;
+-
+-        ImportJob *images_job;
+-        ImportJob *tags_job;
+-        ImportJob *ancestry_job;
+-        ImportJob *json_job;
+-        ImportJob *layer_job;
+-
+-        char *name;
+-        char *tag;
+-        char *id;
+-
+-        char *response_token;
+-        char **response_registries;
+-
+-        char **ancestry;
+-        unsigned n_ancestry;
+-        unsigned current_ancestry;
+-
+-        DkrImportFinished on_finished;
+-        void *userdata;
+-
+-        char *local;
+-        bool force_local;
+-
+-        char *temp_path;
+-        char *final_path;
+-
+-        pid_t tar_pid;
+-};
+-
+-#define PROTOCOL_PREFIX "https://"
+-
+-#define HEADER_TOKEN "X-Do" /* the HTTP header for the auth token */ "cker-Token:"
+-#define HEADER_REGISTRY "X-Do" /*the HTTP header for the registry */ "cker-Endpoints:"
+-
+-#define LAYERS_MAX 2048
+-
+-static void dkr_import_job_on_finished(ImportJob *j);
+-
+-DkrImport* dkr_import_unref(DkrImport *i) {
+-        if (!i)
+-                return NULL;
+-
+-        if (i->tar_pid > 1) {
+-                (void) kill_and_sigcont(i->tar_pid, SIGKILL);
+-                (void) wait_for_terminate(i->tar_pid, NULL);
+-        }
+-
+-        import_job_unref(i->images_job);
+-        import_job_unref(i->tags_job);
+-        import_job_unref(i->ancestry_job);
+-        import_job_unref(i->json_job);
+-        import_job_unref(i->layer_job);
+-
+-        curl_glue_unref(i->glue);
+-        sd_event_unref(i->event);
+-
+-        if (i->temp_path) {
+-                (void) btrfs_subvol_remove(i->temp_path);
+-                (void) rm_rf_dangerous(i->temp_path, false, true, false);
+-                free(i->temp_path);
+-        }
+-
+-        free(i->name);
+-        free(i->tag);
+-        free(i->id);
+-        free(i->response_token);
+-        free(i->response_registries);
+-        strv_free(i->ancestry);
+-        free(i->final_path);
+-        free(i->index_url);
+-        free(i->image_root);
+-        free(i->local);
+-        free(i);
+-
+-        return NULL;
+-}
+-
+-int dkr_import_new(
+-                DkrImport **ret,
+-                sd_event *event,
+-                const char *index_url,
+-                const char *image_root,
+-                DkrImportFinished on_finished,
+-                void *userdata) {
+-
+-        _cleanup_(dkr_import_unrefp) DkrImport *i = NULL;
+-        char *e;
+-        int r;
+-
+-        assert(ret);
+-        assert(index_url);
+-
+-        if (!http_url_is_valid(index_url))
+-                return -EINVAL;
+-
+-        i = new0(DkrImport, 1);
+-        if (!i)
+-                return -ENOMEM;
+-
+-        i->on_finished = on_finished;
+-        i->userdata = userdata;
+-
+-        i->image_root = strdup(image_root ?: "/var/lib/machines");
+-        if (!i->image_root)
+-                return -ENOMEM;
+-
+-        i->index_url = strdup(index_url);
+-        if (!i->index_url)
+-                return -ENOMEM;
+-
+-        e = endswith(i->index_url, "/");
+-        if (e)
+-                *e = 0;
+-
+-        if (event)
+-                i->event = sd_event_ref(event);
+-        else {
+-                r = sd_event_default(&i->event);
+-                if (r < 0)
+-                        return r;
+-        }
+-
+-        r = curl_glue_new(&i->glue, i->event);
+-        if (r < 0)
+-                return r;
+-
+-        i->glue->on_finished = import_job_curl_on_finished;
+-        i->glue->userdata = i;
+-
+-        *ret = i;
+-        i = NULL;
+-
+-        return 0;
+-}
+-
+-static void dkr_import_report_progress(DkrImport *i, DkrProgress p) {
+-        unsigned percent;
+-
+-        assert(i);
+-
+-        switch (p) {
+-
+-        case DKR_SEARCHING:
+-                percent = 0;
+-                if (i->images_job)
+-                        percent += i->images_job->progress_percent * 5 / 100;
+-                break;
+-
+-        case DKR_RESOLVING:
+-                percent = 5;
+-                if (i->tags_job)
+-                        percent += i->tags_job->progress_percent * 5 / 100;
+-                break;
+-
+-        case DKR_METADATA:
+-                percent = 10;
+-                if (i->ancestry_job)
+-                        percent += i->ancestry_job->progress_percent * 5 / 100;
+-                if (i->json_job)
+-                        percent += i->json_job->progress_percent * 5 / 100;
+-                break;
+-
+-        case DKR_DOWNLOADING:
+-                percent = 20;
+-                percent += 75 * i->current_ancestry / MAX(1U, i->n_ancestry);
+-                if (i->layer_job)
+-                        percent += i->layer_job->progress_percent * 75 / MAX(1U, i->n_ancestry) / 100;
+-
+-                break;
+-
+-        case DKR_COPYING:
+-                percent = 95;
+-                break;
+-
+-        default:
+-                assert_not_reached("Unknown progress state");
+-        }
+-
+-        sd_notifyf(false, "X_IMPORT_PROGRESS=%u", percent);
+-        log_debug("Combined progress %u%%", percent);
+-}
+-
+-static int parse_id(const void *payload, size_t size, char **ret) {
+-        _cleanup_free_ char *buf = NULL, *id = NULL, *other = NULL;
+-        union json_value v = {};
+-        void *json_state = NULL;
+-        const char *p;
+-        int t;
+-
+-        assert(payload);
+-        assert(ret);
+-
+-        if (size <= 0)
+-                return -EBADMSG;
+-
+-        if (memchr(payload, 0, size))
+-                return -EBADMSG;
+-
+-        buf = strndup(payload, size);
+-        if (!buf)
+-                return -ENOMEM;
+-
+-        p = buf;
+-        t = json_tokenize(&p, &id, &v, &json_state, NULL);
+-        if (t < 0)
+-                return t;
+-        if (t != JSON_STRING)
+-                return -EBADMSG;
+-
+-        t = json_tokenize(&p, &other, &v, &json_state, NULL);
+-        if (t < 0)
+-                return t;
+-        if (t != JSON_END)
+-                return -EBADMSG;
+-
+-        if (!dkr_id_is_valid(id))
+-                return -EBADMSG;
+-
+-        *ret = id;
+-        id = NULL;
+-
+-        return 0;
+-}
+-
+-static int parse_ancestry(const void *payload, size_t size, char ***ret) {
+-        _cleanup_free_ char *buf = NULL;
+-        void *json_state = NULL;
+-        const char *p;
+-        enum {
+-                STATE_BEGIN,
+-                STATE_ITEM,
+-                STATE_COMMA,
+-                STATE_END,
+-        } state = STATE_BEGIN;
+-        _cleanup_strv_free_ char **l = NULL;
+-        size_t n = 0, allocated = 0;
+-
+-        if (size <= 0)
+-                return -EBADMSG;
+-
+-        if (memchr(payload, 0, size))
+-                return -EBADMSG;
+-
+-        buf = strndup(payload, size);
+-        if (!buf)
+-                return -ENOMEM;
+-
+-        p = buf;
+-        for (;;) {
+-                _cleanup_free_ char *str;
+-                union json_value v = {};
+-                int t;
+-
+-                t = json_tokenize(&p, &str, &v, &json_state, NULL);
+-                if (t < 0)
+-                        return t;
+-
+-                switch (state) {
+-
+-                case STATE_BEGIN:
+-                        if (t == JSON_ARRAY_OPEN)
+-                                state = STATE_ITEM;
+-                        else
+-                                return -EBADMSG;
+-
+-                        break;
+-
+-                case STATE_ITEM:
+-                        if (t == JSON_STRING) {
+-                                if (!dkr_id_is_valid(str))
+-                                        return -EBADMSG;
+-
+-                                if (n+1 > LAYERS_MAX)
+-                                        return -EFBIG;
+-
+-                                if (!GREEDY_REALLOC(l, allocated, n + 2))
+-                                        return -ENOMEM;
+-
+-                                l[n++] = str;
+-                                str = NULL;
+-                                l[n] = NULL;
+-
+-                                state = STATE_COMMA;
+-
+-                        } else if (t == JSON_ARRAY_CLOSE)
+-                                state = STATE_END;
+-                        else
+-                                return -EBADMSG;
+-
+-                        break;
+-
+-                case STATE_COMMA:
+-                        if (t == JSON_COMMA)
+-                                state = STATE_ITEM;
+-                        else if (t == JSON_ARRAY_CLOSE)
+-                                state = STATE_END;
+-                        else
+-                                return -EBADMSG;
+-                        break;
+-
+-                case STATE_END:
+-                        if (t == JSON_END) {
+-
+-                                if (strv_isempty(l))
+-                                        return -EBADMSG;
+-
+-                                if (!strv_is_uniq(l))
+-                                        return -EBADMSG;
+-
+-                                l = strv_reverse(l);
+-
+-                                *ret = l;
+-                                l = NULL;
+-                                return 0;
+-                        } else
+-                                return -EBADMSG;
+-                }
+-
+-        }
+-}
+-
+-static const char *dkr_import_current_layer(DkrImport *i) {
+-        assert(i);
+-
+-        if (strv_isempty(i->ancestry))
+-                return NULL;
+-
+-        return i->ancestry[i->current_ancestry];
+-}
+-
+-static const char *dkr_import_current_base_layer(DkrImport *i) {
+-        assert(i);
+-
+-        if (strv_isempty(i->ancestry))
+-                return NULL;
+-
+-        if (i->current_ancestry <= 0)
+-                return NULL;
+-
+-        return i->ancestry[i->current_ancestry-1];
+-}
+-
+-static int dkr_import_add_token(DkrImport *i, ImportJob *j) {
+-        const char *t;
+-
+-        assert(i);
+-        assert(j);
+-
+-        if (i->response_token)
+-                t = strjoina("Authorization: Token ", i->response_token);
+-        else
+-                t = HEADER_TOKEN " true";
+-
+-        j->request_header = curl_slist_new("Accept: application/json", t, NULL);
+-        if (!j->request_header)
+-                return -ENOMEM;
+-
+-        return 0;
+-}
+-
+-static bool dkr_import_is_done(DkrImport *i) {
+-        assert(i);
+-        assert(i->images_job);
+-
+-        if (i->images_job->state != IMPORT_JOB_DONE)
+-                return false;
+-
+-        if (!i->tags_job || i->tags_job->state != IMPORT_JOB_DONE)
+-                return false;
+-
+-        if (!i->ancestry_job || i->ancestry_job->state != IMPORT_JOB_DONE)
+-                return false;
+-
+-        if (!i->json_job || i->json_job->state != IMPORT_JOB_DONE)
+-                return false;
+-
+-        if (i->layer_job && i->layer_job->state != IMPORT_JOB_DONE)
+-                return false;
+-
+-        if (dkr_import_current_layer(i))
+-                return false;
+-
+-        return true;
+-}
+-
+-static int dkr_import_make_local_copy(DkrImport *i) {
+-        int r;
+-
+-        assert(i);
+-
+-        if (!i->local)
+-                return 0;
+-
+-        if (!i->final_path) {
+-                i->final_path = strjoin(i->image_root, "/.dkr-", i->id, NULL);
+-                if (!i->final_path)
+-                        return log_oom();
+-        }
+-
+-        r = import_make_local_copy(i->final_path, i->image_root, i->local, i->force_local);
+-        if (r < 0)
+-                return r;
+-
+-        return 0;
+-}
+-
+-static int dkr_import_job_on_open_disk(ImportJob *j) {
+-        const char *base;
+-        DkrImport *i;
+-        int r;
+-
+-        assert(j);
+-        assert(j->userdata);
+-
+-        i = j->userdata;
+-        assert(i->layer_job == j);
+-        assert(i->final_path);
+-        assert(!i->temp_path);
+-        assert(i->tar_pid <= 0);
+-
+-        r = tempfn_random(i->final_path, &i->temp_path);
+-        if (r < 0)
+-                return log_oom();
+-
+-        mkdir_parents_label(i->temp_path, 0700);
+-
+-        base = dkr_import_current_base_layer(i);
+-        if (base) {
+-                const char *base_path;
+-
+-                base_path = strjoina(i->image_root, "/.dkr-", base);
+-                r = btrfs_subvol_snapshot(base_path, i->temp_path, false, true);
+-        } else
+-                r = btrfs_subvol_make(i->temp_path);
+-        if (r < 0)
+-                return log_error_errno(r, "Failed to make btrfs subvolume %s: %m", i->temp_path);
+-
+-        j->disk_fd = import_fork_tar(i->temp_path, &i->tar_pid);
+-        if (j->disk_fd < 0)
+-                return j->disk_fd;
+-
+-        return 0;
+-}
+-
+-static void dkr_import_job_on_progress(ImportJob *j) {
+-        DkrImport *i;
+-
+-        assert(j);
+-        assert(j->userdata);
+-
+-        i = j->userdata;
+-
+-        dkr_import_report_progress(
+-                        i,
+-                        j == i->images_job                       ? DKR_SEARCHING :
+-                        j == i->tags_job                         ? DKR_RESOLVING :
+-                        j == i->ancestry_job || j == i->json_job ? DKR_METADATA :
+-                                                                   DKR_DOWNLOADING);
+-}
+-
+-static int dkr_import_pull_layer(DkrImport *i) {
+-        _cleanup_free_ char *path = NULL;
+-        const char *url, *layer = NULL;
+-        int r;
+-
+-        assert(i);
+-        assert(!i->layer_job);
+-        assert(!i->temp_path);
+-        assert(!i->final_path);
+-
+-        for (;;) {
+-                layer = dkr_import_current_layer(i);
+-                if (!layer)
+-                        return 0; /* no more layers */
+-
+-                path = strjoin(i->image_root, "/.dkr-", layer, NULL);
+-                if (!path)
+-                        return log_oom();
+-
+-                if (laccess(path, F_OK) < 0) {
+-                        if (errno == ENOENT)
+-                                break;
+-
+-                        return log_error_errno(errno, "Failed to check for container: %m");
+-                }
+-
+-                log_info("Layer %s already exists, skipping.", layer);
+-
+-                i->current_ancestry++;
+-
+-                free(path);
+-                path = NULL;
+-        }
+-
+-        log_info("Pulling layer %s...", layer);
+-
+-        i->final_path = path;
+-        path = NULL;
+-
+-        url = strjoina(PROTOCOL_PREFIX, i->response_registries[0], "/v1/images/", layer, "/layer");
+-        r = import_job_new(&i->layer_job, url, i->glue, i);
+-        if (r < 0)
+-                return log_error_errno(r, "Failed to allocate layer job: %m");
+-
+-        r = dkr_import_add_token(i, i->layer_job);
+-        if (r < 0)
+-                return log_oom();
+-
+-        i->layer_job->on_finished = dkr_import_job_on_finished;
+-        i->layer_job->on_open_disk = dkr_import_job_on_open_disk;
+-        i->layer_job->on_progress = dkr_import_job_on_progress;
+-
+-        r = import_job_begin(i->layer_job);
+-        if (r < 0)
+-                return log_error_errno(r, "Failed to start layer job: %m");
+-
+-        return 0;
+-}
+-
+-static void dkr_import_job_on_finished(ImportJob *j) {
+-        DkrImport *i;
+-        int r;
+-
+-        assert(j);
+-        assert(j->userdata);
+-
+-        i = j->userdata;
+-        if (j->error != 0) {
+-                if (j == i->images_job)
+-                        log_error_errno(j->error, "Failed to retrieve images list. (Wrong index URL?)");
+-                else if (j == i->tags_job)
+-                        log_error_errno(j->error, "Failed to retrieve tags list.");
+-                else if (j == i->ancestry_job)
+-                        log_error_errno(j->error, "Failed to retrieve ancestry list.");
+-                else if (j == i->json_job)
+-                        log_error_errno(j->error, "Failed to retrieve json data.");
+-                else
+-                        log_error_errno(j->error, "Failed to retrieve layer data.");
+-
+-                r = j->error;
+-                goto finish;
+-        }
+-
+-        if (i->images_job == j) {
+-                const char *url;
+-
+-                assert(!i->tags_job);
+-                assert(!i->ancestry_job);
+-                assert(!i->json_job);
+-                assert(!i->layer_job);
+-
+-                if (strv_isempty(i->response_registries)) {
+-                        r = -EBADMSG;
+-                        log_error("Didn't get registry information.");
+-                        goto finish;
+-                }
+-
+-                log_info("Index lookup succeeded, directed to registry %s.", i->response_registries[0]);
+-                dkr_import_report_progress(i, DKR_RESOLVING);
+-
+-                url = strjoina(PROTOCOL_PREFIX, i->response_registries[0], "/v1/repositories/", i->name, "/tags/", i->tag);
+-                r = import_job_new(&i->tags_job, url, i->glue, i);
+-                if (r < 0) {
+-                        log_error_errno(r, "Failed to allocate tags job: %m");
+-                        goto finish;
+-                }
+-
+-                r = dkr_import_add_token(i, i->tags_job);
+-                if (r < 0) {
+-                        log_oom();
+-                        goto finish;
+-                }
+-
+-                i->tags_job->on_finished = dkr_import_job_on_finished;
+-                i->tags_job->on_progress = dkr_import_job_on_progress;
+-
+-                r = import_job_begin(i->tags_job);
+-                if (r < 0) {
+-                        log_error_errno(r, "Failed to start tags job: %m");
+-                        goto finish;
+-                }
+-
+-        } else if (i->tags_job == j) {
+-                const char *url;
+-                char *id = NULL;
+-
+-                assert(!i->ancestry_job);
+-                assert(!i->json_job);
+-                assert(!i->layer_job);
+-
+-                r = parse_id(j->payload, j->payload_size, &id);
+-                if (r < 0) {
+-                        log_error_errno(r, "Failed to parse JSON id.");
+-                        goto finish;
+-                }
+-
+-                free(i->id);
+-                i->id = id;
+-
+-                log_info("Tag lookup succeeded, resolved to layer %s.", i->id);
+-                dkr_import_report_progress(i, DKR_METADATA);
+-
+-                url = strjoina(PROTOCOL_PREFIX, i->response_registries[0], "/v1/images/", i->id, "/ancestry");
+-                r = import_job_new(&i->ancestry_job, url, i->glue, i);
+-                if (r < 0) {
+-                        log_error_errno(r, "Failed to allocate ancestry job: %m");
+-                        goto finish;
+-                }
+-
+-                r = dkr_import_add_token(i, i->ancestry_job);
+-                if (r < 0) {
+-                        log_oom();
+-                        goto finish;
+-                }
+-
+-                i->ancestry_job->on_finished = dkr_import_job_on_finished;
+-                i->ancestry_job->on_progress = dkr_import_job_on_progress;
+-
+-                url = strjoina(PROTOCOL_PREFIX, i->response_registries[0], "/v1/images/", i->id, "/json");
+-                r = import_job_new(&i->json_job, url, i->glue, i);
+-                if (r < 0) {
+-                        log_error_errno(r, "Failed to allocate json job: %m");
+-                        goto finish;
+-                }
+-
+-                r = dkr_import_add_token(i, i->json_job);
+-                if (r < 0) {
+-                        log_oom();
+-                        goto finish;
+-                }
+-
+-                i->json_job->on_finished = dkr_import_job_on_finished;
+-                i->json_job->on_progress = dkr_import_job_on_progress;
+-
+-                r = import_job_begin(i->ancestry_job);
+-                if (r < 0) {
+-                        log_error_errno(r, "Failed to start ancestry job: %m");
+-                        goto finish;
+-                }
+-
+-                r = import_job_begin(i->json_job);
+-                if (r < 0) {
+-                        log_error_errno(r, "Failed to start json job: %m");
+-                        goto finish;
+-                }
+-
+-        } else if (i->ancestry_job == j) {
+-                char **ancestry = NULL, **k;
+-                unsigned n;
+-
+-                assert(!i->layer_job);
+-
+-                r = parse_ancestry(j->payload, j->payload_size, &ancestry);
+-                if (r < 0) {
+-                        log_error_errno(r, "Failed to parse JSON id.");
+-                        goto finish;
+-                }
+-
+-                n = strv_length(ancestry);
+-                if (n <= 0 || !streq(ancestry[n-1], i->id)) {
+-                        log_error("Ancestry doesn't end in main layer.");
+-                        strv_free(ancestry);
+-                        r = -EBADMSG;
+-                        goto finish;
+-                }
+-
+-                log_info("Ancestor lookup succeeded, requires layers:\n");
+-                STRV_FOREACH(k, ancestry)
+-                        log_info("\t%s", *k);
+-
+-                strv_free(i->ancestry);
+-                i->ancestry = ancestry;
+-                i->n_ancestry = n;
+-                i->current_ancestry = 0;
+-
+-                dkr_import_report_progress(i, DKR_DOWNLOADING);
+-
+-                r = dkr_import_pull_layer(i);
+-                if (r < 0)
+-                        goto finish;
+-
+-        } else if (i->layer_job == j) {
+-                assert(i->temp_path);
+-                assert(i->final_path);
+-
+-                j->disk_fd = safe_close(j->disk_fd);
+-
+-                if (i->tar_pid > 0) {
+-                        r = wait_for_terminate_and_warn("tar", i->tar_pid, true);
+-                        i->tar_pid = 0;
+-                        if (r < 0)
+-                                goto finish;
+-                }
+-
+-                r = aufs_resolve(i->temp_path);
+-                if (r < 0) {
+-                        log_error_errno(r, "Failed to resolve aufs whiteouts: %m");
+-                        goto finish;
+-                }
+-
+-                r = btrfs_subvol_set_read_only(i->temp_path, true);
+-                if (r < 0) {
+-                        log_error_errno(r, "Failed to mark snapshot read-only: %m");
+-                        goto finish;
+-                }
+-
+-                if (rename(i->temp_path, i->final_path) < 0) {
+-                        log_error_errno(errno, "Failed to rename snaphsot: %m");
+-                        goto finish;
+-                }
+-
+-                log_info("Completed writing to layer %s.", i->final_path);
+-
+-                i->layer_job = import_job_unref(i->layer_job);
+-                free(i->temp_path);
+-                i->temp_path = NULL;
+-                free(i->final_path);
+-                i->final_path = NULL;
+-
+-                i->current_ancestry ++;
+-                r = dkr_import_pull_layer(i);
+-                if (r < 0)
+-                        goto finish;
+-
+-        } else if (i->json_job != j)
+-                assert_not_reached("Got finished event for unknown curl object");
+-
+-        if (!dkr_import_is_done(i))
+-                return;
+-
+-        dkr_import_report_progress(i, DKR_COPYING);
+-
+-        r = dkr_import_make_local_copy(i);
+-        if (r < 0)
+-                goto finish;
+-
+-        r = 0;
+-
+-finish:
+-        if (i->on_finished)
+-                i->on_finished(i, r, i->userdata);
+-        else
+-                sd_event_exit(i->event, r);
+-}
+-
+-static int dkr_import_job_on_header(ImportJob *j, const char *header, size_t sz)  {
+-        _cleanup_free_ char *registry = NULL;
+-        char *token;
+-        DkrImport *i;
+-        int r;
+-
+-        assert(j);
+-        assert(j->userdata);
+-
+-        i = j->userdata;
+-
+-        r = curl_header_strdup(header, sz, HEADER_TOKEN, &token);
+-        if (r < 0)
+-                return log_oom();
+-        if (r > 0) {
+-                free(i->response_token);
+-                i->response_token = token;
+-                return 0;
+-        }
+-
+-        r = curl_header_strdup(header, sz, HEADER_REGISTRY, &registry);
+-        if (r < 0)
+-                return log_oom();
+-        if (r > 0) {
+-                char **l, **k;
+-
+-                l = strv_split(registry, ",");
+-                if (!l)
+-                        return log_oom();
+-
+-                STRV_FOREACH(k, l) {
+-                        if (!hostname_is_valid(*k)) {
+-                                log_error("Registry hostname is not valid.");
+-                                strv_free(l);
+-                                return -EBADMSG;
+-                        }
+-                }
+-
+-                strv_free(i->response_registries);
+-                i->response_registries = l;
+-        }
+-
+-        return 0;
+-}
+-
+-int dkr_import_pull(DkrImport *i, const char *name, const char *tag, const char *local, bool force_local) {
+-        const char *url;
+-        int r;
+-
+-        assert(i);
+-
+-        if (!dkr_name_is_valid(name))
+-                return -EINVAL;
+-
+-        if (tag && !dkr_tag_is_valid(tag))
+-                return -EINVAL;
+-
+-        if (local && !machine_name_is_valid(local))
+-                return -EINVAL;
+-
+-        if (i->images_job)
+-                return -EBUSY;
+-
+-        if (!tag)
+-                tag = "latest";
+-
+-        r = free_and_strdup(&i->local, local);
+-        if (r < 0)
+-                return r;
+-        i->force_local = force_local;
+-
+-        r = free_and_strdup(&i->name, name);
+-        if (r < 0)
+-                return r;
+-        r = free_and_strdup(&i->tag, tag);
+-        if (r < 0)
+-                return r;
+-
+-        url = strjoina(i->index_url, "/v1/repositories/", name, "/images");
+-
+-        r = import_job_new(&i->images_job, url, i->glue, i);
+-        if (r < 0)
+-                return r;
+-
+-        r = dkr_import_add_token(i, i->images_job);
+-        if (r < 0)
+-                return r;
+-
+-        i->images_job->on_finished = dkr_import_job_on_finished;
+-        i->images_job->on_header = dkr_import_job_on_header;
+-        i->images_job->on_progress = dkr_import_job_on_progress;
+-
+-        return import_job_begin(i->images_job);
+-}
+diff --git a/src/import/import-dkr.h b/src/import/import-dkr.h
+deleted file mode 100644
+index 633c76796..000000000
+--- a/src/import/import-dkr.h
++++ /dev/null
+@@ -1,36 +0,0 @@
+-/*-*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*-*/
+-
+-/***
+-  This file is part of systemd.
+-
+-  Copyright 2014 Lennart Poettering
+-
+-  systemd is free software; you can redistribute it and/or modify it
+-  under the terms of the GNU Lesser General Public License as published by
+-  the Free Software Foundation; either version 2.1 of the License, or
+-  (at your option) any later version.
+-
+-  systemd is distributed in the hope that it will be useful, but
+-  WITHOUT ANY WARRANTY; without even the implied warranty of
+-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+-  Lesser General Public License for more details.
+-
+-  You should have received a copy of the GNU Lesser General Public License
+-  along with systemd; If not, see <http://www.gnu.org/licenses/>.
+-***/
+-
+-#pragma once
+-
+-#include "sd-event.h"
+-#include "util.h"
+-
+-typedef struct DkrImport DkrImport;
+-
+-typedef void (*DkrImportFinished)(DkrImport *import, int error, void *userdata);
+-
+-int dkr_import_new(DkrImport **import, sd_event *event, const char *index_url, const char *image_root, DkrImportFinished on_finished, void *userdata);
+-DkrImport* dkr_import_unref(DkrImport *import);
+-
+-DEFINE_TRIVIAL_CLEANUP_FUNC(DkrImport*, dkr_import_unref);
+-
+-int dkr_import_pull(DkrImport *import, const char *name, const char *tag, const char *local, bool force_local);
+diff --git a/src/import/importd.c b/src/import/importd.c
+index 1222bf3cd..9aaf991f8 100644
+--- a/src/import/importd.c
++++ b/src/import/importd.c
+@@ -38,7 +38,6 @@ typedef struct Manager Manager;
+ typedef enum TransferType {
+         TRANSFER_TAR,
+         TRANSFER_RAW,
+-        TRANSFER_DKR,
+         _TRANSFER_TYPE_MAX,
+         _TRANSFER_TYPE_INVALID = -1,
+ } TransferType;
+@@ -56,8 +55,6 @@ struct Transfer {
+         char *local;
+         bool force_local;
+ 
+-        char *dkr_index_url;
+-
+         pid_t pid;
+ 
+         int log_fd;
+@@ -91,7 +88,6 @@ struct Manager {
+ static const char* const transfer_type_table[_TRANSFER_TYPE_MAX] = {
+         [TRANSFER_TAR] = "tar",
+         [TRANSFER_RAW] = "raw",
+-        [TRANSFER_DKR] = "dkr",
+ };
+ 
+ DEFINE_PRIVATE_STRING_TABLE_LOOKUP_TO_STRING(transfer_type, TransferType);
+@@ -108,7 +104,6 @@ static Transfer *transfer_unref(Transfer *t) {
+ 
+         free(t->remote);
+         free(t->local);
+-        free(t->dkr_index_url);
+         free(t->object_path);
+ 
+         if (t->pid > 0) {
+@@ -355,7 +350,6 @@ static int transfer_start(Transfer *t) {
+                         "--verify",
+                         NULL, /* verify argument */
+                         NULL, /* maybe --force */
+-                        NULL, /* maybe --dkr-index-url */
+                         NULL, /* the actual URL */
+                         NULL, /* remote */
+                         NULL, /* local */
+@@ -410,11 +404,6 @@ static int transfer_start(Transfer *t) {
+                 if (t->force_local)
+                         cmd[k++] = "--force";
+ 
+-                if (t->dkr_index_url) {
+-                        cmd[k++] = "--dkr-index-url";
+-                        cmd[k++] = t->dkr_index_url;
+-                }
+-
+                 cmd[k++] = t->remote;
+                 if (t->local)
+                         cmd[k++] = t->local;
+@@ -624,7 +613,7 @@ static int manager_new(Manager **ret) {
+         return 0;
+ }
+ 
+-static Transfer *manager_find(Manager *m, TransferType type, const char *dkr_index_url, const char *remote) {
++static Transfer *manager_find(Manager *m, TransferType type, const char *remote) {
+         Transfer *t;
+         Iterator i;
+ 
+@@ -635,8 +624,7 @@ static Transfer *manager_find(Manager *m, TransferType type, const char *dkr_ind
+         HASHMAP_FOREACH(t, m->transfers, i) {
+ 
+                 if (t->type == type &&
+-                    streq_ptr(t->remote, remote) &&
+-                    streq_ptr(t->dkr_index_url, dkr_index_url))
++                    streq_ptr(t->remote, remote))
+                         return t;
+         }
+ 
+@@ -689,7 +677,7 @@ static int method_pull_tar_or_raw(sd_bus *bus, sd_bus_message *msg, void *userda
+ 
+         type = streq_ptr(sd_bus_message_get_member(msg), "PullTar") ? TRANSFER_TAR : TRANSFER_RAW;
+ 
+-        if (manager_find(m, type, NULL, remote))
++        if (manager_find(m, type, remote))
+                 return sd_bus_error_setf(error, BUS_ERROR_TRANSFER_IN_PROGRESS, "Transfer for %s already in progress.", remote);
+ 
+         r = transfer_new(m, &t);
+@@ -719,98 +707,6 @@ static int method_pull_tar_or_raw(sd_bus *bus, sd_bus_message *msg, void *userda
+         return sd_bus_reply_method_return(msg, "uo", id, object);
+ }
+ 
+-static int method_pull_dkr(sd_bus *bus, sd_bus_message *msg, void *userdata, sd_bus_error *error) {
+-        _cleanup_(transfer_unrefp) Transfer *t = NULL;
+-        const char *index_url, *remote, *tag, *local, *verify, *object;
+-        Manager *m = userdata;
+-        ImportVerify v;
+-        int force, r;
+-        uint32_t id;
+-
+-        assert(bus);
+-        assert(msg);
+-        assert(m);
+-
+-        r = bus_verify_polkit_async(
+-                        msg,
+-                        CAP_SYS_ADMIN,
+-                        "org.freedesktop.import1.pull",
+-                        false,
+-                        &m->polkit_registry,
+-                        error);
+-        if (r < 0)
+-                return r;
+-        if (r == 0)
+-                return 1; /* Will call us back */
+-
+-        r = sd_bus_message_read(msg, "sssssb", &index_url, &remote, &tag, &local, &verify, &force);
+-        if (r < 0)
+-                return r;
+-
+-        if (isempty(index_url))
+-                index_url = DEFAULT_DKR_INDEX_URL;
+-        if (!index_url)
+-                return sd_bus_error_setf(error, SD_BUS_ERROR_INVALID_ARGS, "Index URL must be specified.");
+-        if (!http_url_is_valid(index_url))
+-                return sd_bus_error_setf(error, SD_BUS_ERROR_INVALID_ARGS, "Index URL %s is invalid", index_url);
+-
+-        if (!dkr_name_is_valid(remote))
+-                return sd_bus_error_setf(error, SD_BUS_ERROR_INVALID_ARGS, "Remote name %s is not valid", remote);
+-
+-        if (isempty(tag))
+-                tag = "latest";
+-        else if (!dkr_tag_is_valid(tag))
+-                return sd_bus_error_setf(error, SD_BUS_ERROR_INVALID_ARGS, "Tag %s is not valid", tag);
+-
+-        if (isempty(local))
+-                local = NULL;
+-        else if (!machine_name_is_valid(local))
+-                return sd_bus_error_setf(error, SD_BUS_ERROR_INVALID_ARGS, "Local name %s is invalid", local);
+-
+-        if (isempty(verify))
+-                v = IMPORT_VERIFY_SIGNATURE;
+-        else
+-                v = import_verify_from_string(verify);
+-        if (v < 0)
+-                return sd_bus_error_setf(error, SD_BUS_ERROR_INVALID_ARGS, "Unknown verification mode %s", verify);
+-
+-        if (v != IMPORT_VERIFY_NO)
+-                return sd_bus_error_setf(error, SD_BUS_ERROR_NOT_SUPPORTED, "DKR does not support verification.");
+-
+-        if (manager_find(m, TRANSFER_DKR, index_url, remote))
+-                return sd_bus_error_setf(error, BUS_ERROR_TRANSFER_IN_PROGRESS, "Transfer for %s already in progress.", remote);
+-
+-        r = transfer_new(m, &t);
+-        if (r < 0)
+-                return r;
+-
+-        t->type = TRANSFER_DKR;
+-        t->verify = v;
+-        t->force_local = force;
+-
+-        t->dkr_index_url = strdup(index_url);
+-        if (!t->dkr_index_url)
+-                return -ENOMEM;
+-
+-        t->remote = strjoin(remote, ":", tag, NULL);
+-        if (!t->remote)
+-                return -ENOMEM;
+-
+-        t->local = strdup(local);
+-        if (!t->local)
+-                return -ENOMEM;
+-
+-        r = transfer_start(t);
+-        if (r < 0)
+-                return r;
+-
+-        object = t->object_path;
+-        id = t->id;
+-        t = NULL;
+-
+-        return sd_bus_reply_method_return(msg, "uo", id, object);
+-}
+-
+ static int method_list_transfers(sd_bus *bus, sd_bus_message *msg, void *userdata, sd_bus_error *error) {
+         _cleanup_bus_message_unref_ sd_bus_message *reply = NULL;
+         Manager *m = userdata;
+@@ -956,7 +852,6 @@ static const sd_bus_vtable manager_vtable[] = {
+         SD_BUS_VTABLE_START(0),
+         SD_BUS_METHOD("PullTar", "sssb", "uo", method_pull_tar_or_raw, SD_BUS_VTABLE_UNPRIVILEGED),
+         SD_BUS_METHOD("PullRaw", "sssb", "uo", method_pull_tar_or_raw, SD_BUS_VTABLE_UNPRIVILEGED),
+-        SD_BUS_METHOD("PullDkr", "sssssb", "uo", method_pull_dkr, SD_BUS_VTABLE_UNPRIVILEGED),
+         SD_BUS_METHOD("ListTransfers", NULL, "a(usssdo)", method_list_transfers, SD_BUS_VTABLE_UNPRIVILEGED),
+         SD_BUS_METHOD("CancelTransfer", "u", NULL, method_cancel_transfer, SD_BUS_VTABLE_UNPRIVILEGED),
+         SD_BUS_SIGNAL("TransferNew", "uo", 0),
+diff --git a/src/import/org.freedesktop.import1.conf b/src/import/org.freedesktop.import1.conf
+index ae36af422..ed2539a03 100644
+--- a/src/import/org.freedesktop.import1.conf
++++ b/src/import/org.freedesktop.import1.conf
+@@ -52,10 +52,6 @@
+                        send_interface="org.freedesktop.import1.Manager"
+                        send_member="PullRaw"/>
+ 
+-                <allow send_destination="org.freedesktop.import1"
+-                       send_interface="org.freedesktop.import1.Manager"
+-                       send_member="PullDkr"/>
+-
+                 <allow send_destination="org.freedesktop.import1"
+                        send_interface="org.freedesktop.import1.Transfer"
+                        send_member="Cancel"/>
+diff --git a/src/import/pull.c b/src/import/pull.c
+index ee3ff6803..9cb10880f 100644
+--- a/src/import/pull.c
++++ b/src/import/pull.c
+@@ -28,13 +28,11 @@
+ #include "machine-image.h"
+ #include "import-tar.h"
+ #include "import-raw.h"
+-#include "import-dkr.h"
+ #include "import-util.h"
+ 
+ static bool arg_force = false;
+ static const char *arg_image_root = "/var/lib/machines";
+ static ImportVerify arg_verify = IMPORT_VERIFY_SIGNATURE;
+-static const char* arg_dkr_index_url = DEFAULT_DKR_INDEX_URL;
+ 
+ static int interrupt_signal_handler(sd_event_source *s, const struct signalfd_siginfo *si, void *userdata) {
+         log_notice("Transfer aborted.");
+@@ -214,107 +212,6 @@ static int pull_raw(int argc, char *argv[], void *userdata) {
+         return -r;
+ }
+ 
+-static void on_dkr_finished(DkrImport *import, int error, void *userdata) {
+-        sd_event *event = userdata;
+-        assert(import);
+-
+-        if (error == 0)
+-                log_info("Operation completed successfully.");
+-
+-        sd_event_exit(event, abs(error));
+-}
+-
+-static int pull_dkr(int argc, char *argv[], void *userdata) {
+-        _cleanup_(dkr_import_unrefp) DkrImport *import = NULL;
+-        _cleanup_event_unref_ sd_event *event = NULL;
+-        const char *name, *tag, *local;
+-        int r;
+-
+-        if (!arg_dkr_index_url) {
+-                log_error("Please specify an index URL with --dkr-index-url=");
+-                return -EINVAL;
+-        }
+-
+-        if (arg_verify != IMPORT_VERIFY_NO) {
+-                log_error("Imports from dkr do not support image verification, please pass --verify=no.");
+-                return -EINVAL;
+-        }
+-
+-        tag = strchr(argv[1], ':');
+-        if (tag) {
+-                name = strndupa(argv[1], tag - argv[1]);
+-                tag++;
+-        } else {
+-                name = argv[1];
+-                tag = "latest";
+-        }
+-
+-        if (!dkr_name_is_valid(name)) {
+-                log_error("Remote name '%s' is not valid.", name);
+-                return -EINVAL;
+-        }
+-
+-        if (!dkr_tag_is_valid(tag)) {
+-                log_error("Tag name '%s' is not valid.", tag);
+-                return -EINVAL;
+-        }
+-
+-        if (argc >= 3)
+-                local = argv[2];
+-        else {
+-                local = strchr(name, '/');
+-                if (local)
+-                        local++;
+-                else
+-                        local = name;
+-        }
+-
+-        if (isempty(local) || streq(local, "-"))
+-                local = NULL;
+-
+-        if (local) {
+-                if (!machine_name_is_valid(local)) {
+-                        log_error("Local image name '%s' is not valid.", local);
+-                        return -EINVAL;
+-                }
+-
+-                if (!arg_force) {
+-                        r = image_find(local, NULL);
+-                        if (r < 0)
+-                                return log_error_errno(r, "Failed to check whether image '%s' exists: %m", local);
+-                        else if (r > 0) {
+-                                log_error_errno(EEXIST, "Image '%s' already exists.", local);
+-                                return -EEXIST;
+-                        }
+-                }
+-
+-                log_info("Pulling '%s' with tag '%s', saving as '%s'.", name, tag, local);
+-        } else
+-                log_info("Pulling '%s' with tag '%s'.", name, tag);
+-
+-        r = sd_event_default(&event);
+-        if (r < 0)
+-                return log_error_errno(r, "Failed to allocate event loop: %m");
+-
+-        assert_se(sigprocmask_many(SIG_BLOCK, SIGTERM, SIGINT, -1) == 0);
+-        sd_event_add_signal(event, NULL, SIGTERM, interrupt_signal_handler,  NULL);
+-        sd_event_add_signal(event, NULL, SIGINT, interrupt_signal_handler, NULL);
+-
+-        r = dkr_import_new(&import, event, arg_dkr_index_url, arg_image_root, on_dkr_finished, event);
+-        if (r < 0)
+-                return log_error_errno(r, "Failed to allocate importer: %m");
+-
+-        r = dkr_import_pull(import, name, tag, local, arg_force);
+-        if (r < 0)
+-                return log_error_errno(r, "Failed to pull image: %m");
+-
+-        r = sd_event_loop(event);
+-        if (r < 0)
+-                return log_error_errno(r, "Failed to run event loop: %m");
+-
+-        log_info("Exiting.");
+-        return -r;
+-}
+ 
+ static int help(int argc, char *argv[], void *userdata) {
+ 
+@@ -326,11 +223,9 @@ static int help(int argc, char *argv[], void *userdata) {
+                "     --verify=                Verify downloaded image, one of: 'no',\n"
+                "                              'checksum', 'signature'.\n"
+                "     --image-root=            Image root directory\n"
+-               "     --dkr-index-url=URL      Specify index URL to use for downloads\n\n"
+                "Commands:\n"
+                "  tar URL [NAME]              Download a TAR image\n"
+-               "  raw URL [NAME]              Download a RAW image\n"
+-               "  dkr REMOTE [NAME]           Download a DKR image\n",
++               "  raw URL [NAME]              Download a RAW image\n",
+                program_invocation_short_name);
+ 
+         return 0;
+@@ -341,7 +236,6 @@ static int parse_argv(int argc, char *argv[]) {
+         enum {
+                 ARG_VERSION = 0x100,
+                 ARG_FORCE,
+-                ARG_DKR_INDEX_URL,
+                 ARG_IMAGE_ROOT,
+                 ARG_VERIFY,
+         };
+@@ -350,7 +244,6 @@ static int parse_argv(int argc, char *argv[]) {
+                 { "help",            no_argument,       NULL, 'h'                 },
+                 { "version",         no_argument,       NULL, ARG_VERSION         },
+                 { "force",           no_argument,       NULL, ARG_FORCE           },
+-                { "dkr-index-url",   required_argument, NULL, ARG_DKR_INDEX_URL   },
+                 { "image-root",      required_argument, NULL, ARG_IMAGE_ROOT      },
+                 { "verify",          required_argument, NULL, ARG_VERIFY          },
+                 {}
+@@ -377,15 +270,6 @@ static int parse_argv(int argc, char *argv[]) {
+                         arg_force = true;
+                         break;
+ 
+-                case ARG_DKR_INDEX_URL:
+-                        if (!http_url_is_valid(optarg)) {
+-                                log_error("Index URL is not valid: %s", optarg);
+-                                return -EINVAL;
+-                        }
+-
+-                        arg_dkr_index_url = optarg;
+-                        break;
+-
+                 case ARG_IMAGE_ROOT:
+                         arg_image_root = optarg;
+                         break;
+@@ -415,7 +299,6 @@ static int import_main(int argc, char *argv[]) {
+                 { "help", VERB_ANY, VERB_ANY, 0, help     },
+                 { "tar",  2,        3,        0, pull_tar },
+                 { "raw",  2,        3,        0, pull_raw },
+-                { "dkr",  2,        3,        0, pull_dkr },
+                 {}
+         };
+ 
+diff --git a/src/machine/machinectl.c b/src/machine/machinectl.c
+index ef1214a66..cfd3162fb 100644
+--- a/src/machine/machinectl.c
++++ b/src/machine/machinectl.c
+@@ -77,7 +77,6 @@ static unsigned arg_lines = 10;
+ static OutputMode arg_output = OUTPUT_SHORT;
+ static bool arg_force = false;
+ static ImportVerify arg_verify = IMPORT_VERIFY_SIGNATURE;
+-static const char* arg_dkr_index_url = NULL;
+ 
+ static void pager_open_if_enabled(void) {
+ 
+@@ -1998,78 +1997,6 @@ static int pull_raw(int argc, char *argv[], void *userdata) {
+         return pull_image_common(bus, m);
+ }
+ 
+-static int pull_dkr(int argc, char *argv[], void *userdata) {
+-        _cleanup_bus_message_unref_ sd_bus_message *m = NULL;
+-        const char *local, *remote, *tag;
+-        sd_bus *bus = userdata;
+-        int r;
+-
+-        if (arg_verify != IMPORT_VERIFY_NO) {
+-                log_error("Imports from DKR do not support image verification, please pass --verify=no.");
+-                return -EINVAL;
+-        }
+-
+-        remote = argv[1];
+-        tag = strchr(remote, ':');
+-        if (tag) {
+-                remote = strndupa(remote, tag - remote);
+-                tag++;
+-        }
+-
+-        if (!dkr_name_is_valid(remote)) {
+-                log_error("DKR name '%s' is invalid.", remote);
+-                return -EINVAL;
+-        }
+-        if (tag && !dkr_tag_is_valid(tag)) {
+-                log_error("DKR tag '%s' is invalid.", remote);
+-                return -EINVAL;
+-        }
+-
+-        if (argc >= 3)
+-                local = argv[2];
+-        else {
+-                local = strchr(remote, '/');
+-                if (local)
+-                        local++;
+-                else
+-                        local = remote;
+-        }
+-
+-        if (isempty(local) || streq(local, "-"))
+-                local = NULL;
+-
+-        if (local) {
+-                if (!machine_name_is_valid(local)) {
+-                        log_error("Local name %s is not a suitable machine name.", local);
+-                        return -EINVAL;
+-                }
+-        }
+-
+-        r = sd_bus_message_new_method_call(
+-                        bus,
+-                        &m,
+-                        "org.freedesktop.import1",
+-                        "/org/freedesktop/import1",
+-                        "org.freedesktop.import1.Manager",
+-                        "PullDkr");
+-        if (r < 0)
+-                return bus_log_create_error(r);
+-
+-        r = sd_bus_message_append(
+-                        m,
+-                        "sssssb",
+-                        arg_dkr_index_url,
+-                        remote,
+-                        tag,
+-                        local,
+-                        import_verify_to_string(arg_verify),
+-                        arg_force);
+-        if (r < 0)
+-                return bus_log_create_error(r);
+-
+-        return pull_image_common(bus, m);
+-}
+-
+ typedef struct TransferInfo {
+         uint32_t id;
+         const char *type;
+@@ -2237,8 +2164,6 @@ static int help(int argc, char *argv[], void *userdata) {
+                "      --verify=MODE           Verification mode for downloaded images (no,\n"
+                "                              checksum, signature)\n"
+                "      --force                 Download image even if already exists\n"
+-               "      --dkr-index-url=URL     Specify the index URL to use for DKR image\n"
+-               "                              downloads\n\n"
+                "Machine Commands:\n"
+                "  list                        List running VMs and containers\n"
+                "  status NAME...              Show VM/container details\n"
+@@ -2265,7 +2190,6 @@ static int help(int argc, char *argv[], void *userdata) {
+                "Image Transfer Commands:\n"
+                "  pull-tar URL [NAME]         Download a TAR container image\n"
+                "  pull-raw URL [NAME]         Download a RAW container or VM image\n"
+-               "  pull-dkr REMOTE [NAME]      Download a DKR container image\n"
+                "  list-transfers              Show list of downloads in progress\n"
+                "  cancel-transfer             Cancel a download\n"
+                , program_invocation_short_name);
+@@ -2284,8 +2208,7 @@ static int parse_argv(int argc, char *argv[]) {
+                 ARG_MKDIR,
+                 ARG_NO_ASK_PASSWORD,
+                 ARG_VERIFY,
+-                ARG_FORCE,
+-                ARG_DKR_INDEX_URL,
++                ARG_FORCE
+         };
+ 
+         static const struct option options[] = {
+@@ -2308,7 +2231,6 @@ static int parse_argv(int argc, char *argv[]) {
+                 { "no-ask-password", no_argument,       NULL, ARG_NO_ASK_PASSWORD },
+                 { "verify",          required_argument, NULL, ARG_VERIFY          },
+                 { "force",           no_argument,       NULL, ARG_FORCE           },
+-                { "dkr-index-url",   required_argument, NULL, ARG_DKR_INDEX_URL   },
+                 {}
+         };
+ 
+@@ -2421,15 +2343,6 @@ static int parse_argv(int argc, char *argv[]) {
+                         arg_force = true;
+                         break;
+ 
+-                case ARG_DKR_INDEX_URL:
+-                        if (!http_url_is_valid(optarg)) {
+-                                log_error("Index URL is invalid: %s", optarg);
+-                                return -EINVAL;
+-                        }
+-
+-                        arg_dkr_index_url = optarg;
+-                        break;
+-
+                 case '?':
+                         return -EINVAL;
+ 
+@@ -2467,7 +2380,6 @@ static int machinectl_main(int argc, char *argv[], sd_bus *bus) {
+                 { "disable",         2,        VERB_ANY, 0,            enable_machine    },
+                 { "pull-tar",        2,        3,        0,            pull_tar          },
+                 { "pull-raw",        2,        3,        0,            pull_raw          },
+-                { "pull-dkr",        2,        3,        0,            pull_dkr          },
+                 { "list-transfers",  VERB_ANY, 1,        0,            list_transfers    },
+                 { "cancel-transfer", 2,        VERB_ANY, 0,            cancel_transfer   },
+                 {}
+diff --git a/src/shared/import-util.c b/src/shared/import-util.c
+index 660d92ac5..c0aba30a9 100644
+--- a/src/shared/import-util.c
++++ b/src/shared/import-util.c
+@@ -149,34 +149,3 @@ int raw_strip_suffixes(const char *p, char **ret) {
+ 
+         return 0;
+ }
+-
+-bool dkr_name_is_valid(const char *name) {
+-        const char *slash, *p;
+-
+-        if (isempty(name))
+-                return false;
+-
+-        slash = strchr(name, '/');
+-        if (!slash)
+-                return false;
+-
+-        if (!filename_is_valid(slash + 1))
+-                return false;
+-
+-        p = strndupa(name, slash - name);
+-        if (!filename_is_valid(p))
+-                return false;
+-
+-        return true;
+-}
+-
+-bool dkr_id_is_valid(const char *id) {
+-
+-        if (!filename_is_valid(id))
+-                return false;
+-
+-        if (!in_charset(id, "0123456789abcdef"))
+-                return false;
+-
+-        return true;
+-}
+diff --git a/src/shared/import-util.h b/src/shared/import-util.h
+index ff155b0ff..22773c58e 100644
+--- a/src/shared/import-util.h
++++ b/src/shared/import-util.h
+@@ -41,7 +41,3 @@ ImportVerify import_verify_from_string(const char *s) _pure_;
+ 
+ int tar_strip_suffixes(const char *name, char **ret);
+ int raw_strip_suffixes(const char *name, char **ret);
+-
+-bool dkr_name_is_valid(const char *name);
+-bool dkr_id_is_valid(const char *id);
+-#define dkr_tag_is_valid(tag) filename_is_valid(tag)

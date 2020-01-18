@@ -1,0 +1,29 @@
+From 2b089fee5954986c932845887ed2cfd889bd4410 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Sun, 29 Nov 2015 18:37:01 -0500
+Subject: [PATCH] tmpfiles: also set acls on /var/log/journal
+
+This way, directories created later for containers or for
+journald-remote, will be readable by adm & wheel groups by default,
+similarly to /var/log/journal/%m itself.
+
+https://github.com/systemd/systemd/issues/1971
+(cherry picked from commit 57d5b3130cd34b9a844f4258f55c1134b27bc5ad)
+Related: #1411199
+---
+ tmpfiles.d/systemd.conf.m4 | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/tmpfiles.d/systemd.conf.m4 b/tmpfiles.d/systemd.conf.m4
+index d9d51af92..fcd6ec026 100644
+--- a/tmpfiles.d/systemd.conf.m4
++++ b/tmpfiles.d/systemd.conf.m4
+@@ -34,6 +34,8 @@ A+ /run/log/journal/%m - - - - group:adm:r-x,group:wheel:r-x
+ z /var/log/journal 2755 root systemd-journal - -
+ z /var/log/journal/%m 2755 root systemd-journal - -
+ m4_ifdef(`HAVE_ACL',``
++a+ /var/log/journal    - - - - d:group:adm:r-x,d:group:wheel:r-x
++a+ /var/log/journal    - - - - group:adm:r-x,group:wheel:r-x
+ a+ /var/log/journal/%m - - - - d:group:adm:r-x,d:group:wheel:r-x
+ a+ /var/log/journal/%m - - - - group:adm:r-x,group:wheel:r-x
+ '')m4_dnl

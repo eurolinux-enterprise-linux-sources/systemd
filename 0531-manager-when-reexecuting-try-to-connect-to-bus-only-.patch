@@ -1,0 +1,48 @@
+From 8410dde8d9593c1d96593b17d610d7daf955dab3 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekletar@users.noreply.github.com>
+Date: Fri, 8 Sep 2017 15:41:44 +0200
+Subject: [PATCH] manager: when reexecuting try to connect to bus only when
+ dbus.service is around (#6773)
+
+Trying to connect otherwise is pointless, because if socket isn't around
+we won't connect. However, when dbus.socket is present we attempt to
+connect. That attempt can't succeed because we are then supposed
+to activate dbus.service as a response to connection from
+us. This results in deadlock.
+
+Fixes #6303
+
+(cherry picked from commit 5463fa0a88f95d2002858592578f9bf4e0d2660a)
+
+Resolves: #1465737
+---
+ src/core/manager.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/src/core/manager.c b/src/core/manager.c
+index 287cf6a74..041fac46b 100644
+--- a/src/core/manager.c
++++ b/src/core/manager.c
+@@ -799,16 +799,19 @@ static int manager_setup_kdbus(Manager *m) {
+ 
+ static int manager_connect_bus(Manager *m, bool reexecuting) {
+         bool try_bus_connect;
++        Unit *u = NULL;
+ 
+         assert(m);
+ 
+         if (m->test_run)
+                 return 0;
+ 
++        u = manager_get_unit(m, SPECIAL_DBUS_SERVICE);
++
+         try_bus_connect =
+-                m->kdbus_fd >= 0 ||
+-                reexecuting ||
+-                (m->running_as == SYSTEMD_USER && getenv("DBUS_SESSION_BUS_ADDRESS"));
++                (u && UNIT_IS_ACTIVE_OR_RELOADING(unit_active_state(u))) &&
++                (reexecuting ||
++                (m->running_as == SYSTEMD_USER && getenv("DBUS_SESSION_BUS_ADDRESS")));
+ 
+         /* Try to connect to the busses, if possible. */
+         return bus_init(m, try_bus_connect);

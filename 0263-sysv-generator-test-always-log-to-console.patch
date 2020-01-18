@@ -1,0 +1,28 @@
+From a714212703b3fe5f2a27773602cabbc4ab53da15 Mon Sep 17 00:00:00 2001
+From: Martin Pitt <martin.pitt@ubuntu.com>
+Date: Mon, 15 Jun 2015 08:59:44 +0200
+Subject: [PATCH] sysv-generator test: always log to console
+
+Set $SYSTEMD_LOG_TARGET so that the output always goes to stdout/stderr. This
+fixes running the test as root, as that logged to the journal previously.
+
+https://github.com/systemd/systemd/issues/195
+
+Cherry-picked from: 6b7d32add4733a83f86e18bb86f914037a6688b7
+Resolves: #1279034
+---
+ test/sysv-generator-test.py | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/test/sysv-generator-test.py b/test/sysv-generator-test.py
+index e716d705c..153786417 100644
+--- a/test/sysv-generator-test.py
++++ b/test/sysv-generator-test.py
+@@ -60,6 +60,7 @@ class SysvGeneratorTest(unittest.TestCase):
+         '''
+         env = os.environ.copy()
+         env['SYSTEMD_LOG_LEVEL'] = 'debug'
++        env['SYSTEMD_LOG_TARGET'] = 'console'
+         env['SYSTEMD_SYSVINIT_PATH'] = self.init_d_dir
+         env['SYSTEMD_SYSVRCND_PATH'] = self.rcnd_dir
+         env['SYSTEMD_UNIT_PATH'] = self.unit_dir

@@ -1,0 +1,49 @@
+From d5ab3fdc9bf9353478e7c0987b3830f14bbdefae Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Thu, 22 Jun 2017 14:26:39 +0200
+Subject: [PATCH] core: unset sysfs path after transition to dead state
+
+Device is gone and most likely it will get garbage collected. However in
+cases when it doesn't get gc'ed (because it is referenced by some
+other unit, e.g. mount from fstab) we need to unset sysfs. This is
+because when device appears next time, possibly, with different sysfs
+path we need to update the sysfs path. Current code could end up caching
+stale sysfs path forever.
+
+In reality this is not a problem for normal disks (unless you swap them
+during system runtime). However this issue causes failures to mount
+filesystems on LVM where sysfs path depends on activation
+order (i.e. logical volumes from volume group that is activated first
+get assigned lower dm-X numbers and corresponding syspaths).
+
+Fixes #6126
+
+(cherry picked from commit 0e139cac0318de09e6f4c1a4fc61388f7e541ebd)
+
+Resolves: #1408916
+---
+ src/core/device.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/core/device.c b/src/core/device.c
+index befbae83f..63a04bdd3 100644
+--- a/src/core/device.c
++++ b/src/core/device.c
+@@ -474,12 +474,16 @@ static void device_update_found_one(Device *d, bool add, DeviceFound found, bool
+                  * now referenced by the kernel, then we assume the
+                  * kernel knows it now, and udev might soon too. */
+                 device_set_state(d, DEVICE_TENTATIVE);
+-        else
++        else {
+                 /* If nobody sees the device, or if the device was
+                  * previously seen by udev and now is only referenced
+                  * from the kernel, then we consider the device is
+                  * gone, the kernel just hasn't noticed it yet. */
++
+                 device_set_state(d, DEVICE_DEAD);
++                device_unset_sysfs(d);
++        }
++
+ }
+ 
+ static int device_update_found_by_sysfs(Manager *m, const char *sysfs, bool add, DeviceFound found, bool now) {

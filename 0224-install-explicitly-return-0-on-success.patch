@@ -1,0 +1,35 @@
+From c086e8c91b0dc455bfa5fa09f3f5aa20c582b2a0 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Thu, 25 Jun 2015 16:06:40 +0200
+Subject: [PATCH] install: explicitly return 0 on success
+
+Maybe there is some left-over value stored in r from previous function
+call. Let's make sure we always return consistent error code when we reach end of
+the function body.
+
+Fixes following crash of test-install,
+
+Assertion 'r == 0' failed at src/test/test-install.c:52, function main(). Aborting.
+[1]    11703 abort (core dumped)  ./test-install
+
+(cherry picked from commit 77cd2c87a47c49aa9063fbaa4d9077f4a381cab1)
+
+Cherry-picked from: 77cd2c8
+Resolves: #1222517
+---
+ src/shared/install.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/shared/install.c b/src/shared/install.c
+index b62065be5..aa197e91b 100644
+--- a/src/shared/install.c
++++ b/src/shared/install.c
+@@ -2265,7 +2265,7 @@ int unit_file_get_list(
+                 }
+         }
+ 
+-        return r;
++        return 0;
+ }
+ 
+ static const char* const unit_file_state_table[_UNIT_FILE_STATE_MAX] = {

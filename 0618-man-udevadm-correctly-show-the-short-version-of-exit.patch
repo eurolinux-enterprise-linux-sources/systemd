@@ -1,0 +1,23 @@
+From 81725f613bebedc27f7ff763097bcb393f9c4bd9 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Wed, 7 Mar 2018 18:45:29 +0100
+Subject: [PATCH] man/udevadm: correctly show the short version of --exit
+
+Resolves: #1552712
+---
+ man/udevadm.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/man/udevadm.xml b/man/udevadm.xml
+index 99eae387f..e11c2cb2e 100644
+--- a/man/udevadm.xml
++++ b/man/udevadm.xml
+@@ -374,7 +374,7 @@
+       <para>Modify the internal state of the running udev daemon.</para>
+       <variablelist>
+         <varlistentry>
+-          <term><option>-x</option></term>
++          <term><option>-e</option></term>
+           <term><option>--exit</option></term>
+           <listitem>
+             <para>Signal and wait for systemd-udevd to exit.</para>

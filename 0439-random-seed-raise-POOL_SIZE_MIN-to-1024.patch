@@ -1,0 +1,23 @@
+From 6a4ea99f07b32659362c9a1a38be8bec2bb0964c Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Wed, 25 Jan 2017 08:39:15 +0100
+Subject: [PATCH] random-seed: raise POOL_SIZE_MIN to 1024
+
+Resolves: #1386824
+---
+ src/random-seed/random-seed.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/random-seed/random-seed.c b/src/random-seed/random-seed.c
+index ce1bd195d..3ccc8f681 100644
+--- a/src/random-seed/random-seed.c
++++ b/src/random-seed/random-seed.c
+@@ -29,7 +29,7 @@
+ #include "util.h"
+ #include "mkdir.h"
+ 
+-#define POOL_SIZE_MIN 512
++#define POOL_SIZE_MIN 1024
+ 
+ int main(int argc, char *argv[]) {
+         _cleanup_close_ int seed_fd = -1, random_fd = -1;

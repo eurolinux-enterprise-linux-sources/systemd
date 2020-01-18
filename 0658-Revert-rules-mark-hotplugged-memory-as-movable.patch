@@ -1,0 +1,25 @@
+From e1311df43e9c63e72b1a6b329f5ffc9bcd0f37e1 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Thu, 16 Aug 2018 08:38:31 +0000
+Subject: [PATCH] Revert "rules: mark hotplugged memory as movable"
+
+This reverts commit 7431c551954ad63fe61cda18888e1e89419bd631.
+
+Resolves: #1614686
+---
+ rules/40-redhat.rules | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/rules/40-redhat.rules b/rules/40-redhat.rules
+index 26f726001..34a1df9c4 100644
+--- a/rules/40-redhat.rules
++++ b/rules/40-redhat.rules
+@@ -4,7 +4,7 @@
+ SUBSYSTEM=="cpu", ACTION=="add", TEST=="online", ATTR{online}=="0", ATTR{online}="1"
+ 
+ # Memory hotadd request
+-SUBSYSTEM=="memory", ACTION=="add", PROGRAM="/bin/uname -p", RESULT!="s390*", ATTR{state}=="offline", ATTR{state}="online_movable"
++SUBSYSTEM=="memory", ACTION=="add", PROGRAM="/bin/uname -p", RESULT!="s390*", ATTR{state}=="offline", ATTR{state}="online"
+ 
+ # reload sysctl.conf / sysctl.conf.d settings when the bridge module is loaded
+ ACTION=="add", SUBSYSTEM=="module", KERNEL=="bridge", RUN+="/usr/lib/systemd/systemd-sysctl --prefix=/proc/sys/net/bridge"

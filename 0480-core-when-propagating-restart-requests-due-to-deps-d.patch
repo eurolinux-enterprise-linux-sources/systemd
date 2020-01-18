@@ -1,0 +1,142 @@
+From 77f4e582d0f381391594e6f8a7b6767d572d96f7 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Tue, 19 May 2015 18:13:22 +0200
+Subject: [PATCH] core: when propagating restart requests due to deps,
+ downgrade restart to try-restart
+
+Previously, if a service A depended on a service B via Requires=, and A
+was not running and B restarted this would trigger a start of A as well,
+since the restart was propagated as restart independently of the state
+of A.
+
+This patch ensures that a restart of B would be propagated as a
+try-restart to A, thus not changing its state if it isn't up.
+
+http://lists.freedesktop.org/archives/systemd-devel/2015-May/032061.html
+(cherry picked from commit c6497ccb7153af9a1252c48918e380b5134314de)
+
+Resolves: #1436021
+---
+ src/core/job.c         | 28 ++++++++++++++--------------
+ src/core/job.h         |  2 +-
+ src/core/manager.c     |  2 +-
+ src/core/transaction.c | 11 ++++++++---
+ 4 files changed, 24 insertions(+), 19 deletions(-)
+
+diff --git a/src/core/job.c b/src/core/job.c
+index 703286496..1617e24c0 100644
+--- a/src/core/job.c
++++ b/src/core/job.c
+@@ -392,38 +392,38 @@ bool job_type_is_redundant(JobType a, UnitActiveState b) {
+         }
+ }
+ 
+-void job_type_collapse(JobType *t, Unit *u) {
++JobType job_type_collapse(JobType t, Unit *u) {
+         UnitActiveState s;
+ 
+-        switch (*t) {
++        switch (t) {
+ 
+         case JOB_TRY_RESTART:
+                 s = unit_active_state(u);
+                 if (UNIT_IS_INACTIVE_OR_DEACTIVATING(s))
+-                        *t = JOB_NOP;
+-                else
+-                        *t = JOB_RESTART;
+-                break;
++                        return JOB_NOP;
++
++                return JOB_RESTART;
+ 
+         case JOB_RELOAD_OR_START:
+                 s = unit_active_state(u);
+                 if (UNIT_IS_INACTIVE_OR_DEACTIVATING(s))
+-                        *t = JOB_START;
+-                else
+-                        *t = JOB_RELOAD;
+-                break;
++                        return JOB_START;
++
++                return JOB_RELOAD;
+ 
+         default:
+-                ;
++                return t;
+         }
+ }
+ 
+ int job_type_merge_and_collapse(JobType *a, JobType b, Unit *u) {
+-        JobType t = job_type_lookup_merge(*a, b);
++        JobType t;
++
++        t = job_type_lookup_merge(*a, b);
+         if (t < 0)
+                 return -EEXIST;
+-        *a = t;
+-        job_type_collapse(a, u);
++
++        *a = job_type_collapse(t, u);
+         return 0;
+ }
+ 
+diff --git a/src/core/job.h b/src/core/job.h
+index e4191ee77..ce81607de 100644
+--- a/src/core/job.h
++++ b/src/core/job.h
+@@ -210,7 +210,7 @@ bool job_type_is_redundant(JobType a, UnitActiveState b) _pure_;
+ 
+ /* Collapses a state-dependent job type into a simpler type by observing
+  * the state of the unit which it is going to be applied to. */
+-void job_type_collapse(JobType *t, Unit *u);
++JobType job_type_collapse(JobType t, Unit *u);
+ 
+ int job_type_merge_and_collapse(JobType *a, JobType b, Unit *u);
+ 
+diff --git a/src/core/manager.c b/src/core/manager.c
+index 8bd80e687..287cf6a74 100644
+--- a/src/core/manager.c
++++ b/src/core/manager.c
+@@ -1303,7 +1303,7 @@ int manager_add_job(Manager *m, JobType type, Unit *unit, JobMode mode, bool ove
+                        "Trying to enqueue job %s/%s/%s", unit->id,
+                        job_type_to_string(type), job_mode_to_string(mode));
+ 
+-        job_type_collapse(&type, unit);
++        type = job_type_collapse(type, unit);
+ 
+         tr = transaction_new(mode == JOB_REPLACE_IRREVERSIBLY);
+         if (!tr)
+diff --git a/src/core/transaction.c b/src/core/transaction.c
+index 428b7671b..34df15718 100644
+--- a/src/core/transaction.c
++++ b/src/core/transaction.c
+@@ -855,8 +855,7 @@ int transaction_add_job_and_dependencies(
+         /*           by ? job_type_to_string(by->type) : "NA"); */
+ 
+         if (!IN_SET(unit->load_state, UNIT_LOADED, UNIT_ERROR, UNIT_NOT_FOUND, UNIT_MASKED))
+-                return sd_bus_error_setf(e, BUS_ERROR_LOAD_FAILED,
+-                                         "Unit %s is not loaded properly.", unit->id);
++                return sd_bus_error_setf(e, BUS_ERROR_LOAD_FAILED, "Unit %s is not loaded properly.", unit->id);
+ 
+         if (type != JOB_STOP) {
+                 r = bus_unit_check_load_state(unit, e);
+@@ -1014,12 +1013,18 @@ int transaction_add_job_and_dependencies(
+                                 UNIT_CONSISTS_OF,
+                         };
+ 
++                        JobType ptype;
+                         unsigned j;
+ 
++                        /* We propagate STOP as STOP, but RESTART only
++                         * as TRY_RESTART, in order not to start
++                         * dependencies that are not around. */
++                        ptype = type == JOB_RESTART ? JOB_TRY_RESTART : type;
++
+                         for (j = 0; j < ELEMENTSOF(propagate_deps); j++)
+                                 SET_FOREACH(dep, ret->unit->dependencies[propagate_deps[j]], i) {
+ 
+-                                        r = transaction_add_job_and_dependencies(tr, type, dep, ret, true, override, false, false, ignore_order, e);
++                                        r = transaction_add_job_and_dependencies(tr, job_type_collapse(ptype, dep), dep, ret, true, override, false, false, ignore_order, e);
+                                         if (r < 0) {
+                                                 if (r != -EBADR)
+                                                         goto fail;

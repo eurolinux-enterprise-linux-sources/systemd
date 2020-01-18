@@ -1,0 +1,25 @@
+From ec6c44ff15e2b04f5acca7ec467aa0bb1658ba38 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Wed, 23 Sep 2015 19:23:21 +0200
+Subject: [PATCH] units: run ldconfig also when cache is unpopulated
+
+Cherry-picked from: 92eab5dea40f50d0e66b91ba1224e2101bc83494
+Resolves: #1265539
+---
+ units/ldconfig.service | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/units/ldconfig.service b/units/ldconfig.service
+index 43c145b72..8600b1327 100644
+--- a/units/ldconfig.service
++++ b/units/ldconfig.service
+@@ -12,7 +12,8 @@ DefaultDependencies=no
+ Conflicts=shutdown.target
+ After=systemd-readahead-collect.service systemd-readahead-replay.service systemd-remount-fs.service
+ Before=sysinit.target shutdown.target systemd-update-done.service
+-ConditionNeedsUpdate=/etc
++ConditionNeedsUpdate=|/etc
++ConditionFileNotEmpty=|!/etc/ld.so.cache
+ 
+ [Service]
+ Type=oneshot

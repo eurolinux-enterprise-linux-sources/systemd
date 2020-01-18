@@ -1,0 +1,27 @@
+From 5fa3a659c5d106734b3fa76270f048b8b2ea0194 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Fri, 23 Mar 2018 11:20:31 +0100
+Subject: [PATCH] man/udevadm: remove superfluous --version from subcommand
+
+Resolves: #1553076
+---
+ man/udevadm.xml | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/man/udevadm.xml b/man/udevadm.xml
+index 8ef9e23aa..99eae387f 100644
+--- a/man/udevadm.xml
++++ b/man/udevadm.xml
+@@ -187,12 +187,6 @@
+             <para>Cleanup the udev database.</para>
+           </listitem>
+         </varlistentry>
+-        <varlistentry>
+-          <term><option>--version</option></term>
+-          <listitem>
+-            <para>Print version.</para>
+-          </listitem>
+-        </varlistentry>
+         <varlistentry>
+           <term><option>-h</option></term>
+           <term><option>--help</option></term>

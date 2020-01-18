@@ -1,0 +1,68 @@
+From ca82178b166ae5fb8efe4b09aadae802534cf6e3 Mon Sep 17 00:00:00 2001
+From: Evgeny Vereshchagin <evvers@ya.ru>
+Date: Tue, 7 Jun 2016 20:47:41 +0300
+Subject: [PATCH] hwdb: selinuxify a bit (#3460)
+
+-bash-4.3# rm /etc/udev/hwdb.bin
+-bash-4.3# systemd-hwdb update
+-bash-4.3# ls -Z /etc/udev/hwdb.bin
+system_u:object_r:systemd_hwdb_etc_t:s0 /etc/udev/hwdb.bin
+
+Fixes: #3458
+
+(cherry picked from commit ea683512f9b82f2257770f0ed56d819eea230fc2)
+Resolves: #1343648
+---
+ Makefile.am     | 1 +
+ src/hwdb/hwdb.c | 8 ++++++--
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index b0a34b212..3848338a2 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -3752,6 +3752,7 @@ systemd_hwdb_SOURCES = \
+ 	src/hwdb/hwdb.c
+ 
+ systemd_hwdb_LDADD = \
++	libsystemd-label.la \
+ 	libsystemd-shared.la \
+ 	libsystemd-internal.la \
+ 	libudev-internal.la
+diff --git a/src/hwdb/hwdb.c b/src/hwdb/hwdb.c
+index 4539673ea..8e5d6cc86 100644
+--- a/src/hwdb/hwdb.c
++++ b/src/hwdb/hwdb.c
+@@ -34,6 +34,8 @@
+ 
+ #include "hwdb-internal.h"
+ #include "hwdb-util.h"
++#include "label.h"
++#include "selinux-util.h"
+ 
+ /*
+  * Generic udev properties, key/value database based on modalias strings.
+@@ -642,12 +644,12 @@ static int hwdb_update(int argc, char *argv[], void *userdata) {
+         if (!hwdb_bin)
+                 return -ENOMEM;
+ 
+-        mkdir_parents(hwdb_bin, 0755);
++        mkdir_parents_label(hwdb_bin, 0755);
+         r = trie_store(trie, hwdb_bin);
+         if (r < 0)
+                 return log_error_errno(r, "Failure writing database %s: %m", hwdb_bin);
+ 
+-        return 0;
++        return label_fix(hwdb_bin, false, false);
+ }
+ 
+ static void help(void) {
+@@ -733,6 +735,8 @@ int main (int argc, char *argv[]) {
+         if (r <= 0)
+                 goto finish;
+ 
++        mac_selinux_init(NULL);
++
+         r = hwdb_main(argc, argv);
+ 
+ finish:

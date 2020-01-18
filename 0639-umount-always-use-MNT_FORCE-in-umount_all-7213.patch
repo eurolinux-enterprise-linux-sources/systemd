@@ -1,0 +1,72 @@
+From 5bace483dedc9098da8191f39c823649948a7a3c Mon Sep 17 00:00:00 2001
+From: NeilBrown <neil@brown.name>
+Date: Wed, 8 Nov 2017 19:29:32 +1100
+Subject: [PATCH] umount: always use MNT_FORCE in umount_all() (#7213)
+
+The linux umount2() systemcall accepts a MNT_FORCE flags
+which some filesystems honor, particularly FUSE and various
+network filesystems such as NFS.
+These filesystems can sometimes wait for an indefinite period
+for a response from an external service, and the wait if
+sometimes "uninterruptible" meaning that the process cannot be
+killed.
+Using MNT_FORCE causes any such request that are outstanding to
+be aborted.  This normally allows the waiting process to
+be killed.  It will then realease and reference it has to the
+filesytem, this allowing the filesystem to be unmounted.
+
+If there remain active references to the filesystem, MNT_FORCE
+is *not* forcefull enough to unmount the filesystem anyway.
+
+By the time that umount_all() is run by systemd-shutdown, all
+filesystems *should* be unmounted, and sync() will have been
+called.  Anything that remains cannot be unmounted in a
+completely clean manner and just nees to be dealt with as firmly
+as possible.  So use MNT_FORCE and try to explain why in the
+comment.
+
+Also enhance an earlier comment to explain why umount2() is
+safe even though mount(MNT_REMOUNT) isn't.
+
+(cherry picked from commit c44cac7c6c43407d28bd8daebff39f6145a2a33e)
+
+Resolves: #1571098
+---
+ src/core/umount.c | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
+
+diff --git a/src/core/umount.c b/src/core/umount.c
+index 3eec0d459..91d67c06c 100644
+--- a/src/core/umount.c
++++ b/src/core/umount.c
+@@ -377,7 +377,9 @@ static int mount_points_list_umount(MountPoint **head, bool *changed, bool log_e
+                    the superblock here, not the bind mount.
+                    If the filesystem is a network fs, also skip the
+                    remount.  It brings no value (we cannot leave
+-                   a "dirty fs") and could hang if the network is down.  */
++                   a "dirty fs") and could hang if the network is down.
++                   Note that umount2() is more careful and will not
++                   hang because of the network being down. */
+                 if (detect_container(NULL) <= 0 &&
+                     !fstype_is_network(m->type)) {
+                         _cleanup_free_ char *options = NULL;
+@@ -418,11 +420,15 @@ static int mount_points_list_umount(MountPoint **head, bool *changed, bool log_e
+                 )
+                         continue;
+ 
+-                /* Trying to umount. We don't force here since we rely
+-                 * on busy NFS and FUSE file systems to return EBUSY
+-                 * until we closed everything on top of them. */
++                /* Trying to umount. Using MNT_FORCE causes some
++                 * filesystems (e.g. FUSE and NFS and other network
++                 * filesystems) to abort any pending requests and
++                 * return -EIO rather than blocking indefinitely.
++                 * If the filesysten is "busy", this may allow processes
++                 * to die, thus making the filesystem less busy so
++                 * the unmount might succeed (rather then return EBUSY).*/
+                 log_info("Unmounting %s.", m->path);
+-                if (umount2(m->path, 0) == 0) {
++                if (umount2(m->path, MNT_FORCE) == 0) {
+                         if (changed)
+                                 *changed = true;
+ 

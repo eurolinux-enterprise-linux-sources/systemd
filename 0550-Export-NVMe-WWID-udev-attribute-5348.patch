@@ -1,0 +1,28 @@
+From c9c86577937088e36bcfb67e701aebe51d2cc893 Mon Sep 17 00:00:00 2001
+From: Keith Busch <keith.busch@intel.com>
+Date: Fri, 17 Feb 2017 00:46:06 -0700
+Subject: [PATCH] Export NVMe WWID udev attribute (#5348)
+
+We need this for multipath support without relying on NVMe to SCSI
+translations.
+
+Signed-off-by: Keith Busch <keith.busch@intel.com>
+
+Cherry-picked from: 5c1be4f73082d09011661516c39fb53626d8bdc7
+Resolves: #1503253
+---
+ rules/60-persistent-storage.rules | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/rules/60-persistent-storage.rules b/rules/60-persistent-storage.rules
+index 10642a1fd..ba619633b 100644
+--- a/rules/60-persistent-storage.rules
++++ b/rules/60-persistent-storage.rules
+@@ -27,6 +27,7 @@ KERNEL=="nvme*[0-9]n*[0-9]", ATTR{wwid}=="?*", SYMLINK+="disk/by-id/nvme-$attr{w
+ KERNEL=="nvme*[0-9]n*[0-9]p*[0-9]", ENV{DEVTYPE}=="partition", ATTRS{wwid}=="?*", SYMLINK+="disk/by-id/nvme-$attr{wwid}-part%n"
+ 
+ KERNEL=="nvme*[0-9]n*[0-9]", ENV{DEVTYPE}=="disk", ATTRS{serial}=="?*", ENV{ID_SERIAL_SHORT}="$attr{serial}"
++KERNEL=="nvme*[0-9]n*[0-9]", ENV{DEVTYPE}=="disk", ATTRS{wwid}=="?*", ENV{ID_WWN}="$attr{wwid}"
+ KERNEL=="nvme*[0-9]n*[0-9]", ENV{DEVTYPE}=="disk", ATTRS{model}=="?*", ENV{ID_SERIAL_SHORT}=="?*", ENV{ID_SERIAL}="$attr{model}_$env{ID_SERIAL_SHORT}", SYMLINK+="disk/by-id/nvme-$env{ID_SERIAL}", OPTIONS="string_escape=replace"
+ 
+ KERNEL=="nvme*[0-9]n*[0-9]p*[0-9]", ENV{DEVTYPE}=="partition", ATTRS{serial}=="?*", ENV{ID_SERIAL_SHORT}="$attr{serial}"

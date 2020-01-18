@@ -1,0 +1,111 @@
+From 5f273838f41f27e0045395c1677272d9dd12496c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Thu, 21 Apr 2016 20:04:21 -0400
+Subject: [PATCH] systemctl,pid1: do not warn about missing install info with
+ "preset"
+
+When "preset" was executed for a unit without install info, we'd warn similarly
+as for "enable" and "disable". But "preset" is usually called for all units,
+because the preset files are provided by the distribution, and the units are under
+control of individual programs, and it's reasonable to call "preset" for all units
+rather then try to do it only for the ones that can be installed.
+We also don't warn about missing info for "preset-all". Thus it seems reasonable
+to silently ignore units w/o install info when presetting.
+
+(In addition, when more than one unit was specified, we'd issue the warning
+only if none of them had install info. But this is probably something to fix
+for enable/disable too.)
+
+Cherry-picked from: 39207373dd638e548019ddb49929f15795b8b404
+Resolves: #1373950
+---
+ man/systemctl.xml         | 26 +++++++++++++-------------
+ src/systemctl/systemctl.c |  7 ++++---
+ 2 files changed, 17 insertions(+), 16 deletions(-)
+
+diff --git a/man/systemctl.xml b/man/systemctl.xml
+index 2d0678d18..bb21f3a88 100644
+--- a/man/systemctl.xml
++++ b/man/systemctl.xml
+@@ -1012,22 +1012,22 @@ kobject-uevent 1 systemd-udevd-kernel.socket systemd-udevd.service
+           <term><command>preset <replaceable>NAME</replaceable>...</command></term>
+ 
+           <listitem>
+-            <para>Reset one or more unit files, as specified on the
+-            command line, to the defaults configured in the preset
+-            policy files. This has the same effect as
+-            <command>disable</command> or <command>enable</command>,
+-            depending how the unit is listed in the preset files.</para>
++            <para>Reset the enable/disable status one or more unit files, as specified on
++            the command line, to the defaults configured in the preset policy files. This
++            has the same effect as <command>disable</command> or
++            <command>enable</command>, depending how the unit is listed in the preset
++            files.</para>
+ 
+-            <para>Use <option>--preset-mode=</option> to control
+-            whether units shall be enabled and disabled, or only
+-            enabled, or only disabled.</para>
++            <para>Use <option>--preset-mode=</option> to control whether units shall be
++            enabled and disabled, or only enabled, or only disabled.</para>
++
++            <para>If the unit carries no install information, it will be silently ignored
++            by this command.</para>
+ 
+-            <para>For more information on the preset policy format,
+-            see
++            <para>For more information on the preset policy format, see
+             <citerefentry><refentrytitle>systemd.preset</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+-            For more information on the concept of presets, please
+-            consult the <ulink
+-            url="http://freedesktop.org/wiki/Software/systemd/Preset">Preset</ulink>
++            For more information on the concept of presets, please consult the
++            <ulink url="http://freedesktop.org/wiki/Software/systemd/Preset">Preset</ulink>
+             document.</para>
+           </listitem>
+         </varlistentry>
+diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
+index e4b404abc..e854508d9 100644
+--- a/src/systemctl/systemctl.c
++++ b/src/systemctl/systemctl.c
+@@ -5367,6 +5367,7 @@ static int enable_unit(sd_bus *bus, char **args) {
+         UnitFileChange *changes = NULL;
+         unsigned n_changes = 0;
+         int carries_install_info = -1;
++        bool ignore_carries_install_info = false;
+         int r;
+ 
+         if (!args[1])
+@@ -5404,7 +5405,6 @@ static int enable_unit(sd_bus *bus, char **args) {
+                         r = unit_file_link(arg_scope, arg_runtime, arg_root, names, arg_force, &changes, &n_changes);
+                 else if (streq(verb, "preset")) {
+                         r = unit_file_preset(arg_scope, arg_runtime, arg_root, names, arg_preset_mode, arg_force, &changes, &n_changes);
+-                        carries_install_info = r;
+                 } else if (streq(verb, "mask"))
+                         r = unit_file_mask(arg_scope, arg_runtime, arg_root, names, arg_force, &changes, &n_changes);
+                 else if (streq(verb, "unmask"))
+@@ -5424,7 +5424,7 @@ static int enable_unit(sd_bus *bus, char **args) {
+         } else {
+                 _cleanup_bus_message_unref_ sd_bus_message *reply = NULL, *m = NULL;
+                 _cleanup_bus_error_free_ sd_bus_error error = SD_BUS_ERROR_NULL;
+-                int expect_carries_install_info = false;
++                bool expect_carries_install_info = false;
+                 bool send_force = true, send_preset_mode = false;
+                 const char *method;
+ 
+@@ -5450,6 +5450,7 @@ static int enable_unit(sd_bus *bus, char **args) {
+                                 method = "PresetUnitFiles";
+ 
+                         expect_carries_install_info = true;
++                        ignore_carries_install_info = true;
+                 } else if (streq(verb, "mask"))
+                         method = "MaskUnitFiles";
+                 else if (streq(verb, "unmask")) {
+@@ -5515,7 +5516,7 @@ static int enable_unit(sd_bus *bus, char **args) {
+                         r = 0;
+         }
+ 
+-        if (carries_install_info == 0)
++        if (carries_install_info == 0 && !ignore_carries_install_info)
+                 log_warning("The unit files have no [Install] section. They are not meant to be enabled\n"
+                             "using systemctl.\n"
+                             "Possible reasons for having this kind of units are:\n"

@@ -1,0 +1,69 @@
+From 8fe5d9138039aafd314340b12d6d586d657d53a7 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 29 Jun 2016 19:03:26 -0700
+Subject: [PATCH] sd-event: expose the event loop iteration counter via
+ sd_event_get_iteration()
+
+This extends the existing event loop iteration counter to 64bit, and exposes it
+via a new function sd_event_get_iteration(). This is helpful for cases like
+issue #3612. After all, since we maintain the counter anyway, we might as well
+expose it.
+
+(This also fixes an unrelated issue in the man page for sd_event_wait() where
+micro and milliseconds got mixed up)
+
+Cherry-picked from: 7486322b99da5b4d2d00d35b310b035f936f7964
+Related: #1342173
+---
+ src/libsystemd/sd-event/sd-event.c | 14 +++++++++++---
+ src/systemd/sd-event.h             |  1 +
+ 2 files changed, 12 insertions(+), 3 deletions(-)
+
+diff --git a/src/libsystemd/sd-event/sd-event.c b/src/libsystemd/sd-event/sd-event.c
+index 1f1e6fe91..9d48e5a49 100644
+--- a/src/libsystemd/sd-event/sd-event.c
++++ b/src/libsystemd/sd-event/sd-event.c
+@@ -76,8 +76,8 @@ struct sd_event_source {
+         int64_t priority;
+         unsigned pending_index;
+         unsigned prepare_index;
+-        unsigned pending_iteration;
+-        unsigned prepare_iteration;
++        uint64_t pending_iteration;
++        uint64_t prepare_iteration;
+ 
+         LIST_FIELDS(sd_event_source, sources);
+ 
+@@ -169,7 +169,7 @@ struct sd_event {
+ 
+         pid_t original_pid;
+ 
+-        unsigned iteration;
++        uint64_t iteration;
+         dual_timestamp timestamp;
+         usec_t timestamp_boottime;
+         int state;
+@@ -2689,3 +2689,11 @@ _public_ int sd_event_get_watchdog(sd_event *e) {
+ 
+         return e->watchdog;
+ }
++
++_public_ int sd_event_get_iteration(sd_event *e, uint64_t *ret) {
++        assert_return(e, -EINVAL);
++        assert_return(!event_pid_changed(e), -ECHILD);
++
++        *ret = e->iteration;
++        return 0;
++}
+diff --git a/src/systemd/sd-event.h b/src/systemd/sd-event.h
+index 25a10f99a..4957f3a32 100644
+--- a/src/systemd/sd-event.h
++++ b/src/systemd/sd-event.h
+@@ -101,6 +101,7 @@ int sd_event_get_tid(sd_event *e, pid_t *tid);
+ int sd_event_get_exit_code(sd_event *e, int *code);
+ int sd_event_set_watchdog(sd_event *e, int b);
+ int sd_event_get_watchdog(sd_event *e);
++int sd_event_get_iteration(sd_event *e, uint64_t *ret);
+ 
+ sd_event_source* sd_event_source_ref(sd_event_source *s);
+ sd_event_source* sd_event_source_unref(sd_event_source *s);

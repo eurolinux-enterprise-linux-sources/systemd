@@ -1,0 +1,104 @@
+From 8572638ab99090b016ccc28ac1f69aa7759e43cf Mon Sep 17 00:00:00 2001
+From: Robert Milasan <rmilasan@suse.com>
+Date: Thu, 12 Jul 2012 15:56:34 +0000
+Subject: [PATCH] Persistent by_path links for ata devices
+
+With newer kernel we have the 'port_no' attribute,
+which allows us to construct a valid ata by-path link.
+
+With this patch ATA links of the form
+
+ata-<port>.[01]
+
+(for master/slave devices) or
+
+ata-<port>.<pmp>.0
+
+(for devices behind port multipliers)
+are generated.
+
+References: bnc#770910,FATE#317063
+
+Signed-off-by: Robert Milasan <rmilasan@suse.com>
+Signed-off-by: Hannes Reinecke <hare@suse.de>
+
+Downstream patch
+https://build.opensuse.org/package/view_file/Base:System/systemd/1001-re-enable-by_path-links-for-ata-devices.patch
+
+Resolves: #1045498
+---
+ src/udev/udev-builtin-path_id.c | 53 +++++++++++++++++++++++++--------
+ 1 file changed, 41 insertions(+), 12 deletions(-)
+
+diff --git a/src/udev/udev-builtin-path_id.c b/src/udev/udev-builtin-path_id.c
+index b6749aab7..bb0a6242a 100644
+--- a/src/udev/udev-builtin-path_id.c
++++ b/src/udev/udev-builtin-path_id.c
+@@ -426,6 +426,46 @@ static struct udev_device *handle_scsi_hyperv(struct udev_device *parent, char *
+         return parent;
+ }
+ 
++static struct udev_device *handle_ata(struct udev_device *parent, char **path)
++{
++        struct udev *udev  = udev_device_get_udev(parent);
++        struct udev_device *hostdev, *portdev;
++        int host, bus, target, lun, port_no;
++        const char *name, *atahost, *port;
++
++        hostdev = udev_device_get_parent_with_subsystem_devtype(parent, "scsi", "scsi_host");
++        if (hostdev == NULL)
++                return NULL;
++
++        name = udev_device_get_sysname(parent);
++        if (sscanf(name, "%d:%d:%d:%d", &host, &bus, &target, &lun) != 4)
++                return NULL;
++
++        /* The ata port is the parent of the SCSI host */
++        hostdev = udev_device_get_parent(hostdev);
++        atahost = udev_device_get_sysname(hostdev);
++        if (strncmp(atahost, "ata", 3))
++                return NULL;
++
++        /* ATA port number is found in 'port_no' attribute */
++        portdev = udev_device_new_from_subsystem_sysname(udev, "ata_port",
++                                                         atahost);
++        port = udev_device_get_sysattr_value(portdev, "port_no");
++        if (!port || sscanf(port, "%d", &port_no) != 1) {
++                hostdev = NULL;
++                goto out;
++        }
++        if (bus != 0)
++                /* Devices behind port multiplier have a bus != 0*/
++                path_prepend(path, "ata-%u.%u.0", port_no, bus);
++        else
++                /* Master/slave are distinguished by target id */
++                path_prepend(path, "ata-%u.%u", port_no, target);
++out:
++        udev_device_unref(portdev);
++        return hostdev;
++}
++
+ static struct udev_device *handle_scsi(struct udev_device *parent, char **path, bool *supported_parent) {
+         const char *devtype;
+         const char *name;
+@@ -465,19 +505,8 @@ static struct udev_device *handle_scsi(struct udev_device *parent, char **path,
+                 goto out;
+         }
+ 
+-        /*
+-         * We do not support the ATA transport class, it uses global counters
+-         * to name the ata devices which numbers spread across multiple
+-         * controllers.
+-         *
+-         * The real link numbers are not exported. Also, possible chains of ports
+-         * behind port multipliers cannot be composed that way.
+-         *
+-         * Until all that is solved at the kernel level, there are no by-path/
+-         * links for ATA devices.
+-         */
+         if (strstr(name, "/ata") != NULL) {
+-                parent = NULL;
++                parent = handle_ata(parent, path);
+                 goto out;
+         }
+ 

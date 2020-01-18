@@ -1,0 +1,51 @@
+From 38d00b8a0453d38aecb725342ddd89a7c3dcb134 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Fri, 18 Nov 2016 14:00:57 +0100
+Subject: [PATCH] load-fragment: fix parsing values in bytes and prevent
+ returning -ERANGE incorrectly
+
+We didn't port our code base to use uint64_t instead of off_t as
+upstream did. RLIMIT_INIFINITY is -1ULL and if we cast to off_t (64 bit
+signed int on arches we support) then we get -1 and that is always
+smaller than correct value returned by parse_size().
+
+To make code changes as minimal as possible (i.e. not port everything
+to uint64_t) let's cast off_t to uint64_t and not the other way
+around.
+
+RHEL-only
+
+Resolves: #1396277
+---
+ src/core/load-fragment.c  | 2 +-
+ src/test/test-unit-file.c | 4 ++++
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index 2f6209e05..83b6e7efc 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -1105,7 +1105,7 @@ static int rlim_parse_size(const char *val, rlim_t *res) {
+                 off_t u;
+ 
+                 r = parse_size(val, 1024, &u);
+-                if (r >= 0 && u >= (off_t) RLIM_INFINITY)
++                if (r >= 0 && (uint64_t) u >= RLIM_INFINITY)
+                         r = -ERANGE;
+                 if (r == 0)
+                         *res = (rlim_t) u;
+diff --git a/src/test/test-unit-file.c b/src/test/test-unit-file.c
+index 8acf071ff..038430505 100644
+--- a/src/test/test-unit-file.c
++++ b/src/test/test-unit-file.c
+@@ -554,6 +554,10 @@ static void test_config_parse_rlimit(void) {
+         assert_se(rl[RLIMIT_NOFILE]->rlim_cur == 55);
+         assert_se(rl[RLIMIT_NOFILE]->rlim_cur == rl[RLIMIT_NOFILE]->rlim_max);
+ 
++        assert_se(config_parse_bytes_limit(NULL, "fake", 1, "section", 1, "LimitSTACK", RLIMIT_STACK, "55", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_STACK]);
++        assert_se(rl[RLIMIT_STACK]->rlim_cur == 55);
++        assert_se(rl[RLIMIT_STACK]->rlim_cur == rl[RLIMIT_STACK]->rlim_max);
+ 
+         assert_se(config_parse_limit(NULL, "fake", 1, "section", 1, "LimitNOFILE", RLIMIT_NOFILE, "55:66", rl, NULL) >= 0);
+         assert_se(rl[RLIMIT_NOFILE]);

@@ -1,0 +1,47 @@
+From fa37e91818c1de70977462d170df08f441170db5 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekletar@users.noreply.github.com>
+Date: Thu, 25 Aug 2016 08:18:42 +0200
+Subject: [PATCH] udev: inform systemd how many workers we can potentially
+ spawn (#4036)
+
+(cherry picked from commit 1ef72b55ba6d38f879d7ac9f0237cf8a2b53f0e6)
+Resolves: #1361601
+---
+ src/udev/udevd.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/src/udev/udevd.c b/src/udev/udevd.c
+index 82c7a5425..1d21182fb 100644
+--- a/src/udev/udevd.c
++++ b/src/udev/udevd.c
+@@ -697,6 +697,10 @@ static struct udev_ctrl_connection *handle_ctrl_msg(struct udev_ctrl *uctrl) {
+         if (i >= 0) {
+                 log_debug("udevd message (SET_MAX_CHILDREN) received, children_max=%i", i);
+                 arg_children_max = i;
++
++                (void) sd_notifyf(false,
++                                  "READY=1\n"
++                                  "STATUS=Processing with %u children at max", arg_children_max);
+         }
+ 
+         if (udev_ctrl_get_ping(ctrl_msg) > 0)
+@@ -1271,8 +1275,6 @@ int main(int argc, char *argv[]) {
+                 setsid();
+ 
+                 write_string_file("/proc/self/oom_score_adj", "-1000");
+-        } else {
+-                sd_notify(1, "READY=1");
+         }
+ 
+         if (arg_children_max <= 0) {
+@@ -1321,6 +1323,10 @@ int main(int argc, char *argv[]) {
+         ep_netlink.data.fd = fd_netlink;
+         ep_worker.data.fd = fd_worker;
+ 
++        (void) sd_notifyf(false,
++                          "READY=1\n"
++                          "STATUS=Processing with %u children at max", arg_children_max);
++
+         fd_ep = epoll_create1(EPOLL_CLOEXEC);
+         if (fd_ep < 0) {
+                 log_error_errno(errno, "error creating epoll fd: %m");

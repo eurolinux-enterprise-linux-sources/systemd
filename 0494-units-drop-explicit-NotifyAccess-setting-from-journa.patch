@@ -1,0 +1,31 @@
+From 3126e1ac82a14399e4a759b68ab85e10ba8ba3b3 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekletar@users.noreply.github.com>
+Date: Wed, 19 Apr 2017 08:52:40 +0200
+Subject: [PATCH] units: drop explicit NotifyAccess setting from journald's
+ unit file (#5749)
+
+systemd-journald service consists of only single process and that is the
+MainPID. Make unit file shorter and drop NotifyAccess=all since it is
+not useful in such case.
+
+https://lists.freedesktop.org/archives/systemd-devel/2017-April/038667.html
+
+(cherry picked from commit 6f0e6bd253f449bedec78ec8a468929d3c5d8faf)
+
+Resolves: #1444356
+---
+ units/systemd-journald.service.in | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/units/systemd-journald.service.in b/units/systemd-journald.service.in
+index 8575912bb..c85c34932 100644
+--- a/units/systemd-journald.service.in
++++ b/units/systemd-journald.service.in
+@@ -19,7 +19,6 @@ Sockets=systemd-journald.socket
+ ExecStart=@rootlibexecdir@/systemd-journald
+ Restart=always
+ RestartSec=0
+-NotifyAccess=all
+ StandardOutput=null
+ CapabilityBoundingSet=CAP_SYS_ADMIN CAP_DAC_OVERRIDE CAP_SYS_PTRACE CAP_SYSLOG CAP_AUDIT_CONTROL CAP_AUDIT_READ CAP_CHOWN CAP_DAC_READ_SEARCH CAP_FOWNER CAP_SETUID CAP_SETGID CAP_MAC_OVERRIDE
+ WatchdogSec=3min

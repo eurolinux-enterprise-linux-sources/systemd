@@ -1,0 +1,27 @@
+From ab0d796698509ca5da4ac4c926ab123925b25b4e Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 29 Apr 2015 12:04:16 +0200
+Subject: [PATCH] man: avoid line break in url
+
+(cherry picked from commit b53c3c2d24ed1398ee427139cd880b07bc35fa24)
+
+Cherry-picked from: b53c3c2
+Resolves: #1222517
+---
+ man/os-release.xml | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/man/os-release.xml b/man/os-release.xml
+index 8f4ab10fe..4f57323d4 100644
+--- a/man/os-release.xml
++++ b/man/os-release.xml
+@@ -104,8 +104,7 @@
+ 
+     <para>For a longer rationale for <filename>os-release</filename>
+     please refer to the <ulink
+-    url="http://0pointer.de/blog/projects/os-release">Announcement of
+-    <filename>/etc/os-release</filename></ulink>.</para>
++    url="http://0pointer.de/blog/projects/os-release">Announcement of <filename>/etc/os-release</filename></ulink>.</para>
+   </refsect1>
+ 
+   <refsect1>

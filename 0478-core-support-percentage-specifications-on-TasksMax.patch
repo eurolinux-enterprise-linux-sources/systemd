@@ -1,0 +1,313 @@
+From 7ec6e537898e139cc33017e03465ef40a86dd433 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Tue, 19 Jul 2016 15:58:49 +0200
+Subject: [PATCH] core: support percentage specifications on TasksMax=
+
+This adds support for a TasksMax=40% syntax for specifying values relative to
+the system's configured maximum number of processes. This is useful in order to
+neatly subdivide the available room for tasks within containers.
+
+Cherry-picked from: 83f8e80857090f63cf6a02c54d381dad3c0fad55
+Related: #1337244
+---
+ man/systemd.resource-control.xml | 15 +++---
+ src/core/dbus-cgroup.c           | 22 +++++++++
+ src/core/load-fragment.c         | 15 ++++--
+ src/libsystemd/sd-bus/bus-util.c | 19 ++++++++
+ src/shared/util.c                | 84 ++++++++++++++++++++++++++++++++
+ src/shared/util.h                |  5 ++
+ src/test/test-util.c             | 39 +++++++++++++++
+ 7 files changed, 187 insertions(+), 12 deletions(-)
+
+diff --git a/man/systemd.resource-control.xml b/man/systemd.resource-control.xml
+index 217105ee5..f507c6748 100644
+--- a/man/systemd.resource-control.xml
++++ b/man/systemd.resource-control.xml
+@@ -221,15 +221,12 @@
+         <term><varname>TasksMax=<replaceable>N</replaceable></varname></term>
+ 
+         <listitem>
+-          <para>Specify the maximum number of tasks that may be
+-          created in the unit. This ensures that the number of tasks
+-          accounted for the unit (see above) stays below a specific
+-          limit. If assigned the special value
+-          <literal>infinity</literal> no tasks limit is applied. This
+-          controls the <literal>pids.max</literal> control group
+-          attribute. For details about this control group attribute,
+-          see <ulink
+-          url="https://www.kernel.org/doc/Documentation/cgroups/pids.txt">pids.txt</ulink>.</para>
++          <para>Specify the maximum number of tasks that may be created in the unit. This ensures that the number of
++          tasks accounted for the unit (see above) stays below a specific limit. This either takes an absolute number
++          of tasks or a percentage value that is taken relative to the configured maximum number of tasks on the
++          system.  If assigned the special value <literal>infinity</literal>, no tasks limit is applied. This controls
++          the <literal>pids.max</literal> control group attribute. For details about this control group attribute, see
++          <ulink url="https://www.kernel.org/doc/Documentation/cgroup-v1/pids.txt">pids.txt</ulink>.</para>
+ 
+           <para>Implies <literal>TasksAccounting=true</literal>. The
+           system default for this setting may be controlled with
+diff --git a/src/core/dbus-cgroup.c b/src/core/dbus-cgroup.c
+index a4465dc7a..fa76c60c1 100644
+--- a/src/core/dbus-cgroup.c
++++ b/src/core/dbus-cgroup.c
+@@ -694,6 +694,8 @@ int bus_cgroup_set_property(
+                 r = sd_bus_message_read(message, "t", &limit);
+                 if (r < 0)
+                         return r;
++                if (limit <= 0)
++                        return sd_bus_error_set_errnof(error, EINVAL, "%s= is too small", name);
+ 
+                 if (mode != UNIT_CHECK) {
+                         c->tasks_max = limit;
+@@ -705,6 +707,26 @@ int bus_cgroup_set_property(
+                                 unit_write_drop_in_private_format(u, mode, name, "TasksMax=%" PRIu64, limit);
+                 }
+ 
++                return 1;
++        } else if (streq(name, "TasksMaxScale")) {
++                uint64_t limit;
++                uint32_t raw;
++
++                r = sd_bus_message_read(message, "u", &raw);
++                if (r < 0)
++                        return r;
++
++                limit = system_tasks_max_scale(raw, UINT32_MAX);
++                if (limit <= 0 || limit >= UINT64_MAX)
++                        return sd_bus_error_set_errnof(error, EINVAL, "%s= is out of range", name);
++
++                if (mode != UNIT_CHECK) {
++                        c->tasks_max = limit;
++                        u->cgroup_realized_mask &= ~CGROUP_PIDS;
++                        unit_write_drop_in_private_format(u, mode, name, "TasksMax=%" PRIu32 "%%",
++                                                          (uint32_t) (DIV_ROUND_UP((uint64_t) raw * 100U, (uint64_t) UINT32_MAX)));
++                }
++
+                 return 1;
+         }
+ 
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index c1ffee2c7..411475024 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -3089,9 +3089,18 @@ int config_parse_tasks_max(
+                 return 0;
+         }
+ 
+-        r = safe_atou64(rvalue, &u);
+-        if (r < 0 || u < 1) {
+-                log_syntax(unit, LOG_ERR, filename, line, EINVAL, "Maximum tasks value '%s' invalid. Ignoring.", rvalue);
++        r = parse_percent(rvalue);
++        if (r < 0) {
++                r = safe_atou64(rvalue, &u);
++                if (r < 0) {
++                        log_syntax(unit, LOG_ERR, filename, line, r, "Maximum tasks value '%s' invalid. Ignoring.", rvalue);
++                        return 0;
++                }
++        } else
++                u = system_tasks_max_scale(r, 100U);
++
++        if (u <= 0 || u >= UINT64_MAX) {
++                log_syntax(unit, LOG_ERR, filename, line, 0, "Maximum tasks value '%s' out of range. Ignoring.", rvalue);
+                 return 0;
+         }
+ 
+diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
+index ed0849b63..f46fa2bbf 100644
+--- a/src/libsystemd/sd-bus/bus-util.c
++++ b/src/libsystemd/sd-bus/bus-util.c
+@@ -1409,7 +1409,26 @@ int bus_append_unit_property_assignment(sd_bus_message *m, const char *assignmen
+                 }
+ 
+                 r = sd_bus_message_append(m, "v", "t", (uint64_t) bytes);
++        } else if (streq(field, "TasksMax")) {
++                uint64_t t;
++
++                if (isempty(eq) || streq(eq, "infinity"))
++                        t = (uint64_t) -1;
++                else {
++                        r = parse_percent(eq);
++                        if (r >= 0) {
++                                r = sd_bus_message_append(m, "sv", "TasksMaxScale", "u", (uint32_t) (((uint64_t) UINT32_MAX * r) / 100U));
++                                if (r < 0)
++                                        return bus_log_create_error(r);
++                        } else {
++                                r = safe_atou64(eq, &t);
++                                if (r < 0)
++                                        return log_error_errno(r, "Failed to parse maximum tasks specification %s", assignment);
++                        }
++
++                }
+ 
++                r = sd_bus_message_append(m, "sv", "TasksMax", "t", t);
+         } else if (STR_IN_SET(field, "CPUShares", "BlockIOWeight")) {
+                 uint64_t u;
+ 
+diff --git a/src/shared/util.c b/src/shared/util.c
+index cadaddee3..bbb457759 100644
+--- a/src/shared/util.c
++++ b/src/shared/util.c
+@@ -94,6 +94,7 @@
+ #include "def.h"
+ #include "sparse-endian.h"
+ #include "conf-parser.h"
++#include "cgroup-util.h"
+ 
+ int saved_argc = 0;
+ char **saved_argv = NULL;
+@@ -8707,3 +8708,86 @@ int extract_many_words(const char **p, const char *separators, ExtractFlags flag
+ 
+         return c;
+ }
++
++int parse_percent_unbounded(const char *p) {
++        const char *pc, *n;
++        unsigned v;
++        int r;
++
++        pc = endswith(p, "%");
++        if (!pc)
++                return -EINVAL;
++
++        n = strndupa(p, pc - p);
++        r = safe_atou(n, &v);
++        if (r < 0)
++                return r;
++
++        return (int) v;
++}
++
++int parse_percent(const char *p) {
++        int v;
++
++        v = parse_percent_unbounded(p);
++        if (v > 100)
++                return -ERANGE;
++
++        return v;
++}
++
++uint64_t system_tasks_max(void) {
++
++#if SIZEOF_PID_T == 4
++#define TASKS_MAX ((uint64_t) (INT32_MAX-1))
++#elif SIZEOF_PID_T == 2
++#define TASKS_MAX ((uint64_t) (INT16_MAX-1))
++#else
++#error "Unknown pid_t size"
++#endif
++
++        _cleanup_free_ char *value = NULL, *root = NULL;
++        uint64_t a = TASKS_MAX, b = TASKS_MAX;
++
++        /* Determine the maximum number of tasks that may run on this system. We check three sources to determine this
++         * limit:
++         *
++         * a) the maximum value for the pid_t type
++         * b) the cgroups pids_max attribute for the system
++         * c) the kernel's configure maximum PID value
++         *
++         * And then pick the smallest of the three */
++
++        if (read_one_line_file("/proc/sys/kernel/pid_max", &value) >= 0)
++                (void) safe_atou64(value, &a);
++
++        if (cg_get_root_path(&root) >= 0) {
++                free(value);
++                value = NULL;
++
++                if (cg_get_attribute("pids", root, "pids.max", &value) >= 0)
++                        (void) safe_atou64(value, &b);
++        }
++
++        return MIN3(TASKS_MAX,
++                    a <= 0 ? TASKS_MAX : a,
++                    b <= 0 ? TASKS_MAX : b);
++}
++
++uint64_t system_tasks_max_scale(uint64_t v, uint64_t max) {
++        uint64_t t, m;
++
++        assert(max > 0);
++
++        /* Multiply the system's task value by the fraction v/max. Hence, if max==100 this calculates percentages
++         * relative to the system's maximum number of tasks. Returns UINT64_MAX on overflow. */
++
++        t = system_tasks_max();
++        assert(t > 0);
++
++        m = t * v;
++        if (m / t != v) /* overflow? */
++                return UINT64_MAX;
++
++        return m / max;
++}
+diff --git a/src/shared/util.h b/src/shared/util.h
+index 12afcc342..f1b6c348f 100644
+--- a/src/shared/util.h
++++ b/src/shared/util.h
+@@ -1098,3 +1098,8 @@ typedef enum ExtractFlags {
+ int extract_first_word(const char **p, char **ret, const char *separators, ExtractFlags flags);
+ int extract_first_word_and_warn(const char **p, char **ret, const char *separators, ExtractFlags flags, const char *unit, const char *filename, unsigned line, const char *rvalue);
+ int extract_many_words(const char **p, const char *separators, ExtractFlags flags, ...) _sentinel_;
++int parse_percent_unbounded(const char *p);
++int parse_percent(const char *p);
++
++uint64_t system_tasks_max(void);
++uint64_t system_tasks_max_scale(uint64_t v, uint64_t max);
+diff --git a/src/test/test-util.c b/src/test/test-util.c
+index 9ae347b43..971f97d7c 100644
+--- a/src/test/test-util.c
++++ b/src/test/test-util.c
+@@ -1530,6 +1530,43 @@ static void test_shell_maybe_quote(void) {
+         test_shell_maybe_quote_one("foo$bar", "\"foo\\$bar\"");
+ }
+ 
++static void test_system_tasks_max(void) {
++        uint64_t t;
++
++        t = system_tasks_max();
++        assert_se(t > 0);
++        assert_se(t < UINT64_MAX);
++
++        log_info("Max tasks: %" PRIu64, t);
++}
++
++static void test_system_tasks_max_scale(void) {
++        uint64_t t;
++
++        t = system_tasks_max();
++
++        assert_se(system_tasks_max_scale(0, 100) == 0);
++        assert_se(system_tasks_max_scale(100, 100) == t);
++
++        assert_se(system_tasks_max_scale(0, 1) == 0);
++        assert_se(system_tasks_max_scale(1, 1) == t);
++        assert_se(system_tasks_max_scale(2, 1) == 2*t);
++
++        assert_se(system_tasks_max_scale(0, 2) == 0);
++        assert_se(system_tasks_max_scale(1, 2) == t/2);
++        assert_se(system_tasks_max_scale(2, 2) == t);
++        assert_se(system_tasks_max_scale(3, 2) == (3*t)/2);
++        assert_se(system_tasks_max_scale(4, 2) == t*2);
++
++        assert_se(system_tasks_max_scale(0, UINT32_MAX) == 0);
++        assert_se(system_tasks_max_scale((UINT32_MAX-1)/2, UINT32_MAX-1) == t/2);
++        assert_se(system_tasks_max_scale(UINT32_MAX, UINT32_MAX) == t);
++
++        /* overflow */
++
++        assert_se(system_tasks_max_scale(UINT64_MAX/4, UINT64_MAX) == UINT64_MAX);
++}
++
+ int main(int argc, char *argv[]) {
+         log_parse_environment();
+         log_open();
+@@ -1608,6 +1645,8 @@ int main(int argc, char *argv[]) {
+         test_uid_ptr();
+         test_sparse_write();
+         test_shell_maybe_quote();
++        test_system_tasks_max();
++        test_system_tasks_max_scale();
+ 
+         return 0;
+ }

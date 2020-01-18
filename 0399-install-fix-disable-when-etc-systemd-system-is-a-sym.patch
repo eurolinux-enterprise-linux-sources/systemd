@@ -1,0 +1,24 @@
+From 30c5299e91db30f07b64c6c47ac7417bd4e6988c Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Tue, 30 Aug 2016 15:04:07 +0200
+Subject: [PATCH] install: fix disable when /etc/systemd/system is a symlink
+
+Cherry-picked from: 67852d08e6a35d34b428e8be64efdb3f003f4697
+Resolves: #1285996
+---
+ src/shared/install.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/shared/install.c b/src/shared/install.c
+index 61aaafe7b..ab86cd145 100644
+--- a/src/shared/install.c
++++ b/src/shared/install.c
+@@ -476,7 +476,7 @@ static int remove_marked_symlinks(
+         if (set_size(remove_symlinks_to) <= 0)
+                 return 0;
+ 
+-        fd = open(config_path, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
++        fd = open(config_path, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC);
+         if (fd < 0)
+                 return -errno;
+ 

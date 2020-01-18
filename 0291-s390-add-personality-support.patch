@@ -1,0 +1,109 @@
+From 9435bd3d692c7b07e527b6a616018fa5620502e2 Mon Sep 17 00:00:00 2001
+From: Hendrik Brueckner <brueckner@linux.vnet.ibm.com>
+Date: Thu, 24 Sep 2015 12:47:22 +0200
+Subject: [PATCH] s390: add personality support
+
+Introduce personality support for Linux on z Systems to run
+particular services with a 64-bit or 31-bit personality.
+
+Cherry-picked from: 7517f51ef9921d3360453c8eec2c97256d320ceb
+Resolves: #1300344
+---
+ Makefile.am                        |  1 +
+ src/shared/util.c                  | 27 +++++++++++++++++++++++++++
+ src/test/test-execute.c            |  8 ++++++--
+ test/exec-personality-s390.service |  7 +++++++
+ 4 files changed, 41 insertions(+), 2 deletions(-)
+ create mode 100644 test/exec-personality-s390.service
+
+diff --git a/Makefile.am b/Makefile.am
+index 255937643..3af720bda 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -1483,6 +1483,7 @@ EXTRA_DIST += \
+ 	test/exec-ignoresigpipe-yes.service \
+ 	test/exec-personality-x86-64.service \
+ 	test/exec-personality-x86.service \
++	test/exec-personality-s390.service \
+ 	test/exec-privatedevices-no.service \
+ 	test/exec-privatedevices-yes.service \
+ 	test/exec-privatetmp-no.service \
+diff --git a/src/shared/util.c b/src/shared/util.c
+index dc5185269..a24aa7f93 100644
+--- a/src/shared/util.c
++++ b/src/shared/util.c
+@@ -6748,6 +6748,19 @@ unsigned long personality_from_string(const char *p) {
+ 
+         if (streq(p, "x86"))
+                 return PER_LINUX;
++
++#elif defined(__s390x__)
++
++        if (streq(p, "s390"))
++                return PER_LINUX32;
++
++        if (streq(p, "s390x"))
++                return PER_LINUX;
++
++#elif defined(__s390__)
++
++        if (streq(p, "s390"))
++                return PER_LINUX;
+ #endif
+ 
+         /* personality(7) documents that 0xffffffffUL is used for
+@@ -6770,6 +6783,20 @@ const char* personality_to_string(unsigned long p) {
+ 
+         if (p == PER_LINUX)
+                 return "x86";
++
++#elif defined(__s390x__)
++
++        if (p == PER_LINUX)
++                return "s390x";
++
++        if (p == PER_LINUX32)
++                return "s390";
++
++#elif defined(__s390__)
++
++        if (p == PER_LINUX)
++                return "s390";
++
+ #endif
+ 
+         return NULL;
+diff --git a/src/test/test-execute.c b/src/test/test-execute.c
+index 91ccaf72b..00f3607b4 100644
+--- a/src/test/test-execute.c
++++ b/src/test/test-execute.c
+@@ -77,10 +77,14 @@ static void test_exec_workingdirectory(Manager *m) {
+ }
+ 
+ static void test_exec_personality(Manager *m) {
+-        test(m, "exec-personality-x86.service", 0, CLD_EXITED);
+-
+ #if defined(__x86_64__)
+         test(m, "exec-personality-x86-64.service", 0, CLD_EXITED);
++
++#elif defined(__s390__)
++        test(m, "exec-personality-s390.service", 0, CLD_EXITED);
++
++#else
++        test(m, "exec-personality-x86.service", 0, CLD_EXITED);
+ #endif
+ }
+ 
+diff --git a/test/exec-personality-s390.service b/test/exec-personality-s390.service
+new file mode 100644
+index 000000000..f3c3b03e3
+--- /dev/null
++++ b/test/exec-personality-s390.service
+@@ -0,0 +1,7 @@
++[Unit]
++Description=Test for Personality=s390
++
++[Service]
++ExecStart=/bin/sh -c 'echo $(uname -m); exit $(test $(uname -m) = "s390")'
++Type=oneshot
++Personality=s390

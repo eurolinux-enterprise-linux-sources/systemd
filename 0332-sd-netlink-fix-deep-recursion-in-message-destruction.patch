@@ -1,0 +1,47 @@
+From 164a98ea6b24fea3433516dcc0df496929674cdd Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Tue, 7 Jun 2016 12:43:38 +0200
+Subject: [PATCH] sd-netlink: fix deep recursion in message destruction
+
+On larger systems we might very well see messages with thousands of parts.
+When we free them, we must avoid recursing into each part, otherwise we
+very likely get stack overflows.
+
+Fix sd_netlink_message_unref() to use an iterative approach rather than
+recursion (also avoid tail-recursion in case it is not optimized by the
+compiler).
+
+(cherry picked from commit 82e4eda664d40ef60829e27d84b1610c2f4070cd)
+Resolves: #1330593
+---
+ src/libsystemd/sd-rtnl/rtnl-message.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/src/libsystemd/sd-rtnl/rtnl-message.c b/src/libsystemd/sd-rtnl/rtnl-message.c
+index 276591f31..9276bbdeb 100644
+--- a/src/libsystemd/sd-rtnl/rtnl-message.c
++++ b/src/libsystemd/sd-rtnl/rtnl-message.c
+@@ -584,7 +584,9 @@ sd_rtnl_message *sd_rtnl_message_ref(sd_rtnl_message *m) {
+ }
+ 
+ sd_rtnl_message *sd_rtnl_message_unref(sd_rtnl_message *m) {
+-        if (m && REFCNT_DEC(m->n_ref) == 0) {
++        sd_rtnl_message *t;
++
++        while (m && REFCNT_DEC(m->n_ref) == 0) {
+                 unsigned i;
+ 
+                 free(m->hdr);
+@@ -592,9 +594,9 @@ sd_rtnl_message *sd_rtnl_message_unref(sd_rtnl_message *m) {
+                 for (i = 0; i <= m->n_containers; i++)
+                         free(m->rta_offset_tb[i]);
+ 
+-                sd_rtnl_message_unref(m->next);
+-
+-                free(m);
++                t = m;
++                m = m->next;
++                free(t);
+         }
+ 
+         return NULL;

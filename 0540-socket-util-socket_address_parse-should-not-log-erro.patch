@@ -1,0 +1,105 @@
+From b2dfc6d1b697da2e649b04ad0b8c3aef7a7d4d88 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 15 May 2015 20:15:59 +0200
+Subject: [PATCH] socket-util: socket_address_parse() should not log errors on
+ its own
+
+Given that socket_address_parse() is mostly a "library" call it
+shouldn't log on its own, but leave that to its caller.
+
+This patch removes logging from the call in case IPv6 is not available
+but and IPv6 address shall be parsed. Instead a new call
+socket_address_parse_and_warn() is introduced which first invokes
+socket_address_parse() and then logs if necessary.
+
+This should fix "make check" on ipv6-less kernels:
+
+http://lists.freedesktop.org/archives/systemd-devel/2015-April/031385.html
+(cherry picked from commit 7693146dee53a2b0f524e977188347166bf454ca)
+
+Related: #1497639
+---
+ src/core/load-fragment.c |  2 +-
+ src/shared/socket-util.c | 29 +++++++++++++++++++----------
+ src/shared/socket-util.h |  1 +
+ 3 files changed, 21 insertions(+), 11 deletions(-)
+
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index 58e44b89b..0c0fa0f50 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -365,7 +365,7 @@ int config_parse_socket_listen(const char *unit,
+                         log_syntax(unit, LOG_ERR, filename, line, -r,
+                                    "Failed to resolve unit specifiers on %s, ignoring: %s", rvalue, strerror(-r));
+ 
+-                r = socket_address_parse(&p->address, k ? k : rvalue);
++                r = socket_address_parse_and_warn(&p->address, k ? k : rvalue);
+                 if (r < 0) {
+                         if (r != -EAFNOSUPPORT)
+                                 log_syntax(unit, LOG_ERR, filename, line, -r,
+diff --git a/src/shared/socket-util.c b/src/shared/socket-util.c
+index baab6353e..b14e36817 100644
+--- a/src/shared/socket-util.c
++++ b/src/shared/socket-util.c
+@@ -55,11 +55,6 @@ int socket_address_parse(SocketAddress *a, const char *s) {
+         if (*s == '[') {
+                 /* IPv6 in [x:.....:z]:p notation */
+ 
+-                if (!socket_ipv6_is_supported()) {
+-                        log_warning("Binding to IPv6 address not available since kernel does not support IPv6.");
+-                        return -EAFNOSUPPORT;
+-                }
+-
+                 e = strchr(s+1, ']');
+                 if (!e)
+                         return -EINVAL;
+@@ -144,11 +139,6 @@ int socket_address_parse(SocketAddress *a, const char *s) {
+                                 if (idx == 0)
+                                         return -EINVAL;
+ 
+-                                if (!socket_ipv6_is_supported()) {
+-                                        log_warning("Binding to interface is not available since kernel does not support IPv6.");
+-                                        return -EAFNOSUPPORT;
+-                                }
+-
+                                 a->sockaddr.in6.sin6_family = AF_INET6;
+                                 a->sockaddr.in6.sin6_port = htons((uint16_t) u);
+                                 a->sockaddr.in6.sin6_scope_id = idx;
+@@ -182,6 +172,25 @@ int socket_address_parse(SocketAddress *a, const char *s) {
+         return 0;
+ }
+ 
++int socket_address_parse_and_warn(SocketAddress *a, const char *s) {
++        SocketAddress b;
++        int r;
++
++        /* Similar to socket_address_parse() but warns for IPv6 sockets when we don't support them. */
++
++        r = socket_address_parse(&b, s);
++        if (r < 0)
++                return r;
++
++        if (!socket_ipv6_is_supported() && b.sockaddr.sa.sa_family == AF_INET6) {
++                log_warning("Binding to IPv6 address not available since kernel does not support IPv6.");
++                return -EAFNOSUPPORT;
++        }
++
++        *a = b;
++        return 0;
++}
++
+ int socket_address_parse_netlink(SocketAddress *a, const char *s) {
+         int family;
+         unsigned group = 0;
+diff --git a/src/shared/socket-util.h b/src/shared/socket-util.h
+index 6bfb677fb..9200ce882 100644
+--- a/src/shared/socket-util.h
++++ b/src/shared/socket-util.h
+@@ -67,6 +67,7 @@ typedef enum SocketAddressBindIPv6Only {
+ #define socket_address_family(a) ((a)->sockaddr.sa.sa_family)
+ 
+ int socket_address_parse(SocketAddress *a, const char *s);
++int socket_address_parse_and_warn(SocketAddress *a, const char *s);
+ int socket_address_parse_netlink(SocketAddress *a, const char *s);
+ int socket_address_print(const SocketAddress *a, char **p);
+ int socket_address_verify(const SocketAddress *a) _pure_;

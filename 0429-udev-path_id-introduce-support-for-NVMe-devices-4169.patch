@@ -1,0 +1,40 @@
+From ee5aadde983315e72a82241dee95c0e041af15f4 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Fri, 6 Jan 2017 17:30:53 +0100
+Subject: [PATCH] udev/path_id: introduce support for NVMe devices (#4169)
+
+This appends the nvme name and namespace identifier attribute the the
+PCI path for by-path links. Symlinks like the following are now present:
+
+lrwxrwxrwx. 1 root root 13 Sep 16 12:12 pci-0000:01:00.0-nvme-1 -> ../../nvme0n1
+lrwxrwxrwx. 1 root root 15 Sep 16 12:12 pci-0000:01:00.0-nvme-1-part1 -> ../../nvme0n1p1
+
+Cc: Michal Sekletar <sekletar.m@gmail.com>
+Signed-off-by: Keith Busch <keith.busch@intel.com>
+
+Cherry-picked from: b4c6f71b827d41a4af8007b735edf21ef7609f99
+Resolves: #1373150
+---
+ src/udev/udev-builtin-path_id.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/src/udev/udev-builtin-path_id.c b/src/udev/udev-builtin-path_id.c
+index a3b019bfc..88a812ff5 100644
+--- a/src/udev/udev-builtin-path_id.c
++++ b/src/udev/udev-builtin-path_id.c
+@@ -709,6 +709,15 @@ restart:
+                         parent = skip_subsystem(parent, "scm");
+                         supported_transport = true;
+                         supported_parent = true;
++                } else if (streq(subsys, "nvme")) {
++                        const char *nsid = udev_device_get_sysattr_value(dev, "nsid");
++
++                        if (nsid) {
++                                path_prepend(&path, "nvme-%s", nsid);
++                                parent = skip_subsystem(parent, "nvme");
++                                supported_parent = true;
++                                supported_transport = true;
++                        }
+                 }
+ 
+                 parent = udev_device_get_parent(parent);

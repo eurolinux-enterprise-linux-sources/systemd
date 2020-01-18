@@ -1,0 +1,126 @@
+From 0e39139e505a8310ae8530fb2463a9e8f2170d2f Mon Sep 17 00:00:00 2001
+From: HATAYAMA Daisuke <d.hatayama@jp.fujitsu.com>
+Date: Sat, 24 Sep 2016 21:56:07 +0900
+Subject: [PATCH] sysctl: configure kernel parameters in the order they occur
+ in each sysctl configuration files (#4205)
+
+Currently, systemd-sysctl command configures kernel parameters in each sysctl
+configuration files in random order due to characteristics of iterator of
+Hashmap.
+
+However, kernel parameters need to be configured in the order they occur in
+each sysctl configuration files.
+
+- For example, consider fs.suid_coredump and kernel.core_pattern. If
+  fs.suid_coredump=2 is configured before kernel.core_pattern= whose default
+  value is "core", then kernel outputs the following message:
+
+      Unsafe core_pattern used with suid_dumpable=2. Pipe handler or fully qualified core dump path required.
+
+  Note that the security issue mentioned in this message has already been fixed
+  on recent kernels, so this is just a warning message on such kernels. But
+  it's still confusing to users that this message is output on some boot and
+  not output on another boot.
+
+- I don't know but there could be other kernel parameters that are significant
+  in the order they are configured.
+
+- The legacy sysctl command configures kernel parameters in the order they
+  occur in each sysctl configuration files. Although I didn't find any official
+  specification explaining this behavior of sysctl command, I don't think there
+  is any meaningful reason to change this behavior, in particular, to the
+  random one.
+
+This commit does the change by simply using OrderedHashmap instead of
+Hashmap.
+
+(cherry picked from commit 886cf982d3018f7451f0548dadbc05bd2d583bb6)
+
+Resolves: #1382244
+---
+ src/sysctl/sysctl.c | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/src/sysctl/sysctl.c b/src/sysctl/sysctl.c
+index 4fb293b9b..bb2bea7cd 100644
+--- a/src/sysctl/sysctl.c
++++ b/src/sysctl/sysctl.c
+@@ -90,14 +90,14 @@ static int apply_sysctl(const char *property, const char *value) {
+         return r;
+ }
+ 
+-static int apply_all(Hashmap *sysctl_options) {
+-        int r = 0;
++static int apply_all(OrderedHashmap *sysctl_options) {
++        int r;
+         char *property, *value;
+         Iterator i;
+ 
+         assert(sysctl_options);
+ 
+-        HASHMAP_FOREACH_KEY(value, property, sysctl_options, i) {
++        ORDERED_HASHMAP_FOREACH_KEY(value, property, sysctl_options, i) {
+                 int k;
+ 
+                 k = apply_sysctl(property, value);
+@@ -107,7 +107,7 @@ static int apply_all(Hashmap *sysctl_options) {
+         return r;
+ }
+ 
+-static int parse_file(Hashmap *sysctl_options, const char *path, bool ignore_enoent) {
++static int parse_file(OrderedHashmap *sysctl_options, const char *path, bool ignore_enoent) {
+         _cleanup_fclose_ FILE *f = NULL;
+         int r;
+ 
+@@ -171,13 +171,13 @@ static int parse_file(Hashmap *sysctl_options, const char *path, bool ignore_eno
+                 }
+ 
+ found:
+-                existing = hashmap_get2(sysctl_options, p, &v);
++                existing = ordered_hashmap_get2(sysctl_options, p, &v);
+                 if (existing) {
+                         if (streq(value, existing))
+                                 continue;
+ 
+                         log_debug("Overwriting earlier assignment of %s in file '%s'.", p, path);
+-                        free(hashmap_remove(sysctl_options, p));
++                        free(ordered_hashmap_remove(sysctl_options, p));
+                         free(v);
+                 }
+ 
+@@ -191,7 +191,7 @@ found:
+                         return log_oom();
+                 }
+ 
+-                k = hashmap_put(sysctl_options, property, new_value);
++                k = ordered_hashmap_put(sysctl_options, property, new_value);
+                 if (k < 0) {
+                         log_error_errno(k, "Failed to add sysctl variable %s to hashmap: %m", property);
+                         free(property);
+@@ -277,7 +277,7 @@ static int parse_argv(int argc, char *argv[]) {
+ 
+ int main(int argc, char *argv[]) {
+         int r = 0, k;
+-        Hashmap *sysctl_options;
++        OrderedHashmap *sysctl_options;
+ 
+         r = parse_argv(argc, argv);
+         if (r <= 0)
+@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
+ 
+         umask(0022);
+ 
+-        sysctl_options = hashmap_new(&string_hash_ops);
++        sysctl_options = ordered_hashmap_new(&string_hash_ops);
+         if (!sysctl_options) {
+                 r = log_oom();
+                 goto finish;
+@@ -331,7 +331,7 @@ int main(int argc, char *argv[]) {
+                 r = k;
+ 
+ finish:
+-        hashmap_free_free_free(sysctl_options);
++        ordered_hashmap_free_free_free(sysctl_options);
+         strv_free(arg_prefixes);
+ 
+         return r < 0 ? EXIT_FAILURE : EXIT_SUCCESS;

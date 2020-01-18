@@ -1,0 +1,37 @@
+From bd1bb4504d1afe264fd3f739614b97aac8d62bf0 Mon Sep 17 00:00:00 2001
+From: Tom Gundersen <teg@jklm.no>
+Date: Tue, 25 Aug 2015 14:12:19 +0200
+Subject: [PATCH] udev: net_id - support predictable ifnames on virtio buses
+
+Virtio buses are undeterministically enumerated, so we cannot use them as a basis
+for deterministic naming (see bf81e792f3c0). However, we are guaranteed that there
+is only ever one virtio bus for every parent device, so we can simply skip over
+the virtio buses when naming the devices.
+
+Cherry-picked from: 54683f0f9b97a8f88aaf4fbb45b4d729057b101c
+Resolves: #1259015
+---
+ src/udev/udev-builtin-net_id.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/src/udev/udev-builtin-net_id.c b/src/udev/udev-builtin-net_id.c
+index dd2886caf..ddd83d4f1 100644
+--- a/src/udev/udev-builtin-net_id.c
++++ b/src/udev/udev-builtin-net_id.c
+@@ -283,8 +283,16 @@ static int names_pci(struct udev_device *dev, struct netnames *names) {
+         struct udev_device *parent;
+ 
+         parent = udev_device_get_parent(dev);
++
++        /* there can only ever be one virtio bus per parent device, so we can
++           safely ignore any virtio buses. see
++           <http://lists.linuxfoundation.org/pipermail/virtualization/2015-August/030331.html> */
++        while (parent && streq_ptr("virtio", udev_device_get_subsystem(parent)))
++                parent = udev_device_get_parent(parent);
++
+         if (!parent)
+                 return -ENOENT;
++
+         /* check if our direct parent is a PCI device with no other bus in-between */
+         if (streq_ptr("pci", udev_device_get_subsystem(parent))) {
+                 names->type = NET_PCI;

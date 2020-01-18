@@ -1,0 +1,105 @@
+From 81f0a57bed6e03eeaa24443d16555c7f5d20ee1a Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 22 Apr 2015 13:08:19 +0200
+Subject: [PATCH] btrfs-util: introduce btrfs_is_filesystem() and make use of
+ it where appropriate
+
+Let's unify the code that checks whether an fd is on btrfs a bit.
+
+(Also, rename btrfs_is_snapshot() to btrfs_is_subvol(), since that's
+usually how this is referred to in our code)
+
+(cherry picked from commit 21222ea5cdec65fa30a75bd5a78475459075b946)
+
+Related: #1299714
+---
+ src/shared/btrfs-util.c    | 23 ++++++++++++++++-------
+ src/shared/btrfs-util.h    |  3 ++-
+ src/shared/machine-image.c |  9 ++++-----
+ 3 files changed, 22 insertions(+), 13 deletions(-)
+
+diff --git a/src/shared/btrfs-util.c b/src/shared/btrfs-util.c
+index b34ac8b15..52a214349 100644
+--- a/src/shared/btrfs-util.c
++++ b/src/shared/btrfs-util.c
+@@ -83,10 +83,22 @@ static int extract_subvolume_name(const char *path, const char **subvolume) {
+         return 0;
+ }
+ 
+-int btrfs_is_snapshot(int fd) {
+-        struct stat st;
++int btrfs_is_filesystem(int fd) {
+         struct statfs sfs;
+ 
++        assert(fd >= 0);
++
++        if (fstatfs(fd, &sfs) < 0)
++                return -errno;
++
++        return F_TYPE_EQUAL(sfs.f_type, BTRFS_SUPER_MAGIC);
++}
++
++int btrfs_is_subvol(int fd) {
++        struct stat st;
++
++        assert(fd >= 0);
++
+         /* On btrfs subvolumes always have the inode 256 */
+ 
+         if (fstat(fd, &st) < 0)
+@@ -95,10 +107,7 @@ int btrfs_is_snapshot(int fd) {
+         if (!S_ISDIR(st.st_mode) || st.st_ino != 256)
+                 return 0;
+ 
+-        if (fstatfs(fd, &sfs) < 0)
+-                return -errno;
+-
+-        return F_TYPE_EQUAL(sfs.f_type, BTRFS_SUPER_MAGIC);
++        return btrfs_is_filesystem(fd);
+ }
+ 
+ int btrfs_subvol_snapshot(const char *old_path, const char *new_path, bool read_only, bool fallback_copy) {
+@@ -115,7 +124,7 @@ int btrfs_subvol_snapshot(const char *old_path, const char *new_path, bool read_
+         if (old_fd < 0)
+                 return -errno;
+ 
+-        r = btrfs_is_snapshot(old_fd);
++        r = btrfs_is_subvol(old_fd);
+         if (r < 0)
+                 return r;
+         if (r == 0) {
+diff --git a/src/shared/btrfs-util.h b/src/shared/btrfs-util.h
+index 1b9c142e5..1315def87 100644
+--- a/src/shared/btrfs-util.h
++++ b/src/shared/btrfs-util.h
+@@ -43,7 +43,8 @@ typedef struct BtrfsQuotaInfo {
+         uint64_t exclusive_max;
+ } BtrfsQuotaInfo;
+ 
+-int btrfs_is_snapshot(int fd);
++int btrfs_is_filesystem(int fd);
++int btrfs_is_subvol(int fd);
+ 
+ int btrfs_subvol_make(const char *path);
+ int btrfs_subvol_make_label(const char *path);
+diff --git a/src/shared/machine-image.c b/src/shared/machine-image.c
+index c02ee814c..256622928 100644
+--- a/src/shared/machine-image.c
++++ b/src/shared/machine-image.c
+@@ -136,12 +136,11 @@ static int image_make(
+ 
+                 /* btrfs subvolumes have inode 256 */
+                 if (st.st_ino == 256) {
+-                        struct statfs sfs;
+ 
+-                        if (fstatfs(fd, &sfs) < 0)
+-                                return -errno;
+-
+-                        if (F_TYPE_EQUAL(sfs.f_type, BTRFS_SUPER_MAGIC)) {
++                        r = btrfs_is_filesystem(fd);
++                        if (r < 0)
++                                return r;
++                        if (r) {
+                                 BtrfsSubvolInfo info;
+                                 BtrfsQuotaInfo quota;
+ 

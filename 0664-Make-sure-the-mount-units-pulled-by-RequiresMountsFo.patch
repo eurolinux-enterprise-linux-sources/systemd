@@ -1,0 +1,50 @@
+From d772781b2810ae71bace24cce05f255212a348ed Mon Sep 17 00:00:00 2001
+From: Franck Bui <fbui@suse.com>
+Date: Thu, 8 Oct 2015 19:06:06 +0200
+Subject: [PATCH] Make sure the mount units pulled by 'RequiresMountsFor=' are
+ loaded (if they exist)
+
+We should make sure that mount units involved by 'RequiresMountsFor='
+directives are really loaded if not required by any others units so
+that Requires= dependencies on the mount units are applied and thus
+the mount unit dependencies are started.
+
+(cherry-picked from commit c7c89abb9edf9320246482bf4a8e0656199281ae)
+
+Resolves: #1619743
+---
+ src/core/unit.c | 18 ++++++++++++++----
+ 1 file changed, 14 insertions(+), 4 deletions(-)
+
+diff --git a/src/core/unit.c b/src/core/unit.c
+index cfddce34d..e8532a057 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -1131,13 +1131,23 @@ static int unit_add_mount_dependencies(Unit *u) {
+                 char prefix[strlen(*i) + 1];
+ 
+                 PATH_FOREACH_PREFIX_MORE(prefix, *i) {
++                        _cleanup_free_ char *p = NULL;
+                         Unit *m;
+ 
+-                        r = manager_get_unit_by_path(u->manager, prefix, ".mount", &m);
+-                        if (r < 0)
+-                                return r;
+-                        if (r == 0)
++                        p = unit_name_from_path(prefix, ".mount");
++                        if (!p)
++                                return -ENOMEM;
++
++                        m = manager_get_unit(u->manager, p);
++                        if (!m) {
++                                /* Make sure to load the mount unit if
++                                 * it exists. If so the dependencies
++                                 * on this unit will be added later
++                                 * during the loading of the mount
++                                 * unit. */
++                                (void) manager_load_unit_prepare(u->manager, p, NULL, NULL, &m);
+                                 continue;
++                        }
+                         if (m == u)
+                                 continue;
+ 

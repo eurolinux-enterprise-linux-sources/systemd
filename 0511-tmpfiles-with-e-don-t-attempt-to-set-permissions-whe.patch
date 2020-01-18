@@ -1,0 +1,65 @@
+From 797dafce1bb9c3bb16da043f654391dc29075a1a Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Mon, 28 Aug 2017 17:33:24 +0200
+Subject: [PATCH] tmpfiles: with "e" don't attempt to set permissions when file
+ doesn't exist
+
+tmpfiles.d option "e" when run through systemd-tmpfiles --create should
+apply configured permissions (uid,gid) only to already existing
+files. When file doesn't exist we bail out with error. Instead we should
+silently ignore non-existing files.
+
+$ useradd test
+$ cat /etc/tmpfiles.d/foobar.conf
+e /tmp/test - test test 1d
+$ ls -l /tmp/test
+ls: cannot access '/tmp/test': No such file or directory
+
+Before:
+$ systemd-tmpfiles --create /etc/tmpfiles.d/foobar.conf
+Adjusting owner and mode for /tmp/test failed: No such file or directory
+$ echo $?
+1
+
+After:
+$ systemd-tmpfiles --create /etc/tmpfiles.d/foobar.conf
+$ echo $?
+0
+
+(cherry picked from commit 3caf791a1702c97b99d2647c9d465af404f2913d)
+
+Conflicts:
+	src/tmpfiles/tmpfiles.c
+
+Resolves: #1445732
+---
+ src/tmpfiles/tmpfiles.c | 16 ++++++++++++++--
+ 1 file changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
+index df7676b57..ed35b8cf0 100644
+--- a/src/tmpfiles/tmpfiles.c
++++ b/src/tmpfiles/tmpfiles.c
+@@ -585,8 +585,20 @@ static int path_set_perms(Item *i, const char *path) {
+          * O_PATH. */
+ 
+         fd = open(path, O_RDONLY|O_NOFOLLOW|O_CLOEXEC|O_PATH|O_NOATIME);
+-        if (fd < 0)
+-                return log_error_errno(errno, "Adjusting owner and mode for %s failed: %m", path);
++        if (fd < 0) {
++                int level = LOG_ERR, r = -errno;
++
++                /* Option "e" operates only on existing objects. Do not
++                 * print errors about non-existent files or directories */
++                if (i->type == EMPTY_DIRECTORY && errno == ENOENT) {
++                        level = LOG_DEBUG;
++                        r = 0;
++                }
++
++                log_full_errno(level, errno, "Adjusting owner and mode for %s failed: %m", path);
++
++                return r;
++        }
+ 
+         if (fstatat(fd, "", &st, AT_EMPTY_PATH) < 0)
+                 return log_error_errno(errno, "Failed to fstat() file %s: %m", path);

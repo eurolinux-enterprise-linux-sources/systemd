@@ -1,0 +1,24 @@
+From 50a7827f7376d31d2af2dc563fc51d8ad71f48dc Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Wed, 20 May 2015 12:34:18 +0200
+Subject: [PATCH] rules: load sg module
+
+Revert of 09637f743414e2c36d6c5b032d77d76dbeb86b31
+RHEL-only
+
+Resolves: #1186462
+---
+ rules/40-redhat.rules | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/rules/40-redhat.rules b/rules/40-redhat.rules
+index 556a3a3a9..305e75228 100644
+--- a/rules/40-redhat.rules
++++ b/rules/40-redhat.rules
+@@ -8,3 +8,6 @@ SUBSYSTEM=="memory", ACTION=="add", ATTR{state}=="offline", ATTR{state}="online"
+ 
+ # reload sysctl.conf / sysctl.conf.d settings when the bridge module is loaded
+ ACTION=="add", SUBSYSTEM=="module", KERNEL=="bridge", RUN+="/usr/lib/systemd/systemd-sysctl --prefix=/proc/sys/net/bridge"
++
++# load SCSI generic (sg) driver
++SUBSYSTEM=="scsi", ENV{DEVTYPE}=="scsi_device", TEST!="[module/sg]", RUN+="/sbin/modprobe -bv sg"

@@ -1,0 +1,158 @@
+From 2f9ee3163c44a71c99fe104daf01d4d9ab51d2c9 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Mon, 28 May 2018 10:52:52 +0200
+Subject: [PATCH] tmpfiles: use safe_glob()
+
+This filters out "." and ".." from glob results. Fixes #5655 and #5644.
+
+Any judgements on whether the path is "safe" are removed. We will not remove
+"/" under any name (including "/../" and such), but we will remove stuff that
+is specified using paths that include "//", "/./" and "/../". Such paths can be
+created when joining strings automatically, or for other reasons, and people
+generally know what ".." and "." is.
+
+Tests are added to make sure that the helper functions behave as expected.
+
+Original commit: 84e72b5ef445ffb256bc4add4209c4c9c9855206
+Resolves: #1436004
+---
+ src/shared/util.c       | 63 +++++++++++++++++++++++++++++++++++++++--
+ src/shared/util.h       |  2 ++
+ src/tmpfiles/tmpfiles.c | 11 ++-----
+ 3 files changed, 66 insertions(+), 10 deletions(-)
+
+diff --git a/src/shared/util.c b/src/shared/util.c
+index 3216f004a..78967103a 100644
+--- a/src/shared/util.c
++++ b/src/shared/util.c
+@@ -49,7 +49,6 @@
+ #include <dlfcn.h>
+ #include <sys/wait.h>
+ #include <sys/time.h>
+-#include <glob.h>
+ #include <grp.h>
+ #include <sys/mman.h>
+ #include <sys/vfs.h>
+@@ -3370,7 +3369,7 @@ static int rm_rf_internal(const char *path, bool only_dirs, bool delete_root, bo
+         /* We refuse to clean the root file system with this
+          * call. This is extra paranoia to never cause a really
+          * seriously broken system. */
+-        if (path_equal(path, "/")) {
++        if (path_equal_or_files_same(path, "/")) {
+                 log_error("Attempted to remove entire root file system, and we can't allow that.");
+                 return -EPERM;
+         }
+@@ -5096,6 +5095,66 @@ int in_group(const char *name) {
+         return in_gid(gid);
+ }
+ 
++static void closedir_wrapper(void* v) {
++        (void) closedir(v);
++}
++
++static bool dot_or_dot_dot(const char *path) {
++        if (!path)
++                return false;
++        if (path[0] != '.')
++                return false;
++        if (path[1] == 0)
++                return true;
++        if (path[1] != '.')
++                return false;
++
++        return path[2] == 0;
++}
++
++static struct dirent* readdir_no_dot(DIR *dirp) {
++        struct dirent* d;
++
++        for (;;) {
++                d = readdir(dirp);
++                if (d && dot_or_dot_dot(d->d_name))
++                        continue;
++                return d;
++        }
++}
++
++int safe_glob(const char *path, int flags, glob_t *pglob) {
++        int k;
++
++        /* We want to set GLOB_ALTDIRFUNC ourselves, don't allow it to be set. */
++        assert(!(flags & GLOB_ALTDIRFUNC));
++
++        if (!pglob->gl_closedir)
++                pglob->gl_closedir = closedir_wrapper;
++        if (!pglob->gl_readdir)
++                pglob->gl_readdir = (struct dirent *(*)(void *)) readdir_no_dot;
++        if (!pglob->gl_opendir)
++                pglob->gl_opendir = (void *(*)(const char *)) opendir;
++        if (!pglob->gl_lstat)
++                pglob->gl_lstat = lstat;
++        if (!pglob->gl_stat)
++                pglob->gl_stat = stat;
++
++        errno = 0;
++        k = glob(path, flags | GLOB_ALTDIRFUNC, NULL, pglob);
++
++        if (k == GLOB_NOMATCH)
++                return -ENOENT;
++        if (k == GLOB_NOSPACE)
++                return -ENOMEM;
++        if (k != 0)
++                return errno > 0 ? -errno : -EIO;
++        if (strv_isempty(pglob->gl_pathv))
++                return -ENOENT;
++
++        return 0;
++}
++
+ int glob_exists(const char *path) {
+         _cleanup_globfree_ glob_t g = {};
+         int k;
+diff --git a/src/shared/util.h b/src/shared/util.h
+index 998f882bb..cf096aa07 100644
+--- a/src/shared/util.h
++++ b/src/shared/util.h
+@@ -44,6 +44,7 @@
+ #include <mntent.h>
+ #include <sys/socket.h>
+ #include <sys/inotify.h>
++#include <glob.h>
+ 
+ #if SIZEOF_PID_T == 4
+ #  define PID_PRI PRIi32
+@@ -595,6 +596,7 @@ char* gid_to_name(gid_t gid);
+ 
+ int glob_exists(const char *path);
+ int glob_extend(char ***strv, const char *path);
++int safe_glob(const char *path, int flags, glob_t *pglob);
+ 
+ int dirent_ensure_type(DIR *d, struct dirent *de);
+ 
+diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
+index 5212d72f5..8a75efb22 100644
+--- a/src/tmpfiles/tmpfiles.c
++++ b/src/tmpfiles/tmpfiles.c
+@@ -1095,19 +1095,14 @@ static int item_do_children(Item *i, const char *path, action_t action) {
+ 
+ static int glob_item(Item *i, action_t action, bool recursive) {
+         _cleanup_globfree_ glob_t g = {
+-                .gl_closedir = (void (*)(void *)) closedir,
+-                .gl_readdir = (struct dirent *(*)(void *)) readdir,
+                 .gl_opendir = (void *(*)(const char *)) opendir_nomod,
+-                .gl_lstat = lstat,
+-                .gl_stat = stat,
+         };
+         int r = 0, k;
+         char **fn;
+ 
+-        errno = 0;
+-        k = glob(i->path, GLOB_NOSORT|GLOB_BRACE|GLOB_ALTDIRFUNC, NULL, &g);
+-        if (k != 0 && k != GLOB_NOMATCH)
+-                return log_error_errno(errno ?: EIO, "glob(%s) failed: %m", i->path);
++        k = safe_glob(i->path, GLOB_NOSORT|GLOB_BRACE, &g);
++        if (k < 0 && k != -ENOENT)
++                return log_error_errno(k, "glob(%s) failed: %m", i->path);
+ 
+         STRV_FOREACH(fn, g.gl_pathv) {
+                 k = action(i, *fn);

@@ -1,0 +1,65 @@
+From ca5c3dbfd843b6acd92425a6f56c4b01d1a80dde Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Mon, 21 Sep 2015 14:55:39 +0200
+Subject: [PATCH] login: fix label on /run/nologin
+
+rhel-only for now, not yet posted upstream
+
+Resolves: #1264073
+---
+ Makefile.am               | 3 ++-
+ src/login/user-sessions.c | 7 ++++++-
+ 2 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index 58bcc2c42..0fcb73750 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -5829,7 +5829,8 @@ systemd_user_sessions_SOURCES = \
+ 	src/login/user-sessions.c
+ 
+ systemd_user_sessions_LDADD = \
+-	libsystemd-shared.la
++	libsystemd-shared.la \
++	libsystemd-label.la
+ 
+ rootlibexec_PROGRAMS += \
+ 	systemd-logind \
+diff --git a/src/login/user-sessions.c b/src/login/user-sessions.c
+index 6edb823e8..d1d429c0d 100644
+--- a/src/login/user-sessions.c
++++ b/src/login/user-sessions.c
+@@ -26,6 +26,7 @@
+ #include "log.h"
+ #include "util.h"
+ #include "fileio.h"
++#include "selinux-util.h"
+ 
+ int main(int argc, char*argv[]) {
+ 
+@@ -40,6 +41,8 @@ int main(int argc, char*argv[]) {
+ 
+         umask(0022);
+ 
++        mac_selinux_init(NULL);
++
+         if (streq(argv[1], "start")) {
+                 int r = 0;
+ 
+@@ -66,7 +69,7 @@ int main(int argc, char*argv[]) {
+         } else if (streq(argv[1], "stop")) {
+                 int r;
+ 
+-                r = write_string_file_atomic("/run/nologin", "System is going down.");
++                r = write_string_file_atomic_label("/run/nologin", "System is going down.");
+                 if (r < 0) {
+                         log_error_errno(r, "Failed to create /run/nologin: %m");
+                         return EXIT_FAILURE;
+@@ -77,5 +80,7 @@ int main(int argc, char*argv[]) {
+                 return EXIT_FAILURE;
+         }
+ 
++        mac_selinux_finish();
++
+         return EXIT_SUCCESS;
+ }

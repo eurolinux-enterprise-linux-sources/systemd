@@ -1,0 +1,43 @@
+From be21e10cf30e66215e986ab900637b32e502a29a Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Tue, 10 Nov 2015 16:53:00 +0100
+Subject: [PATCH] journald: dispatch SIGTERM/SIGINT with a low priority
+
+Let's make sure to process all queued log data before exiting, so that
+we don't unnecessary lose messages when shutting down.
+
+https://github.com/systemd/systemd/pull/1812#issuecomment-155149871
+
+Cherry-picked from: b374689c02c681671a3c3c0b0fd3add32386b442
+Related: #1318994
+---
+ src/journal/journald-server.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
+index 275224dc9..2b7ecd09a 100644
+--- a/src/journal/journald-server.c
++++ b/src/journal/journald-server.c
+@@ -1284,10 +1284,22 @@ static int setup_signals(Server *s) {
+         if (r < 0)
+                 return r;
+ 
++        /* Let's process SIGTERM late, so that we flush all queued
++         * messages to disk before we exit */
++        r = sd_event_source_set_priority(s->sigterm_event_source, SD_EVENT_PRIORITY_NORMAL+20);
++        if (r < 0)
++                return r;
++
++        /* When journald is invoked on the terminal (when debugging),
++         * it's useful if C-c is handled equivalent to SIGTERM. */
+         r = sd_event_add_signal(s->event, &s->sigint_event_source, SIGINT, dispatch_sigterm, s);
+         if (r < 0)
+                 return r;
+ 
++        r = sd_event_source_set_priority(s->sigint_event_source, SD_EVENT_PRIORITY_NORMAL+20);
++        if (r < 0)
++                return r;
++
+         return 0;
+ }
+ 

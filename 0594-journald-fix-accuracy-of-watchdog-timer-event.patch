@@ -1,0 +1,31 @@
+From 5386dfa655da623cbd5ab1be6c9c66ad866fc17a Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Thu, 12 Nov 2015 12:33:10 +0100
+Subject: [PATCH] journald: fix accuracy of watchdog timer event
+
+Adding 3/4th of the watchdog frequency as accuracy on top of 1/2 of the
+watchdog frequency means we might end up at 5/4th of the frequency which
+means we might miss the message from time to time.
+
+Maybe fixes #1804
+
+(cherry picked from commit 4de2402b603ea2f518f451d06f09e15aeae54fab)
+
+Related: #1511565
+---
+ src/journal/journald-server.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
+index 6e7568b60..7c69061f4 100644
+--- a/src/journal/journald-server.c
++++ b/src/journal/journald-server.c
+@@ -1716,7 +1716,7 @@ static int server_connect_notify(Server *s) {
+         if (sd_watchdog_enabled(false, &s->watchdog_usec) > 0) {
+                 s->send_watchdog = true;
+ 
+-                r = sd_event_add_time(s->event, &s->watchdog_event_source, CLOCK_MONOTONIC, now(CLOCK_MONOTONIC) + s->watchdog_usec/2, s->watchdog_usec*3/4, dispatch_watchdog, s);
++                r = sd_event_add_time(s->event, &s->watchdog_event_source, CLOCK_MONOTONIC, now(CLOCK_MONOTONIC) + s->watchdog_usec/2, s->watchdog_usec/4, dispatch_watchdog, s);
+                 if (r < 0)
+                         return log_error_errno(r, "Failed to add watchdog time event: %m");
+         }

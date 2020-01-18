@@ -1,0 +1,276 @@
+From 5ec508cc5c13d831c93ce98d84b1d9cedb0117a7 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Mon, 1 Feb 2016 09:23:58 +0100
+Subject: [PATCH] sd-journal: introduce has_runtime_files and
+ has_persistent_files
+
+Also introduce sd_journal_has_runtime_files() and
+sd_journal_has_persistent_files() to the public API. These functions
+can be used to easily find out if the open journal files are runtime
+and/or persistent.
+
+Cherry-picked from: 39fd5b08a73f144a20202a665bd25cad51d8a90b
+Resolves: #1082179
+---
+ Makefile-man.am                      |  7 ++
+ man/sd-journal.xml                   |  8 ++-
+ man/sd_journal_has_runtime_files.xml | 95 ++++++++++++++++++++++++++++
+ src/journal/journal-internal.h       |  2 +
+ src/journal/sd-journal.c             | 29 ++++++---
+ src/systemd/sd-journal.h             |  3 +
+ 6 files changed, 133 insertions(+), 11 deletions(-)
+ create mode 100644 man/sd_journal_has_runtime_files.xml
+
+diff --git a/Makefile-man.am b/Makefile-man.am
+index 497be6612..7ec709c8b 100644
+--- a/Makefile-man.am
++++ b/Makefile-man.am
+@@ -40,6 +40,7 @@ MANPAGES += \
+ 	man/sd_journal_get_fd.3 \
+ 	man/sd_journal_get_realtime_usec.3 \
+ 	man/sd_journal_get_usage.3 \
++	man/sd_journal_has_runtime_files.3 \
+ 	man/sd_journal_next.3 \
+ 	man/sd_journal_open.3 \
+ 	man/sd_journal_print.3 \
+@@ -176,6 +177,7 @@ MANPAGES_ALIAS += \
+ 	man/sd_journal_get_events.3 \
+ 	man/sd_journal_get_monotonic_usec.3 \
+ 	man/sd_journal_get_timeout.3 \
++	man/sd_journal_has_persistent_files.3 \
+ 	man/sd_journal_next_skip.3 \
+ 	man/sd_journal_open_container.3 \
+ 	man/sd_journal_open_directory.3 \
+@@ -287,6 +289,7 @@ man/sd_journal_get_data_threshold.3: man/sd_journal_get_data.3
+ man/sd_journal_get_events.3: man/sd_journal_get_fd.3
+ man/sd_journal_get_monotonic_usec.3: man/sd_journal_get_realtime_usec.3
+ man/sd_journal_get_timeout.3: man/sd_journal_get_fd.3
++man/sd_journal_has_persistent_files.3: man/sd_journal_has_runtime_files.3
+ man/sd_journal_next_skip.3: man/sd_journal_next.3
+ man/sd_journal_open_container.3: man/sd_journal_open.3
+ man/sd_journal_open_directory.3: man/sd_journal_open.3
+@@ -500,6 +503,9 @@ man/sd_journal_get_monotonic_usec.html: man/sd_journal_get_realtime_usec.html
+ man/sd_journal_get_timeout.html: man/sd_journal_get_fd.html
+ 	$(html-alias)
+ 
++man/sd_journal_has_persistent_files.html: man/sd_journal_has_runtime_files.html
++	$(html-alias)
++
+ man/sd_journal_next_skip.html: man/sd_journal_next.html
+ 	$(html-alias)
+ 
+@@ -1727,6 +1733,7 @@ EXTRA_DIST += \
+ 	man/sd_journal_get_fd.xml \
+ 	man/sd_journal_get_realtime_usec.xml \
+ 	man/sd_journal_get_usage.xml \
++	man/sd_journal_has_runtime_files.xml \
+ 	man/sd_journal_next.xml \
+ 	man/sd_journal_open.xml \
+ 	man/sd_journal_print.xml \
+diff --git a/man/sd-journal.xml b/man/sd-journal.xml
+index 9b1a52207..a1185d372 100644
+--- a/man/sd-journal.xml
++++ b/man/sd-journal.xml
+@@ -81,9 +81,11 @@
+     <citerefentry><refentrytitle>sd_journal_get_cutoff_realtime_usec</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+     <citerefentry><refentrytitle>sd_journal_get_cutoff_monotonic_usec</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+     <citerefentry><refentrytitle>sd_journal_get_usage</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+-    <citerefentry><refentrytitle>sd_journal_get_catalog</refentrytitle><manvolnum>3</manvolnum></citerefentry>
++    <citerefentry><refentrytitle>sd_journal_get_catalog</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
++    <citerefentry><refentrytitle>sd_journal_get_fd</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
++    <citerefentry><refentrytitle>sd_journal_has_runtime_files</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+     and
+-    <citerefentry><refentrytitle>sd_journal_get_fd</refentrytitle><manvolnum>3</manvolnum></citerefentry>
++    <citerefentry><refentrytitle>sd_journal_has_persistent_files</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+     for more information about the functions implemented.</para>
+ 
+     <para>Command line access for submitting entries to the journal is
+@@ -116,6 +118,8 @@
+       <citerefentry><refentrytitle>sd_journal_get_fd</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+       <citerefentry><refentrytitle>sd_journal_query_unique</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+       <citerefentry><refentrytitle>sd_journal_get_catalog</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
++      <citerefentry><refentrytitle>sd_journal_has_runtime_files</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
++      <citerefentry><refentrytitle>sd_journal_has_persistent_files</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+       <citerefentry><refentrytitle>journalctl</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+       <citerefentry><refentrytitle>sd-id128</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+       <citerefentry project='die-net'><refentrytitle>pkg-config</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+diff --git a/man/sd_journal_has_runtime_files.xml b/man/sd_journal_has_runtime_files.xml
+new file mode 100644
+index 000000000..237e64920
+--- /dev/null
++++ b/man/sd_journal_has_runtime_files.xml
+@@ -0,0 +1,95 @@
++<?xml version='1.0'?> <!--*-nxml-*-->
++<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
++  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
++
++<!--
++  This file is part of systemd.
++
++  Copyright 2016 Jan Synáček
++
++  systemd is free software; you can redistribute it and/or modify it
++  under the terms of the GNU Lesser General Public License as published by
++  the Free Software Foundation; either version 2.1 of the License, or
++  (at your option) any later version.
++
++  systemd is distributed in the hope that it will be useful, but
++  WITHOUT ANY WARRANTY; without even the implied warranty of
++  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++  Lesser General Public License for more details.
++
++  You should have received a copy of the GNU Lesser General Public License
++  along with systemd; If not, see <http://www.gnu.org/licenses/>.
++-->
++
++<refentry id="sd_journal_has_runtime_files">
++
++  <refentryinfo>
++    <title>sd_journal_has_runtime_files</title>
++    <productname>systemd</productname>
++
++    <authorgroup>
++      <author>
++        <contrib>Developer</contrib>
++        <firstname>Jan</firstname>
++        <surname>Synáček</surname>
++        <email>jan.synacek@gmail.com</email>
++      </author>
++    </authorgroup>
++  </refentryinfo>
++
++  <refmeta>
++    <refentrytitle>sd_journal_has_runtime_files</refentrytitle>
++    <manvolnum>3</manvolnum>
++  </refmeta>
++
++  <refnamediv>
++    <refname>sd_journal_has_runtime_files</refname>
++    <refname>sd_journal_has_persistent_files</refname>
++    <refpurpose>Query availability of runtime or persistent journal files.</refpurpose>
++  </refnamediv>
++
++  <refsynopsisdiv>
++    <funcsynopsis>
++      <funcsynopsisinfo>#include &lt;systemd/sd-journal.h&gt;</funcsynopsisinfo>
++
++      <funcprototype>
++        <funcdef>int <function>sd_journal_has_runtime_files</function></funcdef>
++        <paramdef>sd_journal *<parameter>j</parameter></paramdef>
++      </funcprototype>
++
++      <funcprototype>
++        <funcdef>int <function>sd_journal_has_persistent_files</function></funcdef>
++        <paramdef>sd_journal *<parameter>j</parameter></paramdef>
++      </funcprototype>
++
++    </funcsynopsis>
++  </refsynopsisdiv>
++
++  <refsect1>
++    <title>Description</title>
++
++    <para><function>sd_journal_has_runtime_files()</function> returns a positive value
++    if runtime journal files (present in /run/systemd/journal/) have been found.
++    Otherwise returns 0.</para>
++
++    <para><function>sd_journal_has_persistent_files()</function> returns a positive value
++    if persistent journal files (present in /var/log/journal/) have been found.
++    Otherwise returns 0.</para>
++  </refsect1>
++
++  <refsect1>
++    <title>Return value</title>
++    <para>Both <function>sd_journal_has_runtime_files()</function>
++    and <function>sd_journal_has_persistent_files()</function> return -EINVAL
++    if their argument is NULL.
++    </para>
++  </refsect1>
++
++  <refsect1>
++    <title>See Also</title>
++    <para>
++      <citerefentry><refentrytitle>sd-journal</refentrytitle><manvolnum>3</manvolnum></citerefentry>
++    </para>
++  </refsect1>
++
++</refentry>
+diff --git a/src/journal/journal-internal.h b/src/journal/journal-internal.h
+index b51ecdb60..115d7776d 100644
+--- a/src/journal/journal-internal.h
++++ b/src/journal/journal-internal.h
+@@ -115,6 +115,8 @@ struct sd_journal {
+                                   removed, and there were no more
+                                   files, so sd_j_enumerate_unique
+                                   will return a value equal to 0. */
++        bool has_runtime_files:1;
++        bool has_persistent_files:1;
+ 
+         size_t data_threshold;
+ 
+diff --git a/src/journal/sd-journal.c b/src/journal/sd-journal.c
+index 9b9e8ac85..20456c3a1 100644
+--- a/src/journal/sd-journal.c
++++ b/src/journal/sd-journal.c
+@@ -1230,8 +1230,7 @@ static int add_any_file(sd_journal *j, const char *path) {
+ }
+ 
+ static int add_file(sd_journal *j, const char *prefix, const char *filename) {
+-        _cleanup_free_ char *path = NULL;
+-        int r;
++        char *path = NULL;
+ 
+         assert(j);
+         assert(prefix);
+@@ -1241,14 +1240,14 @@ static int add_file(sd_journal *j, const char *prefix, const char *filename) {
+             !file_type_wanted(j->flags, filename))
+                 return 0;
+ 
+-        path = strjoin(prefix, "/", filename, NULL);
+-        if (!path)
+-                return -ENOMEM;
++        path = strjoina(prefix, "/", filename);
+ 
+-        r = add_any_file(j, path);
+-        if (r == -ENOENT)
+-                return 0;
+-        return r;
++        if (!j->has_runtime_files && path_startswith(path, "/run/log/journal"))
++                j->has_runtime_files = true;
++        else if (!j->has_persistent_files && path_startswith(path, "/var/log/journal"))
++                j->has_persistent_files = true;
++
++        return add_any_file(j, path);
+ }
+ 
+ static int remove_file(sd_journal *j, const char *prefix, const char *filename) {
+@@ -2616,3 +2615,15 @@ _public_ int sd_journal_get_data_threshold(sd_journal *j, size_t *sz) {
+         *sz = j->data_threshold;
+         return 0;
+ }
++
++_public_ int sd_journal_has_runtime_files(sd_journal *j) {
++        assert_return(j, -EINVAL);
++
++        return j->has_runtime_files;
++}
++
++_public_ int sd_journal_has_persistent_files(sd_journal *j) {
++        assert_return(j, -EINVAL);
++
++        return j->has_persistent_files;
++}
+diff --git a/src/systemd/sd-journal.h b/src/systemd/sd-journal.h
+index 00237a215..d5fd46eea 100644
+--- a/src/systemd/sd-journal.h
++++ b/src/systemd/sd-journal.h
+@@ -138,6 +138,9 @@ int sd_journal_reliable_fd(sd_journal *j);
+ int sd_journal_get_catalog(sd_journal *j, char **text);
+ int sd_journal_get_catalog_for_message_id(sd_id128_t id, char **text);
+ 
++int sd_journal_has_runtime_files(sd_journal *j);
++int sd_journal_has_persistent_files(sd_journal *j);
++
+ /* the inverse condition avoids ambiguity of danling 'else' after the macro */
+ #define SD_JOURNAL_FOREACH(j)                                           \
+         if (sd_journal_seek_head(j) < 0) { }                            \

@@ -1,0 +1,27 @@
+From fa22d8e9697a0a896007998fdf2cabe7baf98bec Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Tue, 10 Jan 2017 17:36:46 +1000
+Subject: [PATCH] udev: add ID_INPUT_SWITCH for devices with switch capability
+ (#5057)
+
+(cherry picked from commit 64083a6078630372623bb1013a45d3bf31d8a836)
+
+Resolves: #1597240
+---
+ src/udev/udev-builtin-input_id.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/udev/udev-builtin-input_id.c b/src/udev/udev-builtin-input_id.c
+index 46f1c539d..d6ae07304 100644
+--- a/src/udev/udev-builtin-input_id.c
++++ b/src/udev/udev-builtin-input_id.c
+@@ -250,6 +250,9 @@ static int builtin_input_id(struct udev_device *dev, int argc, char *argv[], boo
+                 get_cap_mask(dev, pdev, "capabilities/key", bitmask_key, sizeof(bitmask_key), test);
+                 test_pointers(dev, bitmask_ev, bitmask_abs, bitmask_key, bitmask_rel, test);
+                 test_key(dev, bitmask_ev, bitmask_key, test);
++
++                if (test_bit(EV_SW, bitmask_ev))
++                        udev_builtin_add_property(dev, test, "ID_INPUT_SWITCH", "1");
+         }
+ 
+         devnode = udev_device_get_devnode(dev);

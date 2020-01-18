@@ -1,0 +1,77 @@
+From 80f0fa4a77bfceab3bae7cf67f44b8f899b22427 Mon Sep 17 00:00:00 2001
+From: Vito Caputo <vcaputo@gnugeneration.com>
+Date: Tue, 18 Jul 2017 18:00:37 +0200
+Subject: [PATCH] journal: implicitly flush to var on recovery (#4028)
+
+When the system journal becomes re-opened post-flush with the runtime
+journal open, it implies we've recovered from something like an ENOSPC
+situation where the system journal rotate had failed, leaving the system
+journal closed, causing the runtime journal to be opened post-flush.
+
+For the duration of the unavailable system journal, we log to the
+runtime journal.  But when the system journal gets opened (space made
+available, for example), we need to close the runtime journal before new
+journal writes will go to the system journal.  Calling
+server_flush_to_var() after opening the system journal with a runtime
+journal present, post-flush, achieves this while preserving the runtime
+journal's contents in the system journal.
+
+The combination of the present flushed flag file and the runtime journal
+being open is a state where we should be logging to the system journal,
+so it's appropriate to resume doing so once we've successfully opened
+the system journal.
+
+(cherry picked from commit 929eeb5498e8ae87e05ae683c6d3014d4b59056d)
+
+Related: #1364092
+---
+ src/journal/journald-server.c | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
+index 2b7ecd09a..3e9412d57 100644
+--- a/src/journal/journald-server.c
++++ b/src/journal/journald-server.c
+@@ -923,6 +923,7 @@ static int system_journal_open(Server *s, bool flush_requested) {
+         char *fn;
+         sd_id128_t machine;
+         char ids[33];
++        bool flushed = false;
+ 
+         r = sd_id128_get_machine(&machine);
+         if (r < 0)
+@@ -933,7 +934,7 @@ static int system_journal_open(Server *s, bool flush_requested) {
+         if (!s->system_journal &&
+             (s->storage == STORAGE_PERSISTENT || s->storage == STORAGE_AUTO) &&
+             (flush_requested
+-             || access("/run/systemd/journal/flushed", F_OK) >= 0)) {
++             || (flushed = (access("/run/systemd/journal/flushed", F_OK) >= 0)))) {
+ 
+                 /* If in auto mode: first try to create the machine
+                  * path, but not the prefix.
+@@ -958,6 +959,16 @@ static int system_journal_open(Server *s, bool flush_requested) {
+ 
+                         r = 0;
+                 }
++
++                /* If the runtime journal is open, and we're post-flush, we're
++                 * recovering from a failed system journal rotate (ENOSPC)
++                 * for which the runtime journal was reopened.
++                 *
++                 * Perform an implicit flush to var, leaving the runtime
++                 * journal closed, now that the system journal is back.
++                 */
++                if (s->runtime_journal && flushed)
++                        (void) server_flush_to_var(s);
+         }
+ 
+         if (!s->runtime_journal &&
+@@ -1230,7 +1241,7 @@ static int dispatch_sigusr1(sd_event_source *es, const struct signalfd_siginfo *
+ 
+         log_info("Received request to flush runtime journal from PID %"PRIu32, si->ssi_pid);
+ 
+-        server_flush_to_var(s);
++        (void) server_flush_to_var(s);
+         server_sync(s);
+         server_vacuum(s);
+ 

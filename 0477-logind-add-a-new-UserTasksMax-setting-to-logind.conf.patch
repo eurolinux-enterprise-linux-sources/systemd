@@ -1,0 +1,373 @@
+From ff5349960f1cf7af5404b0f765c57eb386c91216 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 13 Nov 2015 18:25:02 +0100
+Subject: [PATCH] logind: add a new UserTasksMax= setting to logind.conf
+
+This new setting configures the TasksMax= field for the slice objects we
+create for each user.
+
+This alters logind to create the slice unit as transient unit explicitly
+instead of relying on implicit generation of slice units by simply
+starting them. This also enables us to set a friendly description for
+slice units that way.
+
+Cherry-picked from: 90558f315844ec35e3fd4f1a19ac38c8721c9354
+Conflicts:
+	src/login/logind-dbus.c
+	src/login/logind-user.c
+	src/login/logind.conf
+	src/login/logind.h
+
+Resolves: #1337244
+---
+ man/logind.conf.xml          | 15 +++++-
+ src/login/logind-dbus.c      | 94 +++++++++++++++++++++++++++++++++++-
+ src/login/logind-gperf.gperf |  1 +
+ src/login/logind-session.c   | 25 ++++++----
+ src/login/logind-session.h   |  3 +-
+ src/login/logind-user.c      | 41 +++++++++++-----
+ src/login/logind.c           |  1 +
+ src/login/logind.conf        |  1 +
+ src/login/logind.h           |  4 +-
+ 9 files changed, 160 insertions(+), 25 deletions(-)
+
+diff --git a/man/logind.conf.xml b/man/logind.conf.xml
+index 54651f07d..bcc8ee975 100644
+--- a/man/logind.conf.xml
++++ b/man/logind.conf.xml
+@@ -1,4 +1,4 @@
+-<?xml version='1.0'?> <!--*-nxml-*-->
++<?xml version='1.0'?> <!--*- Mode: nxml; nxml-child-indent: 2; indent-tabs-mode: nil -*-->
+ <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+   "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+ 
+@@ -262,7 +262,18 @@
+         limit relative to the amount of physical RAM. Defaults to 10%.
+         Note that this size is a safety limit only. As each runtime
+         directory is a tmpfs file system, it will only consume as much
+-        memory as is needed. </para></listitem>
++        memory as is needed.</para></listitem>
++      </varlistentry>
++
++      <varlistentry>
++        <term><varname>UserTasksMax=</varname></term>
++
++        <listitem><para>Sets the maximum number of OS tasks each user
++        may run concurrently. This controls the
++        <varname>TasksMax=</varname> setting of the per-user slice
++        unit, see
++        <citerefentry><refentrytitle>systemd.resource-control</refentrytitle><manvolnum>5</manvolnum></citerefentry>
++        for details.</para></listitem>
+       </varlistentry>
+ 
+       <varlistentry>
+diff --git a/src/login/logind-dbus.c b/src/login/logind-dbus.c
+index fb84e92e5..63b9a0df3 100644
+--- a/src/login/logind-dbus.c
++++ b/src/login/logind-dbus.c
+@@ -2325,13 +2325,101 @@ int manager_dispatch_delayed(Manager *manager) {
+         return 1;
+ }
+ 
++int manager_start_slice(
++                Manager *manager,
++                const char *slice,
++                const char *description,
++                const char *after,
++                const char *after2,
++                uint64_t tasks_max,
++                sd_bus_error *error,
++                char **job) {
++
++        _cleanup_bus_message_unref_ sd_bus_message *m = NULL, *reply = NULL;
++        int r;
++
++        assert(manager);
++        assert(slice);
++
++        r = sd_bus_message_new_method_call(
++                        manager->bus,
++                        &m,
++                        "org.freedesktop.systemd1",
++                        "/org/freedesktop/systemd1",
++                        "org.freedesktop.systemd1.Manager",
++                        "StartTransientUnit");
++        if (r < 0)
++                return r;
++
++        r = sd_bus_message_append(m, "ss", strempty(slice), "fail");
++        if (r < 0)
++                return r;
++
++        r = sd_bus_message_open_container(m, 'a', "(sv)");
++        if (r < 0)
++                return r;
++
++        if (!isempty(description)) {
++                r = sd_bus_message_append(m, "(sv)", "Description", "s", description);
++                if (r < 0)
++                        return r;
++        }
++
++        if (!isempty(after)) {
++                r = sd_bus_message_append(m, "(sv)", "After", "as", 1, after);
++                if (r < 0)
++                        return r;
++        }
++
++        if (!isempty(after2)) {
++                r = sd_bus_message_append(m, "(sv)", "After", "as", 1, after2);
++                if (r < 0)
++                        return r;
++        }
++
++        r = sd_bus_message_append(m, "(sv)", "TasksMax", "t", tasks_max);
++        if (r < 0)
++                return r;
++
++        r = sd_bus_message_close_container(m);
++        if (r < 0)
++                return r;
++
++        r = sd_bus_message_append(m, "a(sa(sv))", 0);
++        if (r < 0)
++                return r;
++
++        r = sd_bus_call(manager->bus, m, 0, error, &reply);
++        if (r < 0)
++                return r;
++
++        if (job) {
++                const char *j;
++                char *copy;
++
++                r = sd_bus_message_read(reply, "o", &j);
++                if (r < 0)
++                        return r;
++
++                copy = strdup(j);
++                if (!copy)
++                        return -ENOMEM;
++
++                *job = copy;
++        }
++
++        return 1;
++}
++
+ int manager_start_scope(
+                 Manager *manager,
+                 const char *scope,
+                 pid_t pid,
+                 const char *slice,
+                 const char *description,
+-                const char *after, const char *after2,
++                const char *after,
++                const char *after2,
++                uint64_t tasks_max,
+                 sd_bus_error *error,
+                 char **job) {
+ 
+@@ -2399,6 +2487,10 @@ int manager_start_scope(
+         if (r < 0)
+                 return r;
+ 
++        r = sd_bus_message_append(m, "(sv)", "TasksMax", "t", tasks_max);
++        if (r < 0)
++                return r;
++
+         r = sd_bus_message_close_container(m);
+         if (r < 0)
+                 return r;
+diff --git a/src/login/logind-gperf.gperf b/src/login/logind-gperf.gperf
+index 62460673b..8a064e2a9 100644
+--- a/src/login/logind-gperf.gperf
++++ b/src/login/logind-gperf.gperf
+@@ -33,3 +33,4 @@ Login.IdleAction,                  config_parse_handle_action, 0, offsetof(Manag
+ Login.IdleActionSec,               config_parse_sec,           0, offsetof(Manager, idle_action_usec)
+ Login.RuntimeDirectorySize,        config_parse_tmpfs_size,    0, offsetof(Manager, runtime_dir_size)
+ Login.RemoveIPC,                   config_parse_bool,          0, offsetof(Manager, remove_ipc)
++Login.UserTasksMax,                config_parse_uint64,        0, offsetof(Manager, user_tasks_max)
+diff --git a/src/login/logind-session.c b/src/login/logind-session.c
+index 746e50aa5..4575a029f 100644
+--- a/src/login/logind-session.c
++++ b/src/login/logind-session.c
+@@ -510,21 +510,28 @@ static int session_start_scope(Session *s) {
+ 
+         if (!s->scope) {
+                 _cleanup_bus_error_free_ sd_bus_error error = SD_BUS_ERROR_NULL;
+-                _cleanup_free_ char *description = NULL;
+                 char *scope, *job = NULL;
+-
+-                description = strjoin("Session ", s->id, " of user ", s->user->name, NULL);
+-                if (!description)
+-                        return log_oom();
++                const char *description;
+ 
+                 scope = strjoin("session-", s->id, ".scope", NULL);
+                 if (!scope)
+                         return log_oom();
+ 
+-                r = manager_start_scope(s->manager, scope, s->leader, s->user->slice, description, "systemd-logind.service", "systemd-user-sessions.service", &error, &job);
++                description = strjoina("Session ", s->id, " of user ", s->user->name, NULL);
++
++                r = manager_start_scope(
++                                s->manager,
++                                scope,
++                                s->leader,
++                                s->user->slice,
++                                description,
++                                "systemd-logind.service",
++                                "systemd-user-sessions.service",
++                                (uint64_t) -1, /* disable TasksMax= for the scope, rely on the slice setting for it */
++                                &error,
++                                &job);
+                 if (r < 0) {
+-                        log_error("Failed to start session scope %s: %s %s",
+-                                  scope, bus_error_message(&error, r), error.name);
++                        log_error_errno(r, "Failed to start session scope %s: %s", scope, bus_error_message(&error, r));
+                         free(scope);
+                         return r;
+                 } else {
+@@ -536,7 +543,7 @@ static int session_start_scope(Session *s) {
+         }
+ 
+         if (s->scope)
+-                hashmap_put(s->manager->session_units, s->scope, s);
++                (void) hashmap_put(s->manager->session_units, s->scope, s);
+ 
+         return 0;
+ }
+diff --git a/src/login/logind-session.h b/src/login/logind-session.h
+index 5002b6868..d662082d8 100644
+--- a/src/login/logind-session.h
++++ b/src/login/logind-session.h
+@@ -115,7 +115,8 @@ struct Session {
+ 
+         bool in_gc_queue:1;
+         bool started:1;
+-        bool stopping:1;
++
++        bool stopping;
+ 
+         sd_bus_message *create_message;
+ 
+diff --git a/src/login/logind-user.c b/src/login/logind-user.c
+index 97eb4feca..4298704ce 100644
+--- a/src/login/logind-user.c
++++ b/src/login/logind-user.c
+@@ -33,6 +33,7 @@
+ #include "special.h"
+ #include "unit-name.h"
+ #include "bus-util.h"
++#include "bus-common-errors.h"
+ #include "bus-error.h"
+ #include "conf-parser.h"
+ #include "clean-ipc.h"
+@@ -367,34 +368,52 @@ fail:
+ }
+ 
+ static int user_start_slice(User *u) {
+-        char *job;
+         int r;
+ 
+         assert(u);
+ 
+         if (!u->slice) {
+                 _cleanup_bus_error_free_ sd_bus_error error = SD_BUS_ERROR_NULL;
+-                char lu[DECIMAL_STR_MAX(uid_t) + 1], *slice;
+-                sprintf(lu, UID_FMT, u->uid);
++                char lu[DECIMAL_STR_MAX(uid_t) + 1], *slice, *job;
++                const char *description;
++
++                free(u->slice_job);
++                u->slice_job = NULL;
+ 
++                xsprintf(lu, UID_FMT, u->uid);
+                 r = build_subslice(SPECIAL_USER_SLICE, lu, &slice);
+                 if (r < 0)
+-                        return r;
+-
+-                r = manager_start_unit(u->manager, slice, &error, &job);
++                        return log_error_errno(r, "Failed to build slice name: %m");
++
++                description = strjoina("User Slice of ", u->name);
++
++                r = manager_start_slice(
++                                u->manager,
++                                slice,
++                                description,
++                                "systemd-logind.service",
++                                "systemd-user-sessions.service",
++                                u->manager->user_tasks_max,
++                                &error,
++                                &job);
+                 if (r < 0) {
+-                        log_error("Failed to start user slice: %s", bus_error_message(&error, r));
+-                        free(slice);
++
++                        if (sd_bus_error_has_name(&error, BUS_ERROR_UNIT_EXISTS))
++                                /* The slice already exists? If so, that's fine, let's just reuse it */
++                                u->slice = slice;
++                        else {
++                                log_error_errno(r, "Failed to start user slice %s, ignoring: %s (%s)", slice, bus_error_message(&error, r), error.name);
++                                free(slice);
++                                /* we don't fail due to this, let's try to continue */
++                        }
+                 } else {
+                         u->slice = slice;
+-
+-                        free(u->slice_job);
+                         u->slice_job = job;
+                 }
+         }
+ 
+         if (u->slice)
+-                hashmap_put(u->manager->user_units, u->slice, u);
++                (void) hashmap_put(u->manager->user_units, u->slice, u);
+ 
+         return 0;
+ }
+diff --git a/src/login/logind.c b/src/login/logind.c
+index e8d0669bb..16c931c3e 100644
+--- a/src/login/logind.c
++++ b/src/login/logind.c
+@@ -63,6 +63,7 @@ Manager *manager_new(void) {
+         m->idle_action_not_before_usec = now(CLOCK_MONOTONIC);
+ 
+         m->runtime_dir_size = PAGE_ALIGN((size_t) (physical_memory() / 10)); /* 10% */
++        m->user_tasks_max = (uint64_t) -1;
+ 
+         m->devices = hashmap_new(&string_hash_ops);
+         m->seats = hashmap_new(&string_hash_ops);
+diff --git a/src/login/logind.conf b/src/login/logind.conf
+index be8d7dff2..d33e0b34d 100644
+--- a/src/login/logind.conf
++++ b/src/login/logind.conf
+@@ -31,3 +31,4 @@
+ #IdleActionSec=30min
+ #RuntimeDirectorySize=10%
+ #RemoveIPC=no
++#UserTasksMax=
+diff --git a/src/login/logind.h b/src/login/logind.h
+index e0cb7d023..8503eb24d 100644
+--- a/src/login/logind.h
++++ b/src/login/logind.h
+@@ -128,6 +128,7 @@ struct Manager {
+         sd_event_source *lid_switch_ignore_event_source;
+ 
+         size_t runtime_dir_size;
++        uint64_t user_tasks_max;
+ };
+ 
+ Manager *manager_new(void);
+@@ -176,7 +177,8 @@ int manager_send_changed(Manager *manager, const char *property, ...) _sentinel_
+ 
+ int manager_dispatch_delayed(Manager *manager);
+ 
+-int manager_start_scope(Manager *manager, const char *scope, pid_t pid, const char *slice, const char *description, const char *after, const char *after2, sd_bus_error *error, char **job);
++int manager_start_slice(Manager *manager, const char *slice, const char *description, const char *after, const char *after2, uint64_t tasks_max, sd_bus_error *error, char **job);
++int manager_start_scope(Manager *manager, const char *scope, pid_t pid, const char *slice, const char *description, const char *after, const char *after2, uint64_t tasks_max, sd_bus_error *error, char **job);
+ int manager_start_unit(Manager *manager, const char *unit, sd_bus_error *error, char **job);
+ int manager_stop_unit(Manager *manager, const char *unit, sd_bus_error *error, char **job);
+ int manager_abandon_scope(Manager *manager, const char *scope, sd_bus_error *error);

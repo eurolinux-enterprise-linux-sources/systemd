@@ -1,0 +1,27 @@
+From 735f6a0d81b4bbefd0cb57bbfd51f0f86e4a703e Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 22 Apr 2016 17:31:40 +0200
+Subject: [PATCH] run: make --slice= work in conjunction with --scope
+
+Fixes: #2991
+(cherry picked from commit 37e605f934892bf7458eecaeb01fc682e33cc2ad)
+Resolves: #1343904
+---
+ src/run/run.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/run/run.c b/src/run/run.c
+index 468034284..bbb542b65 100644
+--- a/src/run/run.c
++++ b/src/run/run.c
+@@ -595,6 +595,10 @@ static int transient_scope_set_properties(sd_bus_message *m) {
+         if (r < 0)
+                 return r;
+ 
++        r = transient_cgroup_set_properties(m);
++        if (r < 0)
++                return r;
++
+         r = sd_bus_message_append(m, "(sv)", "PIDs", "au", 1, (uint32_t) getpid());
+         if (r < 0)
+                 return r;

@@ -1,0 +1,42 @@
+From 010b80c6215da7357114911f46742939772e18fc Mon Sep 17 00:00:00 2001
+From: Michal Schmidt <mschmidt@redhat.com>
+Date: Tue, 21 Jul 2015 16:20:18 +0200
+Subject: [PATCH] core: log completion of remaining job types
+
+JOB_RESTART and failed JOB_VERIFY_ACTIVE completions were printed to
+console but not to the log.
+
+(cherry picked from commit 4f29c6fea6a6c5c2c9406ad091cd6f56da21e2cb)
+
+Related: #1506256
+---
+ src/core/job.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/src/core/job.c b/src/core/job.c
+index 5e582b3d3..086050aa7 100644
+--- a/src/core/job.c
++++ b/src/core/job.c
+@@ -743,8 +743,7 @@ static void job_log_status_message(Unit *u, JobType t, JobResult result) {
+                                 LOG_MESSAGE("%s", buf),
+                                 "RESULT=%s", job_result_to_string(result),
+                                 NULL);
+-
+-        } else if (t == JOB_STOP)
++        } else if (t == JOB_STOP || t == JOB_RESTART)
+                 log_unit_struct(u->id,
+                                 result == JOB_DONE ? LOG_INFO : LOG_ERR,
+                                 LOG_MESSAGE_ID(SD_MESSAGE_UNIT_STOPPED),
+@@ -759,6 +758,12 @@ static void job_log_status_message(Unit *u, JobType t, JobResult result) {
+                                 LOG_MESSAGE("%s", buf),
+                                 "RESULT=%s", job_result_to_string(result),
+                                 NULL);
++        else
++                log_unit_struct(u->id,
++                                result == JOB_DONE ? LOG_INFO : LOG_ERR,
++                                LOG_MESSAGE("%s", buf),
++                                "RESULT=%s", job_result_to_string(result),
++                                NULL);
+ }
+ 
+ static void job_emit_status_message(Unit *u, JobType t, JobResult result) {

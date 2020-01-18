@@ -1,0 +1,46 @@
+From 2520d152da83096b42fe7d27cf0bf97a62b50fac Mon Sep 17 00:00:00 2001
+From: Michael Gebetsroither <michael@mgeb.org>
+Date: Thu, 17 Sep 2015 22:54:13 +0200
+Subject: [PATCH] load-fragment: resolve specifiers in RuntimeDirectory
+
+Cherry-picked from: 9b5864d
+Resolves: #1428110
+---
+ src/core/load-fragment.c | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index c450fe2c7..6fc4d745d 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -3384,6 +3384,7 @@ int config_parse_runtime_directory(
+                 void *userdata) {
+ 
+         char***rt = data;
++        Unit *u = userdata;
+         const char *word, *state;
+         size_t l;
+         int r;
+@@ -3401,12 +3402,19 @@ int config_parse_runtime_directory(
+         }
+ 
+         FOREACH_WORD_QUOTED(word, l, rvalue, state) {
+-                _cleanup_free_ char *n;
++                _cleanup_free_ char *t = NULL, *n = NULL;
+ 
+-                n = strndup(word, l);
+-                if (!n)
++                t = strndup(word, l);
++                if (!t)
+                         return log_oom();
+ 
++                r = unit_name_printf(u, t, &n);
++                if (r < 0) {
++                        log_syntax(unit, LOG_ERR, filename, line, -r,
++                                   "Failed to resolve specifiers, ignoring: %s", strerror(-r));
++                        continue;
++                }
++
+                 if (!filename_is_valid(n)) {
+                         log_syntax(unit, LOG_ERR, filename, line, EINVAL,
+                                    "Runtime directory is not valid, ignoring assignment: %s", rvalue);

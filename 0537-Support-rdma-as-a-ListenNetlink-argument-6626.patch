@@ -1,0 +1,28 @@
+From db66a909c0e4ca5d05a0dfa84734c1760ae41e3b Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Mon, 25 Sep 2017 10:44:19 +0200
+Subject: [PATCH] Support 'rdma' as a ListenNetlink= argument (#6626)
+
+NETLINK_RDMA has been in the kernel since v3.0.
+
+(cherry-picked from commit 5570d7f9561294271591881cf9a249d574069c30)
+
+Resolves: #1494610
+---
+ src/shared/socket-util.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/shared/socket-util.c b/src/shared/socket-util.c
+index 79d1582d4..baab6353e 100644
+--- a/src/shared/socket-util.c
++++ b/src/shared/socket-util.c
+@@ -725,7 +725,8 @@ static const char* const netlink_family_table[] = {
+         [NETLINK_KOBJECT_UEVENT] = "kobject-uevent",
+         [NETLINK_GENERIC] = "generic",
+         [NETLINK_SCSITRANSPORT] = "scsitransport",
+-        [NETLINK_ECRYPTFS] = "ecryptfs"
++        [NETLINK_ECRYPTFS] = "ecryptfs",
++        [NETLINK_RDMA] = "rdma",
+ };
+ 
+ DEFINE_STRING_TABLE_LOOKUP_WITH_FALLBACK(netlink_family, int, INT_MAX);

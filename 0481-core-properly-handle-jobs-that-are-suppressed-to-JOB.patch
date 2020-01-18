@@ -1,0 +1,31 @@
+From b5ed9900d9a02abd78bfb151932748725b7c0bdb Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Thu, 21 May 2015 20:39:23 +0200
+Subject: [PATCH] core: properly handle jobs that are suppressed to JOB_NOPs
+ when propagating restarts
+
+Cherry-picked from: 48894cd0
+Resolves: #1436021
+---
+ src/core/transaction.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/src/core/transaction.c b/src/core/transaction.c
+index 34df15718..66bbb6066 100644
+--- a/src/core/transaction.c
++++ b/src/core/transaction.c
+@@ -1023,8 +1023,13 @@ int transaction_add_job_and_dependencies(
+ 
+                         for (j = 0; j < ELEMENTSOF(propagate_deps); j++)
+                                 SET_FOREACH(dep, ret->unit->dependencies[propagate_deps[j]], i) {
++                                        JobType nt;
+ 
+-                                        r = transaction_add_job_and_dependencies(tr, job_type_collapse(ptype, dep), dep, ret, true, override, false, false, ignore_order, e);
++                                        nt = job_type_collapse(ptype, dep);
++                                        if (nt == JOB_NOP)
++                                                continue;
++
++                                        r = transaction_add_job_and_dependencies(tr, nt, dep, ret, true, override, false, false, ignore_order, e);
+                                         if (r < 0) {
+                                                 if (r != -EBADR)
+                                                         goto fail;

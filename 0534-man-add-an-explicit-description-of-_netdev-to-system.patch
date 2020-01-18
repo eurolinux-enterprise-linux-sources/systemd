@@ -1,0 +1,41 @@
+From eb628c9f0ec9dcaec41dadc7ff594c8420b78a71 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Tue, 5 Sep 2017 11:20:14 +0200
+Subject: [PATCH] man: add an explicit description of _netdev to
+ systemd.mount(5)
+
+It was mentioned in passing, but having it in the list of options is also
+nice.
+
+Cherry-picked from: 0f00528db4e941503ec8cb5052367b17a8b566ba
+Resolves: #1384014
+---
+ man/systemd.mount.xml | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/man/systemd.mount.xml b/man/systemd.mount.xml
+index 04ed1e1cf..dfa437b5d 100644
+--- a/man/systemd.mount.xml
++++ b/man/systemd.mount.xml
+@@ -202,6 +202,21 @@
+         setting in a unit file.</para>
+         </listitem>
+       </varlistentry>
++      <varlistentry>
++        <term><option>_netdev</option></term>
++
++        <listitem><para>Normally the file system type is used to determine if a
++        mount is a "network mount", i.e. if it should only be started after the
++        network is available. Using this option overrides this detection and
++        specifies that the mount requires network.</para>
++
++        <para>Network mount units are ordered between <filename>remote-fs-pre.target</filename>
++        and <filename>remote-fs.target</filename>, instead of
++        <filename>local-fs-pre.target</filename> and <filename>local-fs.target</filename>.
++        They also pull in <filename>network-online.target</filename> and are ordered after
++        it and <filename>network.target</filename>.</para>
++        </listitem>
++      </varlistentry>
+ 
+       <varlistentry>
+         <term><option>noauto</option></term>

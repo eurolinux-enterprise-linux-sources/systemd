@@ -1,0 +1,26 @@
+From 2a62c3c66698148f1439176bd6ca5a946b8de550 Mon Sep 17 00:00:00 2001
+From: Tom Lyon <pugs@drivescale.com>
+Date: Mon, 21 Sep 2015 14:36:32 -0700
+Subject: [PATCH] Fixup WWN bytes for big-endian systems
+
+Cherry-picked from: cf22cddcfd07d10fecd7b03ef465e957054daec2
+Resolves: #1273306
+---
+ src/udev/ata_id/ata_id.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/udev/ata_id/ata_id.c b/src/udev/ata_id/ata_id.c
+index 4adec4496..ef05fba26 100644
+--- a/src/udev/ata_id/ata_id.c
++++ b/src/udev/ata_id/ata_id.c
+@@ -485,6 +485,10 @@ int main(int argc, char *argv[])
+                 disk_identify_fixup_uint16(identify.byte,  90);     /* time required for enhanced SECURITY ERASE UNIT */
+                 disk_identify_fixup_uint16(identify.byte,  91);     /* current APM values */
+                 disk_identify_fixup_uint16(identify.byte,  94);     /* current AAM value */
++                disk_identify_fixup_uint16(identify.byte, 108);     /* wwn */
++                disk_identify_fixup_uint16(identify.byte, 109);     /* wwn */
++                disk_identify_fixup_uint16(identify.byte, 110);     /* wwn */
++                disk_identify_fixup_uint16(identify.byte, 111);     /* wwn */
+                 disk_identify_fixup_uint16(identify.byte, 128);     /* device lock function */
+                 disk_identify_fixup_uint16(identify.byte, 217);     /* nominal media rotation rate */
+                 memcpy(&id, identify.byte, sizeof id);

@@ -1,0 +1,26 @@
+From 1c6075b30786cefc73e41b2f1f5459006f37b616 Mon Sep 17 00:00:00 2001
+From: Yu Watanabe <watanabe.yu+github@gmail.com>
+Date: Fri, 15 Jan 2016 15:19:52 +0900
+Subject: [PATCH] journal-remote: change owner of /var/log/journal/remote and
+ create /var/lib/systemd/journal-upload
+
+Cherry-picked from: dcdd4411407067fa1e464dc26ab85ae598fcad7d
+Resolves: #1327303
+---
+ tmpfiles.d/systemd-remote.conf | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/tmpfiles.d/systemd-remote.conf b/tmpfiles.d/systemd-remote.conf
+index 1b8973a88..e19230f64 100644
+--- a/tmpfiles.d/systemd-remote.conf
++++ b/tmpfiles.d/systemd-remote.conf
+@@ -7,5 +7,7 @@
+ 
+ # See tmpfiles.d(5) for details
+ 
+-z /var/log/journal/remote 2755 root systemd-journal-remote - -
+-z /run/log/journal/remote 2755 root systemd-journal-remote - -
++d /var/lib/systemd/journal-upload 0755 systemd-journal-upload systemd-journal-upload - -
++
++z /var/log/journal/remote 2755 systemd-journal-remote systemd-journal-remote - -
++z /run/log/journal/remote 2755 systemd-journal-remote systemd-journal-remote - -

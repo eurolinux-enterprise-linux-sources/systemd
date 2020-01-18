@@ -1,0 +1,60 @@
+From 139d2c57d86203e421b17a4b6ec168c49fcb9893 Mon Sep 17 00:00:00 2001
+From: Harald Hoyer <harald@redhat.com>
+Date: Tue, 14 Jan 2014 17:48:08 -0500
+Subject: [PATCH] kernel-install: add fedora specific callouts to
+ new-kernel-pkg
+
+---
+ src/kernel-install/kernel-install | 36 +++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+ mode change 100644 => 100755 src/kernel-install/kernel-install
+
+diff --git a/src/kernel-install/kernel-install b/src/kernel-install/kernel-install
+old mode 100644
+new mode 100755
+index 3ae1d77e3..f1c74de27
+--- a/src/kernel-install/kernel-install
++++ b/src/kernel-install/kernel-install
+@@ -71,6 +71,42 @@ fi
+ KERNEL_VERSION="$1"
+ KERNEL_IMAGE="$2"
+ 
++if [[ -x /sbin/new-kernel-pkg ]]; then
++    KERNEL_DIR="${KERNEL_IMAGE%/*}"
++    if [[ "${KERNEL_DIR}" != "/boot" ]]; then
++        for i in \
++            "$KERNEL_IMAGE" \
++            "$KERNEL_DIR/.${KERNEL_IMAGE##*/}.hmac" \
++            "$KERNEL_DIR"/System.map \
++            "$KERNEL_DIR"/config \
++            "$KERNEL_DIR"/zImage.stub \
++            "$KERNEL_DIR"/dtb \
++            ; do
++            [[ -e "$i" ]] || continue
++            cp -a "$i" "/boot/${i##*/}-${KERNEL_VERSION}"
++        done
++    fi
++
++    [[ "$KERNEL_VERSION" == *\+* ]] && flavor=-"${KERNEL_VERSION##*+}"
++    case "$COMMAND" in
++        add)
++            /sbin/new-kernel-pkg --package "kernel${flavor}" --install "$KERNEL_VERSION" || exit $?
++            /sbin/new-kernel-pkg --package "kernel${flavor}" --mkinitrd --dracut --depmod --update "$KERNEL_VERSION" || exit $?
++            /sbin/new-kernel-pkg --package "kernel${flavor}" --rpmposttrans "$KERNEL_VERSION" || exit $?
++            ;;
++        remove)
++            /sbin/new-kernel-pkg --package "kernel${flavor+-$flavor}" --rminitrd --rmmoddep --remove "$KERNEL_VERSION" || exit $?
++            ;;
++        *)
++            ;;
++    esac
++
++    # exit, if we can't find a boot loader spec conforming setup
++    if ! [[ -d /boot/loader/entries || -L /boot/loader/entries ]]; then
++        exit 0
++    fi
++fi
++
+ if [[ -f /etc/machine-id ]]; then
+     read MACHINE_ID < /etc/machine-id
+ fi

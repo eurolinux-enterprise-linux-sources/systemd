@@ -1,0 +1,188 @@
+From 13bcf85ffab4b4e67039599246604a3f5b503975 Mon Sep 17 00:00:00 2001
+From: David Tardon <dtardon@redhat.com>
+Date: Tue, 24 Apr 2018 15:19:38 +0200
+Subject: [PATCH] fix race between daemon-reload and other commands
+
+When "systemctl daemon-reload" is run at the same time as "systemctl
+start foo", the latter might hang. That's because commands like start
+wait for JobRemoved signal to know when the job is finished. But if the
+job is finished during reloading, the signal is never sent.
+
+The hang can be easily reproduced by running
+
+    # for ((N=1; N>0; N++)) ; do echo $N ; systemctl daemon-reload ; done
+    # for ((N=1; N>0; N++)) ; do echo $N ; systemctl start systemd-coredump.socket ; done
+
+in two different terminals. The start command will hang after 1-2
+iterations.
+
+This keeps track of jobs that were started before reload and finished
+during it and sends JobRemoved after the reload has finished.
+
+(cherry picked from commit a7a7163df7fc8a9f794f6803b2f6c9c9b0745a1f)
+---
+ src/core/job.c     | 45 ++++++++++++++++++++++++++++++++++++++++-----
+ src/core/job.h     |  2 ++
+ src/core/manager.c | 15 +++++++++++++++
+ src/core/manager.h |  3 +++
+ 4 files changed, 60 insertions(+), 5 deletions(-)
+
+diff --git a/src/core/job.c b/src/core/job.c
+index 1861c8a63..275503169 100644
+--- a/src/core/job.c
++++ b/src/core/job.c
+@@ -53,6 +53,7 @@ Job* job_new_raw(Unit *unit) {
+         j->manager = unit->manager;
+         j->unit = unit;
+         j->type = _JOB_TYPE_INVALID;
++        j->reloaded = false;
+ 
+         return j;
+ }
+@@ -74,7 +75,7 @@ Job* job_new(Unit *unit, JobType type) {
+         return j;
+ }
+ 
+-void job_free(Job *j) {
++void job_unlink(Job *j) {
+         assert(j);
+         assert(!j->installed);
+         assert(!j->transaction_prev);
+@@ -82,13 +83,28 @@ void job_free(Job *j) {
+         assert(!j->subject_list);
+         assert(!j->object_list);
+ 
+-        if (j->in_run_queue)
++        if (j->in_run_queue) {
+                 LIST_REMOVE(run_queue, j->manager->run_queue, j);
++                j->in_run_queue = false;
++        }
+ 
+-        if (j->in_dbus_queue)
++        if (j->in_dbus_queue) {
+                 LIST_REMOVE(dbus_queue, j->manager->dbus_job_queue, j);
++                j->in_dbus_queue = false;
++        }
++
++        j->timer_event_source = sd_event_source_unref(j->timer_event_source);
++}
++
++void job_free(Job *j) {
++        assert(j);
++        assert(!j->installed);
++        assert(!j->transaction_prev);
++        assert(!j->transaction_next);
++        assert(!j->subject_list);
++        assert(!j->object_list);
+ 
+-        sd_event_source_unref(j->timer_event_source);
++        job_unlink(j);
+ 
+         sd_bus_track_unref(j->clients);
+         strv_free(j->deserialized_clients);
+@@ -246,6 +262,7 @@ int job_install_deserialized(Job *j) {
+ 
+         *pj = j;
+         j->installed = true;
++        j->reloaded = true;
+ 
+         if (j->state == JOB_RUNNING)
+                 j->unit->manager->n_running_jobs++;
+@@ -790,6 +807,19 @@ static void job_emit_status_message(Unit *u, JobType t, JobResult result) {
+                 job_print_status_message(u, t, result);
+ }
+ 
++static int job_save_pending_finished_job(Job *j) {
++        int r;
++
++        assert(j);
++
++        r = set_ensure_allocated(&j->manager->pending_finished_jobs, NULL);
++        if (r < 0)
++                return r;
++
++        job_unlink(j);
++        return set_put(j->manager->pending_finished_jobs, j);
++}
++
+ int job_finish_and_invalidate(Job *j, JobResult result, bool recursive, bool already) {
+         Unit *u;
+         Unit *other;
+@@ -829,7 +859,12 @@ int job_finish_and_invalidate(Job *j, JobResult result, bool recursive, bool alr
+                 j->manager->n_failed_jobs ++;
+ 
+         job_uninstall(j);
+-        job_free(j);
++        /* Remember jobs started before the reload */
++        if (j->manager->n_reloading > 0 && j->reloaded) {
++                if (job_save_pending_finished_job(j) < 0)
++                        job_free(j);
++        } else
++                job_free(j);
+ 
+         /* Fail depending jobs on failure */
+         if (result != JOB_DONE && recursive) {
+diff --git a/src/core/job.h b/src/core/job.h
+index 535052b48..4ae6f2802 100644
+--- a/src/core/job.h
++++ b/src/core/job.h
+@@ -172,10 +172,12 @@ struct Job {
+         bool sent_dbus_new_signal:1;
+         bool ignore_order:1;
+         bool irreversible:1;
++        bool reloaded:1;
+ };
+ 
+ Job* job_new(Unit *unit, JobType type);
+ Job* job_new_raw(Unit *unit);
++void job_unlink(Job *job);
+ void job_free(Job *job);
+ Job* job_install(Job *j);
+ int job_install_deserialized(Job *j);
+diff --git a/src/core/manager.c b/src/core/manager.c
+index 47b09e1e9..9c406bb5b 100644
+--- a/src/core/manager.c
++++ b/src/core/manager.c
+@@ -2702,6 +2702,18 @@ finish:
+         return r;
+ }
+ 
++static void manager_flush_finished_jobs(Manager *m) {
++        Job *j;
++
++        while ((j = set_steal_first(m->pending_finished_jobs))) {
++                bus_job_send_removed_signal(j);
++                job_free(j);
++        }
++
++        set_free(m->pending_finished_jobs);
++        m->pending_finished_jobs = NULL;
++}
++
+ int manager_reload(Manager *m) {
+         int r, q;
+         _cleanup_fclose_ FILE *f = NULL;
+@@ -2784,6 +2796,9 @@ int manager_reload(Manager *m) {
+         assert(m->n_reloading > 0);
+         m->n_reloading--;
+ 
++        if (m->n_reloading <= 0)
++                manager_flush_finished_jobs(m);
++
+         m->send_reloading_done = true;
+ 
+         return r;
+diff --git a/src/core/manager.h b/src/core/manager.h
+index e91e7bd8b..90d2d982e 100644
+--- a/src/core/manager.h
++++ b/src/core/manager.h
+@@ -270,6 +270,9 @@ struct Manager {
+ 
+         /* non-zero if we are reloading or reexecuting, */
+         int n_reloading;
++        /* A set which contains all jobs that started before reload and finished
++         * during it */
++        Set *pending_finished_jobs;
+ 
+         unsigned n_installed_jobs;
+         unsigned n_failed_jobs;

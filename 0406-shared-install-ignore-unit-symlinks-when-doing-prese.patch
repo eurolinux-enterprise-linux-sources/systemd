@@ -1,0 +1,75 @@
+From 412044ee341c574e5163bf2be32e5da9618f2640 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Sat, 13 Aug 2016 01:20:29 -0400
+Subject: [PATCH] shared/install: ignore unit symlinks when doing preset-all
+
+Before, when interating over unit files during preset-all, behaviour was the
+following:
+
+- if we hit the real unit name first, presets were queried for that name, and
+  that unit was enabled or disabled accordingly,
+
+- if we hit an alias first (one of the symlinks chaining to the real unit), we
+  checked the presets using the symlink name, and then proceeded to enable or
+  disable the real unit.
+
+E.g. for systemd-networkd.service we have the alias dbus-org.freedesktop.network1.service
+(/usr/lib/systemd/system/dbus-org.freedesktop.network1.service), but the preset
+is only for the systemd-networkd.service name. The service would be enabled or
+disabled pseudorandomly depending on the order of iteration.
+
+For "preset", behaviour was analogous: preset on the alias name disabled the
+service (following the default disable policy), preset on the "real" name
+applied the presets.
+
+With the patch, for "preset" and "preset-all" we silently skip symlinks. This
+gives mostly the right behaviour, with the limitation that presets on aliases
+are ignored.  I think that presets on aliases are not that common (at least my
+preset files on Fedora don't exhibit any such usage), and should not be
+necessary, since whoever installs the preset can just refer to the real unit
+file. It would be possible to overcome this limitation by gathering a list of
+names of a unit first, and then checking whether *any* of the names matches the
+presets list. That would require a significant redesign of the code, and be
+a lot slower (since we would have to fully read all unit directories to preset
+one unit) to so I'm not doing that for now.
+
+With this patch, two properties are satisfied:
+- preset-all and preset are idempotent, and the second and subsequent invocations
+  do not produce any changes,
+- preset-all and preset for a specific name produce the same state for that unit.
+
+Fixes #3616.
+
+Cherry-picked from: 11e11fd57a837ea1cb142009c3048882392f3ed3
+Related: #1375097
+---
+ src/shared/install.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/src/shared/install.c b/src/shared/install.c
+index b0a29ddd7..f01a21262 100644
+--- a/src/shared/install.c
++++ b/src/shared/install.c
+@@ -2270,12 +2270,20 @@ static int preset_prepare_one(
+                 const char *name) {
+ 
+         InstallInfo *i;
++        _cleanup_(install_context_done) InstallContext tmp = {};
+         int r;
+ 
+-        if (install_info_find(plus, name) ||
+-            install_info_find(minus, name))
++        if (install_info_find(plus, name) || install_info_find(minus, name))
+                 return 0;
+ 
++        r = install_info_discover(scope, &tmp, root_dir, paths, name, SEARCH_FOLLOW_CONFIG_SYMLINKS, &i);
++        if (r < 0)
++                return r;
++        if (!streq(name, i->name)) {
++                log_debug("Skipping %s because is an alias for %s", name, i->name);
++                return 0;
++        }
++
+         r = unit_file_query_preset(scope, root_dir, name);
+         if (r < 0)
+                 return r;

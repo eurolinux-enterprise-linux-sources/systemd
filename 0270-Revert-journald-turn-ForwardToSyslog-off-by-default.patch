@@ -1,0 +1,54 @@
+From 1b8d3a9c51d5584b6f6e394592a83b43cfbc693d Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Mon, 25 Jan 2016 14:03:47 +0100
+Subject: [PATCH] Revert "journald: turn ForwardToSyslog= off by default"
+
+This reverts commit 46b131574fdd7d77c15a0919ca9010cad7aa6ac7.
+
+rhel-only
+
+Resolves: #1285642
+---
+ man/journald.conf.xml         | 2 +-
+ src/journal/journald-server.c | 1 +
+ src/journal/journald.conf     | 2 +-
+ 3 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/man/journald.conf.xml b/man/journald.conf.xml
+index 2cbe58bc1..c4f71e887 100644
+--- a/man/journald.conf.xml
++++ b/man/journald.conf.xml
+@@ -302,7 +302,7 @@
+         These options take boolean arguments. If forwarding to syslog
+         is enabled but nothing reads messages from the socket,
+         forwarding to syslog has no effect. By default, only
+-        forwarding to wall is enabled. These settings may be
++        forwarding to syslog and wall is enabled. These settings may be
+         overridden at boot time with the kernel command line options
+         <literal>systemd.journald.forward_to_syslog=</literal>,
+         <literal>systemd.journald.forward_to_kmsg=</literal>,
+diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
+index f13147f65..6a35ebbde 100644
+--- a/src/journal/journald-server.c
++++ b/src/journal/journald-server.c
+@@ -1470,6 +1470,7 @@ int server_init(Server *s) {
+         s->rate_limit_interval = DEFAULT_RATE_LIMIT_INTERVAL;
+         s->rate_limit_burst = DEFAULT_RATE_LIMIT_BURST;
+ 
++        s->forward_to_syslog = true;
+         s->forward_to_wall = true;
+ 
+         s->max_file_usec = DEFAULT_MAX_FILE_USEC;
+diff --git a/src/journal/journald.conf b/src/journal/journald.conf
+index 47eefe91c..3907dfb7f 100644
+--- a/src/journal/journald.conf
++++ b/src/journal/journald.conf
+@@ -27,7 +27,7 @@
+ #RuntimeMaxFileSize=
+ #MaxRetentionSec=
+ #MaxFileSec=1month
+-#ForwardToSyslog=no
++#ForwardToSyslog=yes
+ #ForwardToKMsg=no
+ #ForwardToConsole=no
+ #ForwardToWall=yes

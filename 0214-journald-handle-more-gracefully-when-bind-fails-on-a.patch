@@ -1,0 +1,36 @@
+From a81ba5e1bfabf643e11fec41c1ce646874ae0df1 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 20 May 2015 14:37:21 +0200
+Subject: [PATCH] journald: handle more gracefully when bind() fails on audit
+ sockets
+
+(cherry picked from commit 417a7fdc418ec76cc4c321c9a07ec15c72b3ac7d)
+
+Cherry-picked from: 417a7fd
+Resolves: #1222517
+---
+ src/journal/journald-audit.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/src/journal/journald-audit.c b/src/journal/journald-audit.c
+index 46eb82fa3..0e739a23a 100644
+--- a/src/journal/journald-audit.c
++++ b/src/journal/journald-audit.c
+@@ -532,9 +532,14 @@ int server_open_audit(Server *s) {
+                         return 0;
+                 }
+ 
+-                r = bind(s->audit_fd, &sa.sa, sizeof(sa.nl));
+-                if (r < 0)
+-                        return log_error_errno(errno, "Failed to join audit multicast group: %m");
++                if (bind(s->audit_fd, &sa.sa, sizeof(sa.nl)) < 0) {
++                        log_warning_errno(errno,
++                                          "Failed to join audit multicast group. "
++                                          "The kernel is probably too old or multicast reading is not supported. "
++                                          "Ignoring: %m");
++                        s->audit_fd = safe_close(s->audit_fd);
++                        return 0;
++                }
+         } else
+                 fd_nonblock(s->audit_fd, 1);
+ 

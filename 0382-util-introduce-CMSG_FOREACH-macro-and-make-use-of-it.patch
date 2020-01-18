@@ -1,0 +1,301 @@
+From 603edc22d0516044b72b09ed94a696edd2de7f37 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 10 Jun 2015 19:10:47 +0200
+Subject: [PATCH] util: introduce CMSG_FOREACH() macro and make use of it
+ everywhere
+
+It's only marginally shorter then the usual for() loop, but certainly
+more readable.
+
+Cherry-picked from: 2a1288ff89322a2f49c79f6d1832c8164c14a05c
+Related: #1318994
+---
+ src/core/manager.c                      |  2 +-
+ src/core/namespace.c                    |  3 +--
+ src/import/importd.c                    |  8 ++------
+ src/journal/journald-server.c           |  2 +-
+ src/libsystemd-network/sd-dhcp-client.c |  2 +-
+ src/libsystemd-network/sd-dhcp-server.c |  2 +-
+ src/libsystemd/sd-bus/bus-container.c   |  2 +-
+ src/libsystemd/sd-bus/bus-socket.c      | 16 ++++++++++------
+ src/libsystemd/sd-rtnl/rtnl-message.c   |  2 +-
+ src/resolve/resolved-dns-stream.c       |  3 ++-
+ src/resolve/resolved-manager.c          |  2 +-
+ src/shared/macro.h                      |  3 +++
+ src/shared/util.c                       | 12 +++++++++++-
+ src/shared/util.h                       |  2 ++
+ src/timesync/timesyncd-manager.c        |  2 +-
+ 15 files changed, 39 insertions(+), 24 deletions(-)
+
+diff --git a/src/core/manager.c b/src/core/manager.c
+index c5021993e..71dd70c94 100644
+--- a/src/core/manager.c
++++ b/src/core/manager.c
+@@ -1679,7 +1679,7 @@ static int manager_dispatch_notify_fd(sd_event_source *source, int fd, uint32_t
+                 return -errno;
+         }
+ 
+-        for (cmsg = CMSG_FIRSTHDR(&msghdr); cmsg; cmsg = CMSG_NXTHDR(&msghdr, cmsg)) {
++        CMSG_FOREACH(cmsg, &msghdr) {
+                 if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
+ 
+                         fd_array = (int*) CMSG_DATA(cmsg);
+diff --git a/src/core/namespace.c b/src/core/namespace.c
+index ebd5fb334..00495c144 100644
+--- a/src/core/namespace.c
++++ b/src/core/namespace.c
+@@ -658,12 +658,11 @@ int setup_netns(int netns_storage_socket[2]) {
+         } else {
+                 /* Yay, found something, so let's join the namespace */
+ 
+-                for (cmsg = CMSG_FIRSTHDR(&mh); cmsg; cmsg = CMSG_NXTHDR(&mh, cmsg)) {
++                CMSG_FOREACH(cmsg, &mh)
+                         if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
+                                 assert(cmsg->cmsg_len == CMSG_LEN(sizeof(int)));
+                                 netns = *(int*) CMSG_DATA(cmsg);
+                         }
+-                }
+ 
+                 if (setns(netns, CLONE_NEWNET) < 0) {
+                         r = -errno;
+diff --git a/src/import/importd.c b/src/import/importd.c
+index 9aaf991f8..a29630b12 100644
+--- a/src/import/importd.c
++++ b/src/import/importd.c
+@@ -507,12 +507,8 @@ static int manager_on_notify(sd_event_source *s, int fd, uint32_t revents, void
+                 return -errno;
+         }
+ 
+-        for (cmsg = CMSG_FIRSTHDR(&msghdr); cmsg; cmsg = CMSG_NXTHDR(&msghdr, cmsg)) {
+-                if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
+-                        close_many((int*) CMSG_DATA(cmsg), (cmsg->cmsg_len - CMSG_LEN(0)) / sizeof(int));
+-                        log_warning("Somebody sent us unexpected fds, ignoring.");
+-                        return 0;
+-                } else if (cmsg->cmsg_level == SOL_SOCKET &&
++        CMSG_FOREACH(cmsg, &msghdr) {
++                if (cmsg->cmsg_level == SOL_SOCKET &&
+                            cmsg->cmsg_type == SCM_CREDENTIALS &&
+                            cmsg->cmsg_len == CMSG_LEN(sizeof(struct ucred))) {
+ 
+diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
+index 6a35ebbde..1eb1394d1 100644
+--- a/src/journal/journald-server.c
++++ b/src/journal/journald-server.c
+@@ -1176,7 +1176,7 @@ int server_process_datagram(sd_event_source *es, int fd, uint32_t revents, void
+                         return -errno;
+                 }
+ 
+-                for (cmsg = CMSG_FIRSTHDR(&msghdr); cmsg; cmsg = CMSG_NXTHDR(&msghdr, cmsg)) {
++                CMSG_FOREACH(cmsg, &msghdr) {
+ 
+                         if (cmsg->cmsg_level == SOL_SOCKET &&
+                             cmsg->cmsg_type == SCM_CREDENTIALS &&
+diff --git a/src/libsystemd-network/sd-dhcp-client.c b/src/libsystemd-network/sd-dhcp-client.c
+index 5f90617b9..870850ed3 100644
+--- a/src/libsystemd-network/sd-dhcp-client.c
++++ b/src/libsystemd-network/sd-dhcp-client.c
+@@ -1590,7 +1590,7 @@ static int client_receive_message_raw(sd_event_source *s, int fd,
+         } else if ((size_t)len < sizeof(DHCPPacket))
+                 return 0;
+ 
+-        for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
++        CMSG_FOREACH(cmsg, &msg) {
+                 if (cmsg->cmsg_level == SOL_PACKET &&
+                     cmsg->cmsg_type == PACKET_AUXDATA &&
+                     cmsg->cmsg_len == CMSG_LEN(sizeof(struct tpacket_auxdata))) {
+diff --git a/src/libsystemd-network/sd-dhcp-server.c b/src/libsystemd-network/sd-dhcp-server.c
+index 0f284eb6a..c9d0ace72 100644
+--- a/src/libsystemd-network/sd-dhcp-server.c
++++ b/src/libsystemd-network/sd-dhcp-server.c
+@@ -903,7 +903,7 @@ static int server_receive_message(sd_event_source *s, int fd,
+         else if ((size_t)len < sizeof(DHCPMessage))
+                 return 0;
+ 
+-        for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
++        CMSG_FOREACH(cmsg, &msg) {
+                 if (cmsg->cmsg_level == IPPROTO_IP &&
+                     cmsg->cmsg_type == IP_PKTINFO &&
+                     cmsg->cmsg_len == CMSG_LEN(sizeof(struct in_pktinfo))) {
+diff --git a/src/libsystemd/sd-bus/bus-container.c b/src/libsystemd/sd-bus/bus-container.c
+index d29b98a26..10ab71431 100644
+--- a/src/libsystemd/sd-bus/bus-container.c
++++ b/src/libsystemd/sd-bus/bus-container.c
+@@ -222,7 +222,7 @@ int bus_container_connect_kernel(sd_bus *b) {
+         if (recvmsg(pair[0], &mh, MSG_NOSIGNAL|MSG_CMSG_CLOEXEC) < 0)
+                 return -errno;
+ 
+-        for (cmsg = CMSG_FIRSTHDR(&mh); cmsg; cmsg = CMSG_NXTHDR(&mh, cmsg))
++        CMSG_FOREACH(cmsg, &mh)
+                 if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
+                         int *fds;
+                         unsigned n_fds;
+diff --git a/src/libsystemd/sd-bus/bus-socket.c b/src/libsystemd/sd-bus/bus-socket.c
+index a3c3a45b4..ab56ef4f3 100644
+--- a/src/libsystemd/sd-bus/bus-socket.c
++++ b/src/libsystemd/sd-bus/bus-socket.c
+@@ -503,7 +503,6 @@ static int bus_socket_read_auth(sd_bus *b) {
+                 struct cmsghdr cmsghdr;
+                 uint8_t buf[CMSG_SPACE(sizeof(int) * BUS_FDS_MAX)];
+         } control;
+-        struct cmsghdr *cmsg;
+         bool handle_cmsg = false;
+ 
+         assert(b);
+@@ -554,8 +553,10 @@ static int bus_socket_read_auth(sd_bus *b) {
+ 
+         b->rbuffer_size += k;
+ 
+-        if (handle_cmsg)
+-                for (cmsg = CMSG_FIRSTHDR(&mh); cmsg; cmsg = CMSG_NXTHDR(&mh, cmsg))
++        if (handle_cmsg) {
++                struct cmsghdr *cmsg;
++
++                CMSG_FOREACH(cmsg, &mh)
+                         if (cmsg->cmsg_level == SOL_SOCKET &&
+                             cmsg->cmsg_type == SCM_RIGHTS) {
+                                 int j;
+@@ -569,6 +570,7 @@ static int bus_socket_read_auth(sd_bus *b) {
+                         } else
+                                 log_debug("Got unexpected auxiliary data with level=%d and type=%d",
+                                           cmsg->cmsg_level, cmsg->cmsg_type);
++        }
+ 
+         r = bus_socket_auth_verify(b);
+         if (r != 0)
+@@ -930,7 +932,6 @@ int bus_socket_read_message(sd_bus *bus) {
+                 struct cmsghdr cmsghdr;
+                 uint8_t buf[CMSG_SPACE(sizeof(int) * BUS_FDS_MAX)];
+         } control;
+-        struct cmsghdr *cmsg;
+         bool handle_cmsg = false;
+ 
+         assert(bus);
+@@ -976,8 +977,10 @@ int bus_socket_read_message(sd_bus *bus) {
+ 
+         bus->rbuffer_size += k;
+ 
+-        if (handle_cmsg)
+-                for (cmsg = CMSG_FIRSTHDR(&mh); cmsg; cmsg = CMSG_NXTHDR(&mh, cmsg))
++        if (handle_cmsg) {
++                struct cmsghdr *cmsg;
++
++                CMSG_FOREACH(cmsg, &mh)
+                         if (cmsg->cmsg_level == SOL_SOCKET &&
+                             cmsg->cmsg_type == SCM_RIGHTS) {
+                                 int n, *f;
+@@ -1005,6 +1008,7 @@ int bus_socket_read_message(sd_bus *bus) {
+                         } else
+                                 log_debug("Got unexpected auxiliary data with level=%d and type=%d",
+                                           cmsg->cmsg_level, cmsg->cmsg_type);
++        }
+ 
+         r = bus_socket_read_message_need(bus, &need);
+         if (r < 0)
+diff --git a/src/libsystemd/sd-rtnl/rtnl-message.c b/src/libsystemd/sd-rtnl/rtnl-message.c
+index 9276bbdeb..cc84253f1 100644
+--- a/src/libsystemd/sd-rtnl/rtnl-message.c
++++ b/src/libsystemd/sd-rtnl/rtnl-message.c
+@@ -1444,7 +1444,7 @@ static int socket_recv_message(int fd, struct iovec *iov, uint32_t *_group, bool
+                 return (errno == EAGAIN || errno == EINTR) ? 0 : -errno;
+         }
+ 
+-        for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
++        CMSG_FOREACH(cmsg, &msg) {
+                 if (cmsg->cmsg_level == SOL_SOCKET &&
+                     cmsg->cmsg_type == SCM_CREDENTIALS &&
+                     cmsg->cmsg_len == CMSG_LEN(sizeof(struct ucred))) {
+diff --git a/src/resolve/resolved-dns-stream.c b/src/resolve/resolved-dns-stream.c
+index 4c0b557ba..7f47e7223 100644
+--- a/src/resolve/resolved-dns-stream.c
++++ b/src/resolve/resolved-dns-stream.c
+@@ -113,7 +113,8 @@ static int dns_stream_identify(DnsStream *s) {
+ 
+         mh.msg_control = &control;
+         mh.msg_controllen = sl;
+-        for (cmsg = CMSG_FIRSTHDR(&mh); cmsg; cmsg = CMSG_NXTHDR(&mh, cmsg)) {
++
++        CMSG_FOREACH(cmsg, &mh) {
+ 
+                 if (cmsg->cmsg_level == IPPROTO_IPV6) {
+                         assert(s->peer.sa.sa_family == AF_INET6);
+diff --git a/src/resolve/resolved-manager.c b/src/resolve/resolved-manager.c
+index 7c253aa13..173ab8a14 100644
+--- a/src/resolve/resolved-manager.c
++++ b/src/resolve/resolved-manager.c
+@@ -920,7 +920,7 @@ int manager_recv(Manager *m, int fd, DnsProtocol protocol, DnsPacket **ret) {
+         } else
+                 return -EAFNOSUPPORT;
+ 
+-        for (cmsg = CMSG_FIRSTHDR(&mh); cmsg; cmsg = CMSG_NXTHDR(&mh, cmsg)) {
++        CMSG_FOREACH(cmsg, &mh) {
+ 
+                 if (cmsg->cmsg_level == IPPROTO_IPV6) {
+                         assert(p->family == AF_INET6);
+diff --git a/src/shared/macro.h b/src/shared/macro.h
+index 9d857dc8d..7a57f4e5b 100644
+--- a/src/shared/macro.h
++++ b/src/shared/macro.h
+@@ -471,4 +471,7 @@ static inline bool GID_IS_INVALID(gid_t gid) {
+         }                                                       \
+         struct __useless_struct_to_allow_trailing_semicolon__
+ 
++#define CMSG_FOREACH(cmsg, mh)                                          \
++        for ((cmsg) = CMSG_FIRSTHDR(mh); (cmsg); (cmsg) = CMSG_NXTHDR((mh), (cmsg)))
++
+ #include "log.h"
+diff --git a/src/shared/util.c b/src/shared/util.c
+index 4c441a544..357fbfe7d 100644
+--- a/src/shared/util.c
++++ b/src/shared/util.c
+@@ -7887,7 +7887,7 @@ int openpt_in_namespace(pid_t pid, int flags) {
+         if (recvmsg(pair[0], &mh, MSG_NOSIGNAL|MSG_CMSG_CLOEXEC) < 0)
+                 return -errno;
+ 
+-        for (cmsg = CMSG_FIRSTHDR(&mh); cmsg; cmsg = CMSG_NXTHDR(&mh, cmsg))
++        CMSG_FOREACH(cmsg, &mh)
+                 if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
+                         int *fds;
+                         unsigned n_fds;
+@@ -8375,6 +8375,16 @@ ssize_t string_table_lookup(const char * const *table, size_t len, const char *k
+         return -1;
+ }
+ 
++void cmsg_close_all(struct msghdr *mh) {
++        struct cmsghdr *cmsg;
++
++        assert(mh);
++
++        CMSG_FOREACH(cmsg, mh)
++                if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS)
++                        close_many((int*) CMSG_DATA(cmsg), (cmsg->cmsg_len - CMSG_LEN(0)) / sizeof(int));
++}
++
+ char *shell_maybe_quote(const char *s) {
+         const char *p;
+         char *r, *t;
+diff --git a/src/shared/util.h b/src/shared/util.h
+index be04524cc..12afcc342 100644
+--- a/src/shared/util.h
++++ b/src/shared/util.h
+@@ -1082,6 +1082,8 @@ void sigkill_wait(pid_t *pid);
+ 
+ int syslog_parse_priority(const char **p, int *priority, bool with_facility);
+ 
++void cmsg_close_all(struct msghdr *mh);
++
+ char *shell_maybe_quote(const char *s);
+ 
+ typedef enum ExtractFlags {
+diff --git a/src/timesync/timesyncd-manager.c b/src/timesync/timesyncd-manager.c
+index 73ac7eecb..5cc196820 100644
+--- a/src/timesync/timesyncd-manager.c
++++ b/src/timesync/timesyncd-manager.c
+@@ -539,7 +539,7 @@ static int manager_receive_response(sd_event_source *source, int fd, uint32_t re
+         }
+ 
+         recv_time = NULL;
+-        for (cmsg = CMSG_FIRSTHDR(&msghdr); cmsg; cmsg = CMSG_NXTHDR(&msghdr, cmsg)) {
++        CMSG_FOREACH(cmsg, &msghdr) {
+                 if (cmsg->cmsg_level != SOL_SOCKET)
+                         continue;
+ 

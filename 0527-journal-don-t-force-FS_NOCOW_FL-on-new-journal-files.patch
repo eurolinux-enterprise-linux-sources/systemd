@@ -1,0 +1,86 @@
+From 245ad27530ae9e99242ebfa1631bd7fc8f66a59c Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 22 Apr 2015 13:20:49 +0200
+Subject: [PATCH] journal: don't force FS_NOCOW_FL on new journal files, but
+ warn if it is missing
+
+This way users have the freedom to set or unset the FS_NOCOW_FL flag on
+their journal files by setting it on the journal directory. Since our
+default tmpfiles configuration now sets this flag on the directory the
+flag is set by default on new files, however people can opt-out of this
+by masking the tmpfiles file for it.
+
+(cherry picked from commit fc68c92973e5437ee0489c1bc80d80f0a7b6ca0b)
+
+Conflicts:
+	src/journal/journal-file.c
+
+Resolves: #1299714
+---
+ src/journal/journal-file.c | 46 +++++++++++++++++++++++++++++---------
+ 1 file changed, 36 insertions(+), 10 deletions(-)
+
+diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
+index 8034b771d..0fd59ec07 100644
+--- a/src/journal/journal-file.c
++++ b/src/journal/journal-file.c
+@@ -2543,6 +2543,41 @@ void journal_file_print_header(JournalFile *f) {
+                 printf("Disk usage: %s\n", format_bytes(bytes, sizeof(bytes), (off_t) st.st_blocks * 512ULL));
+ }
+ 
++static int journal_file_warn_btrfs(JournalFile *f) {
++        unsigned attrs;
++        int r;
++
++        assert(f);
++
++        /* Before we write anything, check if the COW logic is turned
++         * off on btrfs. Given our write pattern that is quite
++         * unfriendly to COW file systems this should greatly improve
++         * performance on COW file systems, such as btrfs, at the
++         * expense of data integrity features (which shouldn't be too
++         * bad, given that we do our own checksumming). */
++
++        r = btrfs_is_filesystem(f->fd);
++        if (r < 0)
++                return log_warning_errno(r, "Failed to determine if journal is on btrfs: %m");
++        if (!r)
++                return 0;
++
++        r = read_attr_fd(f->fd, &attrs);
++        if (r < 0)
++                return log_warning_errno(r, "Failed to read file attributes: %m");
++
++        if (attrs & FS_NOCOW_FL) {
++                log_debug("Detected btrfs file system with copy-on-write disabled, all is good.");
++                return 0;
++        }
++
++        log_notice("Creating journal file %s on a btrfs file system, and copy-on-write is enabled. "
++                   "This is likely to slow down journal access substantially, please consider turning "
++                   "off the copy-on-write file attribute on the journal directory, using chattr +C.", f->path);
++
++        return 1;
++}
++
+ int journal_file_open(
+                 const char *fname,
+                 int flags,
+@@ -2623,16 +2658,7 @@ int journal_file_open(
+ 
+         if (f->last_stat.st_size == 0 && f->writable) {
+ 
+-                /* Before we write anything, turn off COW logic. Given
+-                 * our write pattern that is quite unfriendly to COW
+-                 * file systems this should greatly improve
+-                 * performance on COW file systems, such as btrfs, at
+-                 * the expense of data integrity features (which
+-                 * shouldn't be too bad, given that we do our own
+-                 * checksumming). */
+-                r = chattr_fd(f->fd, true, FS_NOCOW_FL);
+-                if (r < 0 && r != -ENOTTY)
+-                        log_warning_errno(r, "Failed to set file attributes: %m");
++                (void) journal_file_warn_btrfs(f);
+ 
+                 /* Let's attach the creation time to the journal file,
+                  * so that the vacuuming code knows the age of this

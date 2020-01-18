@@ -1,0 +1,26 @@
+From 13b70c13553c94c444f149bd086bd3e8d9cc39b6 Mon Sep 17 00:00:00 2001
+From: Evgeny Vereshchagin <evvers@ya.ru>
+Date: Thu, 29 Oct 2015 14:13:04 +0300
+Subject: [PATCH] core: fix capability bounding set parsing
+
+bug: CapabilityBoundingSet= doesn't reset all caps
+
+Cherry-picked from: 661b37b
+Resolves: #1409586
+---
+ src/core/load-fragment.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index 90d42b002..705641971 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -1069,7 +1069,7 @@ int config_parse_bounding_set(const char *unit,
+                            "Trailing garbage, ignoring.");
+ 
+         capability_bounding_set = invert ? ~sum : sum;
+-        if (*capability_bounding_set_drop)
++        if (*capability_bounding_set_drop && capability_bounding_set)
+                 *capability_bounding_set_drop = ~(~*capability_bounding_set_drop | capability_bounding_set);
+         else
+                 *capability_bounding_set_drop = ~capability_bounding_set;

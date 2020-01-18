@@ -1,0 +1,31 @@
+From 046d996001c0b3fe34d34683e55f62481a5af932 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Mon, 1 Feb 2016 09:29:02 +0100
+Subject: [PATCH] journalctl: improve error messages when the specified boot is
+ not found
+
+Cherry-picked from: c34e939909710bf124e7741c3648592a30418ffd
+Resolves: #1082179
+---
+ src/journal/journalctl.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
+index 7058788ef..964f849ee 100644
+--- a/src/journal/journalctl.c
++++ b/src/journal/journalctl.c
+@@ -1090,10 +1090,11 @@ static int add_boot(sd_journal *j) {
+                 const char *reason = (r == 0) ? "No such boot ID in journal" : strerror(-r);
+ 
+                 if (sd_id128_is_null(arg_boot_id))
+-                        log_error("Failed to look up boot %+i: %s", arg_boot_offset, reason);
++                        log_error("Data from the specified boot (%+i) is not available: %s",
++                                  arg_boot_offset, reason);
+                 else
+-                        log_error("Failed to look up boot ID "SD_ID128_FORMAT_STR"%+i: %s",
+-                                  SD_ID128_FORMAT_VAL(arg_boot_id), arg_boot_offset, reason);
++                        log_error("Data from the specified boot ("SD_ID128_FORMAT_STR") is not available: %s",
++                                  SD_ID128_FORMAT_VAL(arg_boot_id), reason);
+ 
+                 return r == 0 ? -ENODATA : r;
+         }

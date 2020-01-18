@@ -1,0 +1,25 @@
+From 13f24902c7c1ba91d41bf4e8dd694cf01f876938 Mon Sep 17 00:00:00 2001
+From: Evgeny Vereshchagin <evvers@ya.ru>
+Date: Tue, 17 Nov 2015 06:06:52 +0000
+Subject: [PATCH] journalctl: don't print -- No entries -- in quiet mode
+
+Cherry-picked from: bfcb7c5f5333f9c3523b7027c2ad4c99e4494fb5
+Related: #1350232
+---
+ src/journal/journalctl.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
+index 2688d8b2e..a38ce4b8f 100644
+--- a/src/journal/journalctl.c
++++ b/src/journal/journalctl.c
+@@ -2145,7 +2145,8 @@ int main(int argc, char *argv[]) {
+                 if (arg_follow)
+                         need_seek = true;
+                 else {
+-                        printf("-- No entries --\n");
++                        if (!arg_quiet)
++                                printf("-- No entries --\n");
+                         return EXIT_SUCCESS;
+                 }
+         }

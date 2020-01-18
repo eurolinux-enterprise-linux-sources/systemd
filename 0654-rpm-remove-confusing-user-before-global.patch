@@ -1,0 +1,35 @@
+From 4bc18a925e964f10b4e7ed92e8e0d84bf985c6a8 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Sat, 19 May 2018 13:01:55 +0200
+Subject: [PATCH] rpm: remove confusing --user before --global
+
+Fixes #9027.
+
+(cherry picked from commit 28d36da64a7a23a55e8d0a139f2620384fd058b3)
+Resolves: #1582383
+---
+ src/core/macros.systemd.in | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/core/macros.systemd.in b/src/core/macros.systemd.in
+index 662791ccc..3d6e41274 100644
+--- a/src/core/macros.systemd.in
++++ b/src/core/macros.systemd.in
+@@ -43,7 +43,7 @@ if [ $1 -eq 1 ] ; then \
+ fi \
+ %{nil}
+ 
+-%systemd_user_post() %{expand:%systemd_post \\--user \\--global %%{?*}}
++%systemd_user_post() %{expand:%systemd_post \\--global %%{?*}}
+ 
+ %systemd_preun() \
+ if [ $1 -eq 0 ] ; then \
+@@ -56,7 +56,7 @@ fi \
+ %systemd_user_preun() \
+ if [ $1 -eq 0 ] ; then \
+         # Package removal, not upgrade \
+-        systemctl --no-reload --user --global disable %{?*} > /dev/null 2>&1 || : \
++        systemctl --global disable %{?*} > /dev/null 2>&1 || : \
+ fi \
+ %{nil}
+ 

@@ -1,0 +1,89 @@
+From 2d30914ae86e9f40c02d80e0ef5c01e54efbbbc9 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Tue, 1 Sep 2015 16:02:58 +0200
+Subject: [PATCH] selinux: always use *_raw API from libselinux
+
+When mcstransd* is running non-raw functions will return translated SELinux
+context. Problem is that libselinux will cache this information and in the
+future it will return same context even though mcstransd maybe not running at
+that time. If you then check with such context against SELinux policy then
+selinux_check_access may fail depending on whether mcstransd is running or not.
+
+To workaround this problem/bug in libselinux, we should always get raw context
+instead. Most users will not notice because they don't use MCS/MLS policy
+anyway. Others will most likely not notice as well because result of access
+check is logged only in debug mode.
+
+* Service which translates labels to human readable form
+
+Resolves: #1256888
+---
+ src/core/selinux-access.c |  4 ++--
+ src/shared/selinux-util.c | 10 +++++-----
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/src/core/selinux-access.c b/src/core/selinux-access.c
+index f11247c09..297372d12 100644
+--- a/src/core/selinux-access.c
++++ b/src/core/selinux-access.c
+@@ -219,13 +219,13 @@ int mac_selinux_generic_access_check(
+         if (path && !system) {
+                 /* Get the file context of the unit file */
+ 
+-                r = getfilecon(path, &fcon);
++                r = getfilecon_raw(path, &fcon);
+                 if (r < 0) {
+                         r = sd_bus_error_setf(error, SD_BUS_ERROR_ACCESS_DENIED, "Failed to get file context on %s.", path);
+                         goto finish;
+                 }
+         } else {
+-                r = getcon(&fcon);
++                r = getcon_raw(&fcon);
+                 if (r < 0) {
+                         r = sd_bus_error_setf(error, SD_BUS_ERROR_ACCESS_DENIED, "Failed to get current context.");
+                         goto finish;
+diff --git a/src/shared/selinux-util.c b/src/shared/selinux-util.c
+index a46ddf849..4c2e1b0b4 100644
+--- a/src/shared/selinux-util.c
++++ b/src/shared/selinux-util.c
+@@ -200,11 +200,11 @@ int mac_selinux_get_create_label_from_exe(const char *exe, char **label) {
+         if (!mac_selinux_use())
+                 return -EOPNOTSUPP;
+ 
+-        r = getcon(&mycon);
++        r = getcon_raw(&mycon);
+         if (r < 0)
+                 return -errno;
+ 
+-        r = getfilecon(exe, &fcon);
++        r = getfilecon_raw(exe, &fcon);
+         if (r < 0)
+                 return -errno;
+ 
+@@ -226,7 +226,7 @@ int mac_selinux_get_our_label(char **label) {
+         if (!mac_selinux_use())
+                 return -EOPNOTSUPP;
+ 
+-        r = getcon(label);
++        r = getcon_raw(label);
+         if (r < 0)
+                 return -errno;
+ #endif
+@@ -250,7 +250,7 @@ int mac_selinux_get_child_mls_label(int socket_fd, const char *exe, const char *
+         if (!mac_selinux_use())
+                 return -EOPNOTSUPP;
+ 
+-        r = getcon(&mycon);
++        r = getcon_raw(&mycon);
+         if (r < 0)
+                 return -errno;
+ 
+@@ -261,7 +261,7 @@ int mac_selinux_get_child_mls_label(int socket_fd, const char *exe, const char *
+         if (!exec_label) {
+                 /* If there is no context set for next exec let's use context
+                    of target executable */
+-                r = getfilecon(exe, &fcon);
++                r = getfilecon_raw(exe, &fcon);
+                 if (r < 0)
+                         return -errno;
+         }

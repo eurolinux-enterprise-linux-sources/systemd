@@ -1,0 +1,30 @@
+From 38815fb30199a76684d4153a0a2dcd6abd3a2dda Mon Sep 17 00:00:00 2001
+From: nmartensen <nis.martensen@web.de>
+Date: Fri, 15 Jan 2016 07:55:25 +0100
+Subject: [PATCH] fstab-generator: remove bogus condition
+
+The sysroot mount is already taken care of by the add_sysroot_mount function. With this condition left in, we can get something like this:
+
+initrd-root-fs.target.requires
+`-- usr.mount -> /run/systemd/generator/usr.mount
+
+in the main system (i.e., not in the initramfs). In the initramfs, the previous condition already kicks in.
+Cherry-picked from: ce3f6d82b003f365f718f24e48f55b8a0372b924
+Resolves: #1446171
+---
+ src/fstab-generator/fstab-generator.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/src/fstab-generator/fstab-generator.c b/src/fstab-generator/fstab-generator.c
+index 32aca2244..23b5457e4 100644
+--- a/src/fstab-generator/fstab-generator.c
++++ b/src/fstab-generator/fstab-generator.c
+@@ -476,8 +476,6 @@ static int parse_fstab(bool initrd) {
+                                                       "x-systemd.automount\0");
+                         if (initrd)
+                                 post = SPECIAL_INITRD_FS_TARGET;
+-                        else if (mount_in_initrd(me))
+-                                post = SPECIAL_INITRD_ROOT_FS_TARGET;
+                         else if (mount_is_network(me))
+                                 post = SPECIAL_REMOTE_FS_TARGET;
+                         else

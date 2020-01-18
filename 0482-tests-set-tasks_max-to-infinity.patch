@@ -1,0 +1,52 @@
+From a1c4eecf9a334e5841744cabdc18bdfdc108a636 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Fri, 21 Apr 2017 15:44:25 +0200
+Subject: [PATCH] tests: set tasks_max to infinity
+
+rhel-only
+(upstream does the same but the code there is quite different)
+
+Related: #1337244
+---
+ src/test/test-cgroup-mask.c | 11 +++++++++++
+ src/test/test-execute.c     |  5 +++++
+ 2 files changed, 16 insertions(+)
+
+diff --git a/src/test/test-cgroup-mask.c b/src/test/test-cgroup-mask.c
+index 9e9de23e0..471adb25b 100644
+--- a/src/test/test-cgroup-mask.c
++++ b/src/test/test-cgroup-mask.c
+@@ -45,6 +45,17 @@ static int test_cgroup_mask(void) {
+                 puts("manager_new: Permission denied. Skipping test.");
+                 return EXIT_TEST_SKIP;
+         }
++        assert_se(r >= 0);
++
++        /* Turn off all kinds of default accouning, so that we can
++         * verify the masks resulting of our configuration and nothing
++         * else. */
++        m->default_cpu_accounting =
++                m->default_memory_accounting =
++                m->default_blockio_accounting =
++                m->default_tasks_accounting = false;
++        m->default_tasks_max = (uint64_t) -1;
++
+         assert_se(r >= 0);
+         assert_se(manager_startup(m, serial, fdset) >= 0);
+ 
+diff --git a/src/test/test-execute.c b/src/test/test-execute.c
+index 8e70702cb..627097fcf 100644
+--- a/src/test/test-execute.c
++++ b/src/test/test-execute.c
+@@ -270,6 +270,11 @@ int main(int argc, char *argv[]) {
+         }
+         assert_se(r >= 0);
+         assert_se(manager_startup(m, NULL, NULL) >= 0);
++        m->default_cpu_accounting =
++                m->default_memory_accounting =
++                m->default_blockio_accounting =
++                m->default_tasks_accounting = false;
++        m->default_tasks_max = (uint64_t) -1;
+ 
+         for (test = tests; test && *test; test++)
+                 (*test)(m);

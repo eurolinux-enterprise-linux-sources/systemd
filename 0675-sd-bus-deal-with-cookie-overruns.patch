@@ -1,0 +1,109 @@
+From 28f73a10df367721b30a95df5d729f6c56d318e5 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Tue, 2 Apr 2019 10:23:30 +0200
+Subject: [PATCH] sd-bus: deal with cookie overruns
+
+Apparently this happens IRL. Let's carefully deal with issues like this:
+when we overrun, let's not go back to zero but instead leave the highest
+cookie bit set. We use that as indication that we are in "overrun
+territory", and then are particularly careful with checking cookies,
+i.e. that they haven't been used for still outstanding replies yet. This
+should retain the quick cookie generation behaviour we used to have, but
+permits dealing with overruns.
+
+Replaces: #11804
+Fixes: #11809
+
+(cherry picked from commit 1f82f5bb4237ed5f015daf93f818e9db95e764b8)
+(cherry picked from commit ac46d01c5f6a211bbbbb43e20f63ecae2549da20)
+
+Resolves: #1720699
+---
+ src/libsystemd/sd-bus/sd-bus.c | 49 +++++++++++++++++++++++++++++++++-
+ src/shared/macro.h             |  2 ++
+ 2 files changed, 50 insertions(+), 1 deletion(-)
+
+diff --git a/src/libsystemd/sd-bus/sd-bus.c b/src/libsystemd/sd-bus/sd-bus.c
+index b0a3237..44ed2c7 100644
+--- a/src/libsystemd/sd-bus/sd-bus.c
++++ b/src/libsystemd/sd-bus/sd-bus.c
+@@ -1495,7 +1495,50 @@ _public_ int sd_bus_get_bus_id(sd_bus *bus, sd_id128_t *id) {
+         return 0;
+ }
+ 
++#define COOKIE_CYCLED (UINT32_C(1) << 31)
++
++static uint64_t cookie_inc(uint64_t cookie) {
++
++        /* Stay within the 32bit range, since classic D-Bus can't deal with more */
++        if (cookie >= UINT32_MAX)
++                return COOKIE_CYCLED; /* Don't go back to zero, but use the highest bit for checking
++                                       * whether we are looping. */
++
++        return cookie + 1;
++}
++
++static int next_cookie(sd_bus *b) {
++        uint64_t new_cookie;
++
++        assert(b);
++
++        new_cookie = cookie_inc(b->cookie);
++
++        /* Small optimization: don't bother with checking for cookie reuse until we overran cookiespace at
++         * least once, but then do it thorougly. */
++        if (FLAGS_SET(new_cookie, COOKIE_CYCLED)) {
++                uint32_t i;
++
++                /* Check if the cookie is currently in use. If so, pick the next one */
++                for (i = 0; i < COOKIE_CYCLED; i++) {
++                        if (!ordered_hashmap_contains(b->reply_callbacks, &new_cookie))
++                                goto good;
++
++                        new_cookie = cookie_inc(new_cookie);
++                }
++
++                /* Can't fulfill request */
++                return -EBUSY;
++        }
++
++good:
++        b->cookie = new_cookie;
++        return 0;
++}
++
+ static int bus_seal_message(sd_bus *b, sd_bus_message *m, usec_t timeout) {
++        int r;
++
+         assert(b);
+         assert(m);
+ 
+@@ -1510,7 +1553,11 @@ static int bus_seal_message(sd_bus *b, sd_bus_message *m, usec_t timeout) {
+         if (timeout == 0)
+                 timeout = BUS_DEFAULT_TIMEOUT;
+ 
+-        return bus_message_seal(m, ++b->cookie, timeout);
++        r = next_cookie(b);
++        if (r < 0)
++                return r;
++
++        return bus_message_seal(m, b->cookie, timeout);
+ }
+ 
+ static int bus_remarshal_message(sd_bus *b, sd_bus_message **m) {
+diff --git a/src/shared/macro.h b/src/shared/macro.h
+index 7a57f4e..08567d2 100644
+--- a/src/shared/macro.h
++++ b/src/shared/macro.h
+@@ -394,6 +394,8 @@ do {                                                                    \
+ 
+ #define SET_FLAG(v, flag, b) \
+         (v) = (b) ? ((v) | (flag)) : ((v) & ~(flag))
++#define FLAGS_SET(v, flags) \
++        ((~(v) & (flags)) == 0)
+ 
+ #define IN_SET(x, y, ...)                                               \
+         ({                                                              \
+-- 
+2.21.0
+

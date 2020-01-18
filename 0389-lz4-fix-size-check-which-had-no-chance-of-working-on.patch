@@ -1,0 +1,25 @@
+From 942cfd50b5c03f19cfe1b03040c54b7a460b5593 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Tue, 1 Dec 2015 22:53:23 -0500
+Subject: [PATCH] lz4: fix size check which had no chance of working on
+ big-endian
+
+Cherry-picked from: b3aa622929f81b44974d182636b1fde8b2a506e5
+Related: #1318994
+---
+ src/journal/compress.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/journal/compress.c b/src/journal/compress.c
+index c9a3399cc..4fb09f596 100644
+--- a/src/journal/compress.c
++++ b/src/journal/compress.c
+@@ -190,7 +190,7 @@ int decompress_blob_lz4(const void *src, uint64_t src_size,
+                 return -EBADMSG;
+ 
+         size = le64toh( *(le64_t*)src );
+-        if (size < 0 || (le64_t) size != *(le64_t*)src)
++        if (size < 0 || (unsigned) size != le64toh(*(le64_t*)src))
+                 return -EFBIG;
+         if ((size_t) size > *dst_alloc_size) {
+                 out = realloc(*dst, size);

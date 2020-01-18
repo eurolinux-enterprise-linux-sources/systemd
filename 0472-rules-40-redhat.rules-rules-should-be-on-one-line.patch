@@ -1,0 +1,32 @@
+From 33d6abe2452c8222b926f917171d65ed934d0136 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Tue, 11 Apr 2017 15:15:00 +0200
+Subject: [PATCH] rules/40-redhat.rules: rules should be on one line
+
+rhel-only
+Related: #1274401
+---
+ rules/40-redhat.rules | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
+
+diff --git a/rules/40-redhat.rules b/rules/40-redhat.rules
+index c928d412b..34a1df9c4 100644
+--- a/rules/40-redhat.rules
++++ b/rules/40-redhat.rules
+@@ -29,14 +29,10 @@ ACTION=="remove", GOTO="zfcp_scsi_device_end"
+ KERNEL=="sd*", SUBSYSTEMS=="ccw", DRIVERS=="zfcp", ENV{.ID_ZFCP_BUS}="1"
+ 
+ # For SCSI disks
+-KERNEL=="sd*[!0-9]", SUBSYSTEMS=="scsi",
+-        ENV{.ID_ZFCP_BUS}=="1", ENV{DEVTYPE}=="disk",
+-        SYMLINK+="disk/by-path/ccw-$attr{hba_id}-zfcp-$attr{wwpn}:$attr{fcp_lun}"
++KERNEL=="sd*[!0-9]", SUBSYSTEMS=="scsi", ENV{.ID_ZFCP_BUS}=="1", ENV{DEVTYPE}=="disk", SYMLINK+="disk/by-path/ccw-$attr{hba_id}-zfcp-$attr{wwpn}:$attr{fcp_lun}"
+ 
+ 
+ # For partitions on a SCSI disk
+-KERNEL=="sd*[0-9]", SUBSYSTEMS=="scsi",
+-        ENV{.ID_ZFCP_BUS}=="1", ENV{DEVTYPE}=="partition",
+-        SYMLINK+="disk/by-path/ccw-$attr{hba_id}-zfcp-$attr{wwpn}:$attr{fcp_lun}-part%n"
++KERNEL=="sd*[0-9]", SUBSYSTEMS=="scsi", ENV{.ID_ZFCP_BUS}=="1", ENV{DEVTYPE}=="partition", SYMLINK+="disk/by-path/ccw-$attr{hba_id}-zfcp-$attr{wwpn}:$attr{fcp_lun}-part%n"
+ 
+ LABEL="zfcp_scsi_device_end"

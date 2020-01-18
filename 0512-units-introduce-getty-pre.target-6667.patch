@@ -1,0 +1,112 @@
+From d538b6082216f4867b4a50c8009abe2462aafbf4 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekletar@users.noreply.github.com>
+Date: Thu, 31 Aug 2017 11:20:14 +0200
+Subject: [PATCH] units: introduce getty-pre.target (#6667)
+
+This new target is a passive unit, hence it is supposed to be pulled in
+to the transaction by the service that wants to block login on the
+console (e.g. text version of initial-setup). Now both getty and
+serial-getty are ordered after this target.
+
+https://lists.freedesktop.org/archives/systemd-devel/2015-July/033754.html
+
+(cherry picked from commit 175902541852fb9207f6e532d8da48c9a102340c)
+
+Conflicts:
+	units/meson.build
+
+Resolves: #1173080
+---
+ Makefile.am                    |  1 +
+ man/systemd.special.xml        | 12 ++++++++++++
+ units/getty-pre.target         | 11 +++++++++++
+ units/getty@.service.m4        |  2 +-
+ units/serial-getty@.service.m4 |  2 +-
+ 5 files changed, 26 insertions(+), 2 deletions(-)
+ create mode 100644 units/getty-pre.target
+
+diff --git a/Makefile.am b/Makefile.am
+index e9ceac98a..7c58fd050 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -462,6 +462,7 @@ dist_systemunit_DATA = \
+ 	units/sysinit.target \
+ 	units/basic.target \
+ 	units/getty.target \
++	units/getty-pre.target \
+ 	units/halt.target \
+ 	units/kexec.target \
+ 	units/local-fs.target \
+diff --git a/man/systemd.special.xml b/man/systemd.special.xml
+index 553197d66..eb464f9f8 100644
+--- a/man/systemd.special.xml
++++ b/man/systemd.special.xml
+@@ -61,6 +61,7 @@
+     <filename>exit.target</filename>,
+     <filename>final.target</filename>,
+     <filename>getty.target</filename>,
++    <filename>getty-pre.target</filename>,
+     <filename>graphical.target</filename>,
+     <filename>halt.target</filename>,
+     <filename>hibernate.target</filename>,
+@@ -216,6 +217,17 @@
+           </para>
+         </listitem>
+       </varlistentry>
++      <varlistentry>
++        <term><filename>getty-pre.target</filename></term>
++        <listitem>
++          <para>A special passive target unit. Users of this target
++          are expected to pull it in the boot transaction via
++          a dependency (e.g. <varname>Wants=</varname>). Order your
++          unit before this unit if you want to make use of the console
++          just before <filename>getty</filename> is started.
++          </para>
++        </listitem>
++      </varlistentry>
+       <varlistentry>
+         <term><filename>graphical.target</filename></term>
+         <listitem>
+diff --git a/units/getty-pre.target b/units/getty-pre.target
+new file mode 100644
+index 000000000..f6c78b6c2
+--- /dev/null
++++ b/units/getty-pre.target
+@@ -0,0 +1,11 @@
++#  This file is part of systemd.
++#
++#  systemd is free software; you can redistribute it and/or modify it
++#  under the terms of the GNU Lesser General Public License as published by
++#  the Free Software Foundation; either version 2.1 of the License, or
++#  (at your option) any later version.
++
++[Unit]
++Description=Login Prompts (Pre)
++Documentation=man:systemd.special(7) man:systemd-getty-generator(8)
++Documentation=http://0pointer.de/blog/projects/serial-console.html
+diff --git a/units/getty@.service.m4 b/units/getty@.service.m4
+index 46164ab9d..ad4bf2103 100644
+--- a/units/getty@.service.m4
++++ b/units/getty@.service.m4
+@@ -9,7 +9,7 @@
+ Description=Getty on %I
+ Documentation=man:agetty(8) man:systemd-getty-generator(8)
+ Documentation=http://0pointer.de/blog/projects/serial-console.html
+-After=systemd-user-sessions.service plymouth-quit-wait.service
++After=systemd-user-sessions.service plymouth-quit-wait.service getty-pre.target
+ m4_ifdef(`HAVE_SYSV_COMPAT',
+ After=rc-local.service
+ )m4_dnl
+diff --git a/units/serial-getty@.service.m4 b/units/serial-getty@.service.m4
+index 4522d0d2b..6802333f7 100644
+--- a/units/serial-getty@.service.m4
++++ b/units/serial-getty@.service.m4
+@@ -10,7 +10,7 @@ Description=Serial Getty on %I
+ Documentation=man:agetty(8) man:systemd-getty-generator(8)
+ Documentation=http://0pointer.de/blog/projects/serial-console.html
+ BindsTo=dev-%i.device
+-After=dev-%i.device systemd-user-sessions.service plymouth-quit-wait.service
++After=dev-%i.device systemd-user-sessions.service plymouth-quit-wait.service getty-pre.target
+ m4_ifdef(`HAVE_SYSV_COMPAT',
+ After=rc-local.service
+ )m4_dnl

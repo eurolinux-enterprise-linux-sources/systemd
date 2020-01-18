@@ -1,0 +1,103 @@
+From d750826683aaad1cf33b16290c7daa8b0a669f4c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Sat, 23 Sep 2017 10:48:09 +0200
+Subject: [PATCH] fileio: use _cleanup_ for FILE unlocking
+
+(cherry picked from commit f858e5148e4f36335555dfaac812197ebd3ef036)
+
+Resolves: #1503106
+---
+ src/shared/fileio.c | 57 +++++++++++++++++++++------------------------
+ 1 file changed, 27 insertions(+), 30 deletions(-)
+
+diff --git a/src/shared/fileio.c b/src/shared/fileio.c
+index be775f982..4880a4941 100644
+--- a/src/shared/fileio.c
++++ b/src/shared/fileio.c
+@@ -802,10 +802,13 @@ int get_status_field(const char *filename, const char *pattern, char **field) {
+         return 0;
+ }
+ 
++static inline void funlockfilep(FILE **f) {
++        funlockfile(*f);
++}
++
+ int read_line(FILE *f, size_t limit, char **ret) {
+         _cleanup_free_ char *buffer = NULL;
+         size_t n = 0, allocated = 0, count = 0;
+-        int r;
+ 
+         assert(f);
+ 
+@@ -827,48 +830,42 @@ int read_line(FILE *f, size_t limit, char **ret) {
+                         return -ENOMEM;
+         }
+ 
+-        flockfile(f);
++        {
++                _cleanup_(funlockfilep) FILE *flocked = f;
++                flockfile(f);
+ 
+-        for (;;) {
+-                int c;
++                for (;;) {
++                        int c;
+ 
+-                if (n >= limit) {
+-                        funlockfile(f);
+-                        return -ENOBUFS;
+-                }
++                        if (n >= limit)
++                                return -ENOBUFS;
++
++                        errno = 0;
++                        c = fgetc_unlocked(f);
++                        if (c == EOF) {
++                                /* if we read an error, and have no data to return, then propagate the error */
++                                if (ferror_unlocked(f) && n == 0)
++                                        return errno > 0 ? -errno : -EIO;
+ 
+-                errno = 0;
+-                c = fgetc_unlocked(f);
+-                if (c == EOF) {
+-                        /* if we read an error, and have no data to return, then propagate the error */
+-                        if (ferror_unlocked(f) && n == 0) {
+-                                r = errno > 0 ? -errno : -EIO;
+-                                funlockfile(f);
+-                                return r;
++                                break;
+                         }
+ 
+-                        break;
+-                }
++                        count++;
+ 
+-                count++;
++                        if (IN_SET(c, '\n', 0)) /* Reached a delimiter */
++                                break;
+ 
+-                if (IN_SET(c, '\n', 0)) /* Reached a delimiter */
+-                        break;
++                        if (ret) {
++                                if (!GREEDY_REALLOC(buffer, allocated, n + 2))
++                                        return -ENOMEM;
+ 
+-                if (ret) {
+-                        if (!GREEDY_REALLOC(buffer, allocated, n + 2)) {
+-                                funlockfile(f);
+-                                return -ENOMEM;
++                                buffer[n] = (char) c;
+                         }
+ 
+-                        buffer[n] = (char) c;
++                        n++;
+                 }
+-
+-                n++;
+         }
+ 
+-        funlockfile(f);
+-
+         if (ret) {
+                 buffer[n] = 0;
+ 

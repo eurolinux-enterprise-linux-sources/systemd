@@ -1,0 +1,22 @@
+From 5a21b0644425a8f1decdb6d52b93e2a73d5c75bf Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Tue, 21 Apr 2015 17:02:22 +0200
+Subject: [PATCH] some compilators don't support __INCLUDE_LEVEL__
+
+---
+ src/systemd/_sd-common.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/systemd/_sd-common.h b/src/systemd/_sd-common.h
+index 896a027eb..e9426a450 100644
+--- a/src/systemd/_sd-common.h
++++ b/src/systemd/_sd-common.h
+@@ -24,7 +24,7 @@
+ 
+ /* This is a private header; never even think of including this directly! */
+ 
+-#if __INCLUDE_LEVEL__ <= 1
++#if defined __INCLUDE_LEVEL__ &&  __INCLUDE_LEVEL__ <= 1
+ #error "Do not include _sd-common.h directly; it is a private header."
+ #endif
+ 

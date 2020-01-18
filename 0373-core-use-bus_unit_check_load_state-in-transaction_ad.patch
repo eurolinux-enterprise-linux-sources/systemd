@@ -1,0 +1,76 @@
+From a47b58110f92415fcb69441031e4d04fec48b852 Mon Sep 17 00:00:00 2001
+From: Franck Bui <fbui@suse.com>
+Date: Wed, 2 Dec 2015 17:03:28 +0100
+Subject: [PATCH] core: use bus_unit_check_load_state() in
+ transaction_add_job_and_dependencies()
+
+(cherry picked from commit ee87525c5eeacf3ce8fb730bcd3658e8da085046)
+Related: #1256858
+---
+ src/core/transaction.c    | 27 +++++----------------------
+ src/systemctl/systemctl.c |  5 +++++
+ 2 files changed, 10 insertions(+), 22 deletions(-)
+
+diff --git a/src/core/transaction.c b/src/core/transaction.c
+index aed64fa41..57e9cb3f8 100644
+--- a/src/core/transaction.c
++++ b/src/core/transaction.c
+@@ -26,6 +26,7 @@
+ #include "bus-util.h"
+ #include "bus-error.h"
+ #include "transaction.h"
++#include "dbus-unit.h"
+ 
+ static void transaction_unlink_job(Transaction *tr, Job *j, bool delete_dependencies);
+ 
+@@ -857,30 +858,12 @@ int transaction_add_job_and_dependencies(
+                 return sd_bus_error_setf(e, BUS_ERROR_LOAD_FAILED,
+                                          "Unit %s is not loaded properly.", unit->id);
+ 
+-        if (type != JOB_STOP && unit->load_state == UNIT_ERROR) {
+-                if (unit->load_error == -ENOENT || unit->manager->test_run)
+-                        return sd_bus_error_setf(e, BUS_ERROR_LOAD_FAILED,
+-                                                 "Unit %s failed to load: %s.",
+-                                                 unit->id,
+-                                                 strerror(-unit->load_error));
+-                else
+-                        return sd_bus_error_setf(e, BUS_ERROR_LOAD_FAILED,
+-                                                 "Unit %s failed to load: %s. "
+-                                                 "See system logs and 'systemctl status %s' for details.",
+-                                                 unit->id,
+-                                                 strerror(-unit->load_error),
+-                                                 unit->id);
++        if (type != JOB_STOP) {
++                r = bus_unit_check_load_state(unit, e);
++                if (r < 0)
++                        return r;
+         }
+ 
+-        if (type != JOB_STOP && unit->load_state == UNIT_NOT_FOUND)
+-                return sd_bus_error_setf(e, BUS_ERROR_LOAD_FAILED,
+-                                         "Unit %s failed to load: %s.",
+-                                         unit->id, strerror(-unit->load_error));
+-
+-        if (type != JOB_STOP && unit->load_state == UNIT_MASKED)
+-                return sd_bus_error_setf(e, BUS_ERROR_UNIT_MASKED,
+-                                         "Unit %s is masked.", unit->id);
+-
+         if (!unit_job_is_applicable(unit, type))
+                 return sd_bus_error_setf(e, BUS_ERROR_JOB_TYPE_NOT_APPLICABLE,
+                                          "Job type %s is not applicable for unit %s.",
+diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
+index 58998185c..e4b404abc 100644
+--- a/src/systemctl/systemctl.c
++++ b/src/systemctl/systemctl.c
+@@ -2617,6 +2617,11 @@ static int start_unit_one(
+                 verb = method_to_verb(method);
+ 
+                 log_error("Failed to %s %s: %s", verb, name, bus_error_message(error, r));
++
++                if (!sd_bus_error_has_name(error, BUS_ERROR_NO_SUCH_UNIT) &&
++                    !sd_bus_error_has_name(error, BUS_ERROR_UNIT_MASKED))
++                        log_error("See system logs and 'systemctl status %s' for details.", name);
++
+                 return r;
+         }
+ 

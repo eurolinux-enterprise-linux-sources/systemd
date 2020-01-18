@@ -1,0 +1,26 @@
+From 131de4184e86e7096d987973d7c4918f8303fa4b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Fri, 13 Mar 2015 00:25:31 -0400
+Subject: [PATCH] man: update example 2 in systemd.network(5)
+
+none/both/v4/v6 are deprecated in favour of no/yes/ipv4/ipv6.
+
+https://bugs.freedesktop.org/show_bug.cgi?id=89221
+(cherry picked from commit 9c8ca3f7a69f82ca181b3cd2d5e1d3e621938abb)
+---
+ man/systemd.network.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/man/systemd.network.xml b/man/systemd.network.xml
+index 485876b6a..24f8416ef 100644
+--- a/man/systemd.network.xml
++++ b/man/systemd.network.xml
+@@ -643,7 +643,7 @@ Gateway=192.168.0.1</programlisting>
+ Name=en*
+ 
+ [Network]
+-DHCP=both</programlisting>
++DHCP=yes</programlisting>
+     </example>
+ 
+     <example>

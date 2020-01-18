@@ -1,0 +1,34 @@
+From 2ae0271ada810c06c12755699f0db955fc51061d Mon Sep 17 00:00:00 2001
+From: Petr Lautrbach <plautrba@redhat.com>
+Date: Thu, 10 Mar 2016 10:19:56 +0100
+Subject: [PATCH] socket_address_listen - do not rely on errno
+
+Currently socket_address_listen() calls mac_selinux_bind() to bind a UNIX
+socket and checks its return value and errno for EADDRINUSE. This is not
+correct. When there's an SELinux context change made for the new socket,
+bind() is not the last function called in mac_selinux_bind(). In that
+case the last call is setfscreatecon() from libselinux which can change
+errno as it uses access() to check if /proc/thread-self is available.
+It fails on kernels before 3.17 and errno is set to ENOENT.
+
+It's safe to check only the return value at it's set to -errno.
+
+Cherry-picked from: a0c9496cc826957fe0f3926f619e073f17a9ab4d
+Resolves: #1316452
+---
+ src/shared/socket-label.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/shared/socket-label.c b/src/shared/socket-label.c
+index a6289eb50..713e71ba3 100644
+--- a/src/shared/socket-label.c
++++ b/src/shared/socket-label.c
+@@ -119,7 +119,7 @@ int socket_address_listen(
+ 
+                 r = mac_selinux_bind(fd, &a->sockaddr.sa, a->size);
+ 
+-                if (r < 0 && errno == EADDRINUSE) {
++                if (r == -EADDRINUSE) {
+                         /* Unlink and try again */
+                         unlink(a->sockaddr.un.sun_path);
+                         r = bind(fd, &a->sockaddr.sa, a->size);

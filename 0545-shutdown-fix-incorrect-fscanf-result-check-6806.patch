@@ -1,0 +1,29 @@
+From 4ee75042124dbc675fa68d2dadfdcf866d772de8 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 13 Sep 2017 10:08:37 +0200
+Subject: [PATCH] shutdown: fix incorrect fscanf() result check (#6806)
+
+A correction for 090e3c9796ef6468d4f396610804d62f6ffd797f.
+
+Fixes: #6796
+
+(cherry-picked from: 3d4ec01269244c2d35a781abf748ea9ba57666e2)
+
+Related: #1312002
+---
+ src/core/umount.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/core/umount.c b/src/core/umount.c
+index 6e8ccc794..3eec0d459 100644
+--- a/src/core/umount.c
++++ b/src/core/umount.c
+@@ -93,7 +93,7 @@ static int mount_points_list_get(MountPoint **head) {
+                            "%ms"        /* (11) mount options */
+                            "%*[^\n]",   /* some rubbish at the end */
+                            &path, &type, &options);
+-                if (k != 2) {
++                if (k != 3) {
+                         if (k == EOF)
+                                 break;
+ 

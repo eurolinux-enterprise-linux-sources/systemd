@@ -1,0 +1,35 @@
+From 273a3d35df021128bd72e124d943cbb7b1c7194c Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Fri, 22 Jun 2018 09:11:49 +0200
+Subject: [PATCH] man: correct the meaning of TimeoutStopSec=
+
+Fixes: #9325
+(cherry picked from commit 9a6da355a06e2b272717f2ac23e41945ce56eb6d)
+Resolves: #1305509
+---
+ man/systemd.service.xml | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/man/systemd.service.xml b/man/systemd.service.xml
+index a274db480..d147e449a 100644
+--- a/man/systemd.service.xml
++++ b/man/systemd.service.xml
+@@ -429,12 +429,12 @@
+ 
+       <varlistentry>
+         <term><varname>TimeoutStopSec=</varname></term>
+-        <listitem><para>Configures the time to wait for stop. If a
+-        service is asked to stop, but does not terminate in the
+-        specified time, it will be terminated forcibly via
+-        <constant>SIGTERM</constant>, and after another timeout of
+-        equal duration with <constant>SIGKILL</constant> (see
+-        <varname>KillMode=</varname> in
++        <listitem><para>This option serves two purposes. First, it configures the time to wait for each
++        <constant>ExecStop=</constant> command. If any of them times out, subsequent <constant>ExecStop=</constant> commands
++        are skipped and the service will be terminated by <constant>SIGTERM</constant>. If no <constant>ExecStop=</constant>
++        commands are specified, the service gets the <constant>SIGTERM</constant> immediately. Second, it configures the time
++        to wait for the service itself to stop. If it doesn't terminate in the specified time, it will be forcibly terminated
++        by <constant>SIGKILL</constant> (see <varname>KillMode=</varname> in
+         <citerefentry><refentrytitle>systemd.kill</refentrytitle><manvolnum>5</manvolnum></citerefentry>).
+         Takes a unit-less value in seconds, or a time span value such
+         as "5min 20s". Pass <literal>0</literal> to disable the

@@ -1,0 +1,63 @@
+From 0204371780cbcae7635544abc61846d33d04c317 Mon Sep 17 00:00:00 2001
+From: Michal Schmidt <mschmidt@redhat.com>
+Date: Mon, 20 Jul 2015 18:36:12 +0200
+Subject: [PATCH] core: unit_get_status_message_format() never returns NULL
+
+unit_get_status_message_format() is used only with one of JOB_START,
+JOB_STOP, JOB_RELOAD, all of which have fallback message strings
+defined, so the function may never return NULL.
+
+(cherry picked from commit b5bf308ba50ab0bac0f0caec2d8e4d5c75c107d0)
+
+Related: #1506256
+---
+ src/core/unit.c | 13 +++----------
+ 1 file changed, 3 insertions(+), 10 deletions(-)
+
+diff --git a/src/core/unit.c b/src/core/unit.c
+index a33cbdf73..22d9beed7 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -1332,10 +1332,9 @@ _pure_ static const char* unit_get_status_message_format(Unit *u, JobType t) {
+         const UnitStatusMessageFormats *format_table;
+ 
+         assert(u);
+-        assert(t >= 0);
+-        assert(t < _JOB_TYPE_MAX);
++        assert(t == JOB_START || t == JOB_STOP || t == JOB_RELOAD);
+ 
+-        if (t == JOB_START || t == JOB_STOP) {
++        if (t != JOB_RELOAD) {
+                 format_table = &UNIT_VTABLE(u)->status_message_formats;
+                 if (format_table) {
+                         format = format_table->starting_stopping[t == JOB_STOP];
+@@ -1349,10 +1348,8 @@ _pure_ static const char* unit_get_status_message_format(Unit *u, JobType t) {
+                 return "Starting %s.";
+         else if (t == JOB_STOP)
+                 return "Stopping %s.";
+-        else if (t == JOB_RELOAD)
++        else
+                 return "Reloading %s.";
+-
+-        return NULL;
+ }
+ 
+ static void unit_status_print_starting_stopping(Unit *u, JobType t) {
+@@ -1361,8 +1358,6 @@ static void unit_status_print_starting_stopping(Unit *u, JobType t) {
+         assert(u);
+ 
+         format = unit_get_status_message_format(u, t);
+-        if (!format)
+-                return;
+ 
+         DISABLE_WARNING_FORMAT_NONLITERAL;
+         unit_status_printf(u, "", format);
+@@ -1385,8 +1380,6 @@ static void unit_status_log_starting_stopping_reloading(Unit *u, JobType t) {
+         /* We log status messages for all units and all operations. */
+ 
+         format = unit_get_status_message_format(u, t);
+-        if (!format)
+-                return;
+ 
+         DISABLE_WARNING_FORMAT_NONLITERAL;
+         snprintf(buf, sizeof(buf), format, unit_description(u));

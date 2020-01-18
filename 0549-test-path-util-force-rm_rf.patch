@@ -1,0 +1,28 @@
+From 6e3239eed032eaf0c9a6308664a9034e64c98d30 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Fri, 13 Oct 2017 13:29:14 +0200
+Subject: [PATCH] test-path-util: force rm_rf
+
+On rhel we don't have tmpfs in /tmp, so simple rm_rf will
+refuse to remove the test directory.
+
+RHEL-only
+
+Related: #1472439
+---
+ src/test/test-path-util.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/test/test-path-util.c b/src/test/test-path-util.c
+index a4fec07e7..aee1f4e03 100644
+--- a/src/test/test-path-util.c
++++ b/src/test/test-path-util.c
+@@ -157,7 +157,7 @@ static void test_path_is_mount_point(void) {
+         } else
+                 printf("Skipping bind mount file test: %m\n");
+ 
+-        assert_se(rm_rf(tmp_dir, false, true, false) == 0);
++        assert_se(rm_rf_dangerous(tmp_dir, false, true, false) == 0);
+ }
+ 
+ static void test_find_binary(const char *self, bool local) {

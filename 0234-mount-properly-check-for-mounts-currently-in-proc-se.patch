@@ -1,0 +1,75 @@
+From 602786c9171d189e859796fd61873835fe858a06 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Tue, 19 May 2015 17:19:27 +0200
+Subject: [PATCH] mount: properly check for mounts currently in
+ /proc/self/mountinfo
+
+http://lists.freedesktop.org/archives/systemd-devel/2015-May/032059.html
+(cherry picked from commit 394763f63c1941cafd9d3bf81e8151a2206474a7)
+
+Cherry-picked from: 394763f
+Resolves: #1222517
+---
+ src/core/mount.c | 33 +++++++++++++++++++--------------
+ 1 file changed, 19 insertions(+), 14 deletions(-)
+
+diff --git a/src/core/mount.c b/src/core/mount.c
+index fa63f2426..1f1a41ab6 100644
+--- a/src/core/mount.c
++++ b/src/core/mount.c
+@@ -1768,7 +1768,18 @@ static int mount_dispatch_io(sd_event_source *source, int fd, uint32_t revents,
+ 
+                 if (!mount->is_mounted) {
+ 
+-                        /* A mount point is gone */
++                        /* A mount point is not around right now. It
++                         * might be gone, or might never have
++                         * existed. */
++
++                        if (mount->from_proc_self_mountinfo &&
++                            mount->parameters_proc_self_mountinfo.what) {
++
++                                /* Remember that this device might just have disappeared */
++                                if (set_ensure_allocated(&gone, &string_hash_ops) < 0 ||
++                                    set_put(gone, mount->parameters_proc_self_mountinfo.what) < 0)
++                                        log_oom(); /* we don't care too much about OOM here... */
++                        }
+ 
+                         mount->from_proc_self_mountinfo = false;
+ 
+@@ -1785,14 +1796,6 @@ static int mount_dispatch_io(sd_event_source *source, int fd, uint32_t revents,
+                                 break;
+                         }
+ 
+-                        /* Remember that this device might just have disappeared */
+-                        if (mount->parameters_proc_self_mountinfo.what) {
+-
+-                                if (set_ensure_allocated(&gone, &string_hash_ops) < 0 ||
+-                                    set_put(gone, mount->parameters_proc_self_mountinfo.what) < 0)
+-                                        log_oom(); /* we don't care too much about OOM here... */
+-                        }
+-
+                 } else if (mount->just_mounted || mount->just_changed) {
+ 
+                         /* A mount point was added or changed */
+@@ -1820,13 +1823,15 @@ static int mount_dispatch_io(sd_event_source *source, int fd, uint32_t revents,
+                                 mount_set_state(mount, mount->state);
+                                 break;
+                         }
++                }
+ 
+-                        if (mount->parameters_proc_self_mountinfo.what) {
++                if (mount->is_mounted &&
++                    mount->from_proc_self_mountinfo &&
++                    mount->parameters_proc_self_mountinfo.what) {
+ 
+-                                if (set_ensure_allocated(&around, &string_hash_ops) < 0 ||
+-                                    set_put(around, mount->parameters_proc_self_mountinfo.what) < 0)
+-                                        log_oom();
+-                        }
++                        if (set_ensure_allocated(&around, &string_hash_ops) < 0 ||
++                            set_put(around, mount->parameters_proc_self_mountinfo.what) < 0)
++                                log_oom();
+                 }
+ 
+                 /* Reset the flags for later calls */

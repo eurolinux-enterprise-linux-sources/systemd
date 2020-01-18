@@ -1,0 +1,24 @@
+From 01cfafc9f1d79f751405239046db827b6eb73f1e Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Mon, 20 Feb 2017 12:32:42 +0100
+Subject: [PATCH] service: log_unit consumes id of unit not a unit
+
+rhel-only
+Related: #1421658
+---
+ src/core/service.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/core/service.c b/src/core/service.c
+index 84e00573f..3bd6c3338 100644
+--- a/src/core/service.c
++++ b/src/core/service.c
+@@ -1567,7 +1567,7 @@ static void service_enter_start(Service *s) {
+                         /* There's no command line configured for the main command? Hmm, that is strange. This can only
+                          * happen if the configuration changes at runtime. In this case, let's enter a failure
+                          * state. */
+-                        log_unit_error(UNIT(s), "There's no 'start' task anymore we could start: %m");
++                        log_unit_error(UNIT(s)->id, "There's no 'start' task anymore we could start: %m");
+                         r = -ENXIO;
+                         goto fail;
+                 }

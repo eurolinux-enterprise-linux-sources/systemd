@@ -1,0 +1,214 @@
+From 8afe4259a8add0d042950015d34afc95a221ad96 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 6 Jul 2016 13:47:07 +0200
+Subject: [PATCH] time-util: add parse_time(), which is like parse_sec() but
+ allows specification of default time unit if none is specified
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This is useful if we want to parse RLIMIT_RTTIME values where the common
+UNIX syntax is without any units but refers to a non-second unit (µs in
+this case), but where we want to allow specification of units.
+
+Cherry-picked from: 519cffec890510f817740d07355e911b10c203b7
+Related: #1351415
+---
+ src/shared/calendarspec.c |  4 ++--
+ src/shared/time-util.c    | 34 ++++++++++++++++++++++------------
+ src/shared/time-util.h    |  1 +
+ src/test/test-time.c      | 23 +++++++++++++++++++++++
+ src/test/test-unit-file.c |  6 +++---
+ 5 files changed, 51 insertions(+), 17 deletions(-)
+
+diff --git a/src/shared/calendarspec.c b/src/shared/calendarspec.c
+index 2fde3e107..abbf0261e 100644
+--- a/src/shared/calendarspec.c
++++ b/src/shared/calendarspec.c
+@@ -556,7 +556,7 @@ static int parse_date(const char **p, CalendarSpec *c) {
+         return -EINVAL;
+ }
+ 
+-static int parse_time(const char **p, CalendarSpec *c) {
++static int parse_calendar_time(const char **p, CalendarSpec *c) {
+         CalendarComponent *h = NULL, *m = NULL, *s = NULL;
+         const char *t;
+         int r;
+@@ -789,7 +789,7 @@ int calendar_spec_from_string(const char *p, CalendarSpec **spec) {
+                 if (r < 0)
+                         goto fail;
+ 
+-                r = parse_time(&p, c);
++                r = parse_calendar_time(&p, c);
+                 if (r < 0)
+                         goto fail;
+ 
+diff --git a/src/shared/time-util.c b/src/shared/time-util.c
+index 1c36c577c..c001f52de 100644
+--- a/src/shared/time-util.c
++++ b/src/shared/time-util.c
+@@ -613,7 +613,8 @@ finish:
+         return 0;
+ }
+ 
+-int parse_sec(const char *t, usec_t *usec) {
++int parse_time(const char *t, usec_t *usec, usec_t default_unit) {
++
+         static const struct {
+                 const char *suffix;
+                 usec_t usec;
+@@ -645,7 +646,6 @@ int parse_sec(const char *t, usec_t *usec) {
+                 { "y", USEC_PER_YEAR },
+                 { "usec", 1ULL },
+                 { "us", 1ULL },
+-                { "", USEC_PER_SEC }, /* default is sec */
+         };
+ 
+         const char *p, *s;
+@@ -654,6 +654,7 @@ int parse_sec(const char *t, usec_t *usec) {
+ 
+         assert(t);
+         assert(usec);
++        assert(default_unit > 0);
+ 
+         p = t;
+ 
+@@ -672,6 +673,7 @@ int parse_sec(const char *t, usec_t *usec) {
+                 long long l, z = 0;
+                 char *e;
+                 unsigned i, n = 0;
++                usec_t multiplier, k;
+ 
+                 p += strspn(p, WHITESPACE);
+ 
+@@ -714,21 +716,24 @@ int parse_sec(const char *t, usec_t *usec) {
+ 
+                 for (i = 0; i < ELEMENTSOF(table); i++)
+                         if (startswith(e, table[i].suffix)) {
+-                                usec_t k = (usec_t) z * table[i].usec;
+-
+-                                for (; n > 0; n--)
+-                                        k /= 10;
+-
+-                                r += (usec_t) l * table[i].usec + k;
++                                multiplier = table[i].usec;
+                                 p = e + strlen(table[i].suffix);
+-
+-                                something = true;
+                                 break;
+                         }
+ 
+-                if (i >= ELEMENTSOF(table))
+-                        return -EINVAL;
++                if (i >= ELEMENTSOF(table)) {
++                        multiplier = default_unit;
++                        p = e;
++                }
++
++                something = true;
++
++                k = (usec_t) z * multiplier;
++
++                for (; n > 0; n--)
++                        k /= 10;
+ 
++                r += (usec_t) l * multiplier + k;
+         }
+ 
+         *usec = r;
+@@ -736,6 +741,11 @@ int parse_sec(const char *t, usec_t *usec) {
+         return 0;
+ }
+ 
++
++int parse_sec(const char *t, usec_t *usec) {
++        return parse_time(t, usec, USEC_PER_SEC);
++}
++
+ int parse_nsec(const char *t, nsec_t *nsec) {
+         static const struct {
+                 const char *suffix;
+diff --git a/src/shared/time-util.h b/src/shared/time-util.h
+index fca8a4db9..f2789142f 100644
+--- a/src/shared/time-util.h
++++ b/src/shared/time-util.h
+@@ -99,6 +99,7 @@ void dual_timestamp_deserialize(const char *value, dual_timestamp *t);
+ int parse_timestamp(const char *t, usec_t *usec);
+ 
+ int parse_sec(const char *t, usec_t *usec);
++int parse_time(const char *t, usec_t *usec, usec_t default_unit);
+ int parse_nsec(const char *t, nsec_t *nsec);
+ 
+ bool ntp_synced(void);
+diff --git a/src/test/test-time.c b/src/test/test-time.c
+index 3840fff06..820e4aaee 100644
+--- a/src/test/test-time.c
++++ b/src/test/test-time.c
+@@ -57,6 +57,28 @@ static void test_parse_sec(void) {
+         assert_se(parse_sec(".3 infinity", &u) < 0);
+ }
+ 
++static void test_parse_time(void) {
++        usec_t u;
++
++        assert_se(parse_time("5", &u, 1) >= 0);
++        assert_se(u == 5);
++
++        assert_se(parse_time("5", &u, USEC_PER_MSEC) >= 0);
++        assert_se(u == 5 * USEC_PER_MSEC);
++
++        assert_se(parse_time("5", &u, USEC_PER_SEC) >= 0);
++        assert_se(u == 5 * USEC_PER_SEC);
++
++        assert_se(parse_time("5s", &u, 1) >= 0);
++        assert_se(u == 5 * USEC_PER_SEC);
++
++        assert_se(parse_time("5s", &u, USEC_PER_SEC) >= 0);
++        assert_se(u == 5 * USEC_PER_SEC);
++
++        assert_se(parse_time("5s", &u, USEC_PER_MSEC) >= 0);
++        assert_se(u == 5 * USEC_PER_SEC);
++}
++
+ static void test_parse_nsec(void) {
+         nsec_t u;
+ 
+@@ -161,6 +183,7 @@ static void test_get_timezones(void) {
+ 
+ int main(int argc, char *argv[]) {
+         test_parse_sec();
++        test_parse_time();
+         test_parse_nsec();
+         test_format_timespan(1);
+         test_format_timespan(USEC_PER_MSEC);
+diff --git a/src/test/test-unit-file.c b/src/test/test-unit-file.c
+index d15173796..87c81ccd7 100644
+--- a/src/test/test-unit-file.c
++++ b/src/test/test-unit-file.c
+@@ -559,7 +559,7 @@ static void test_config_parse_rlimit(void) {
+         assert_se(rl[RLIMIT_NOFILE]->rlim_cur == RLIM_INFINITY);
+         assert_se(rl[RLIMIT_NOFILE]->rlim_cur == rl[RLIMIT_NOFILE]->rlim_max);
+ 
+-        rl[RLIMIT_NOFILE] = free(rl[RLIMIT_NOFILE]);
++        free(rl[RLIMIT_NOFILE]);
+         assert_se(config_parse_sec_limit(NULL, "fake", 1, "section", 1, "LimitCPU", RLIMIT_CPU, "56", rl, NULL) >= 0);
+         assert_se(rl[RLIMIT_CPU]);
+         assert_se(rl[RLIMIT_CPU]->rlim_cur == 56);
+@@ -580,7 +580,7 @@ static void test_config_parse_rlimit(void) {
+         assert_se(rl[RLIMIT_CPU]->rlim_cur == 2);
+         assert_se(rl[RLIMIT_CPU]->rlim_cur == rl[RLIMIT_CPU]->rlim_max);
+ 
+-        rl[RLIMIT_CPU] = free(rl[RLIMIT_CPU]);
++        free(rl[RLIMIT_CPU]);
+ 
+         assert_se(config_parse_usec_limit(NULL, "fake", 1, "section", 1, "LimitRTTIME", RLIMIT_RTTIME, "58", rl, NULL) >= 0);
+         assert_se(rl[RLIMIT_RTTIME]);
+@@ -602,7 +602,7 @@ static void test_config_parse_rlimit(void) {
+         assert_se(rl[RLIMIT_RTTIME]->rlim_cur == 2345 * USEC_PER_MSEC);
+         assert_se(rl[RLIMIT_RTTIME]->rlim_cur == rl[RLIMIT_RTTIME]->rlim_max);
+ 
+-        rl[RLIMIT_RTTIME] = free(rl[RLIMIT_RTTIME]);
++        free(rl[RLIMIT_RTTIME]);
+ }
+ 
+ int main(int argc, char *argv[]) {

@@ -1,0 +1,45 @@
+From d205f5f85569e2dddca96362ce2db4e2a0b99d00 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Sat, 24 Oct 2015 15:08:15 +0200
+Subject: [PATCH] journal: irrelevant coding style fixes
+
+Cherry-picked from: 0240c603691e006165d8687d6a2c70859755b11f
+Related: #1292447
+---
+ src/journal/compress.c     | 9 +++++----
+ src/journal/journal-file.c | 2 +-
+ 2 files changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/src/journal/compress.c b/src/journal/compress.c
+index 6923753f8..c9a3399cc 100644
+--- a/src/journal/compress.c
++++ b/src/journal/compress.c
+@@ -51,10 +51,11 @@ int compress_blob_xz(const void *src, uint64_t src_size, void *dst, size_t *dst_
+ #ifdef HAVE_XZ
+         static const lzma_options_lzma opt = {
+                 1u << 20u, NULL, 0, LZMA_LC_DEFAULT, LZMA_LP_DEFAULT,
+-                LZMA_PB_DEFAULT, LZMA_MODE_FAST, 128, LZMA_MF_HC3, 4};
+-        static const lzma_filter filters[2] = {
+-                {LZMA_FILTER_LZMA2, (lzma_options_lzma*) &opt},
+-                {LZMA_VLI_UNKNOWN, NULL}
++                LZMA_PB_DEFAULT, LZMA_MODE_FAST, 128, LZMA_MF_HC3, 4
++        };
++        static const lzma_filter filters[] = {
++                { LZMA_FILTER_LZMA2, (lzma_options_lzma*) &opt },
++                { LZMA_VLI_UNKNOWN, NULL }
+         };
+         lzma_ret ret;
+         size_t out_pos = 0;
+diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
+index a8f92e23a..892fe4734 100644
+--- a/src/journal/journal-file.c
++++ b/src/journal/journal-file.c
+@@ -1032,7 +1032,7 @@ static int journal_file_append_data(
+         r = journal_file_find_data_object_with_hash(f, data, size, hash, &o, &p);
+         if (r < 0)
+                 return r;
+-        else if (r > 0) {
++        if (r > 0) {
+ 
+                 if (ret)
+                         *ret = o;

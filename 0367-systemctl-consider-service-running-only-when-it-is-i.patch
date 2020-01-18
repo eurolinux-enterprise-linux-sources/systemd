@@ -1,0 +1,29 @@
+From 94fec84897ab40bf2bc92f0d395a93ecac1b45be Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Luk=C3=A1=C5=A1=20Nykr=C3=BDn?= <lnykryn@redhat.com>
+Date: Wed, 3 Aug 2016 17:08:37 +0200
+Subject: [PATCH] systemctl: consider service running only when it is in active
+ or reloading state (#3874)
+
+Otherwise for example services that are failing on start and have Restart=on-failure
+and bigger RestartSec systemctl status will return 0.
+
+Fixes: #3864
+Cherry-picked from: 7f5da8bd4fb1ba49ba40195a74ca76bb5d4d1f81
+Resolves: #1362461
+---
+ src/systemctl/systemctl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
+index 93b7a193b..b7496c006 100644
+--- a/src/systemctl/systemctl.c
++++ b/src/systemctl/systemctl.c
+@@ -4339,7 +4339,7 @@ static int show_one(
+         else if (streq(verb, "status")) {
+                 print_status_info(&info, ellipsized);
+ 
+-                if (info.active_state && STR_IN_SET(info.active_state, "inactive", "failed"))
++                if (info.active_state && !STR_IN_SET(info.active_state, "active", "reloading"))
+                         r = EXIT_PROGRAM_NOT_RUNNING;
+                 else
+                         r = EXIT_PROGRAM_RUNNING_OR_SERVICE_OK;

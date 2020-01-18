@@ -1,0 +1,61 @@
+From 0ca06b7178ac205855238941eef7fe981447822a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Sun, 24 May 2015 20:20:06 -0400
+Subject: [PATCH] bus-creds: always set SD_BUS_CREDS_PID when we set pid in the
+ mask
+
+Also reorder the code a bit to be easier to parse.
+
+Cherry-picked from: 236f83a
+Related: #1230190
+---
+ src/core/selinux-access.c         |  2 +-
+ src/libsystemd/sd-bus/bus-creds.c | 17 +++++++----------
+ 2 files changed, 8 insertions(+), 11 deletions(-)
+
+diff --git a/src/core/selinux-access.c b/src/core/selinux-access.c
+index 18888747f..ce4f39459 100644
+--- a/src/core/selinux-access.c
++++ b/src/core/selinux-access.c
+@@ -240,7 +240,7 @@ int mac_selinux_generic_access_check(
+         audit_info.path = path;
+         audit_info.cmdline = cl;
+ 
+-        r = selinux_check_access((security_context_t) scon, fcon, tclass, permission, &audit_info);
++        r = selinux_check_access(scon, fcon, tclass, permission, &audit_info);
+         if (r < 0)
+                 r = sd_bus_error_setf(error, SD_BUS_ERROR_ACCESS_DENIED, "SELinux policy denies access.");
+ 
+diff --git a/src/libsystemd/sd-bus/bus-creds.c b/src/libsystemd/sd-bus/bus-creds.c
+index ea8a619c5..5b87fa950 100644
+--- a/src/libsystemd/sd-bus/bus-creds.c
++++ b/src/libsystemd/sd-bus/bus-creds.c
+@@ -698,21 +698,18 @@ int bus_creds_add_more(sd_bus_creds *c, uint64_t mask, pid_t pid, pid_t tid) {
+                 return 0;
+ 
+         /* Try to retrieve PID from creds if it wasn't passed to us */
+-        if (pid <= 0 && (c->mask & SD_BUS_CREDS_PID))
++        if (pid > 0) {
++                c->pid = pid;
++                c->mask |= SD_BUS_CREDS_PID;
++        } else if (c->mask & SD_BUS_CREDS_PID)
+                 pid = c->pid;
++        else
++                /* Without pid we cannot do much... */
++                return 0;
+ 
+         if (tid <= 0 && (c->mask & SD_BUS_CREDS_TID))
+                 tid = c->pid;
+ 
+-        /* Without pid we cannot do much... */
+-        if (pid <= 0)
+-                return 0;
+-
+-        if (pid > 0) {
+-                c->pid = pid;
+-                c->mask |= SD_BUS_CREDS_PID;
+-        }
+-
+         if (tid > 0) {
+                 c->tid = tid;
+                 c->mask |= SD_BUS_CREDS_TID;

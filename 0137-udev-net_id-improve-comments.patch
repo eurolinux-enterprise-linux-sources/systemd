@@ -1,0 +1,35 @@
+From 127c3f7b5ca3158851dc4a747f664ce43b2a94ee Mon Sep 17 00:00:00 2001
+From: Tom Gundersen <teg@jklm.no>
+Date: Wed, 1 Apr 2015 23:34:19 +0200
+Subject: [PATCH] udev: net_id - improve comments
+
+The dev_port concept is a bit confusing, expand on the comment a bit.
+
+Conflicts:
+	src/udev/udev-builtin-net_id.c
+---
+ src/udev/udev-builtin-net_id.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/udev/udev-builtin-net_id.c b/src/udev/udev-builtin-net_id.c
+index 6a5ada688..2cc1fd409 100644
+--- a/src/udev/udev-builtin-net_id.c
++++ b/src/udev/udev-builtin-net_id.c
+@@ -146,7 +146,7 @@ static int dev_pci_onboard(struct udev_device *dev, struct netnames *names) {
+         if (idx <= 0)
+                 return -EINVAL;
+ 
+-        /* kernel provided multi-device index */
++        /* kernel provided port index for multiple ports on a single PCI function */
+         attr = udev_device_get_sysattr_value(dev, "dev_port");
+         if (attr)
+                 dev_port = strtol(attr, NULL, 10);
+@@ -199,7 +199,7 @@ static int dev_pci_slot(struct udev_device *dev, struct netnames *names) {
+         if (sscanf(udev_device_get_sysname(names->pcidev), "%x:%x:%x.%u", &domain, &bus, &slot, &func) != 4)
+                 return -ENOENT;
+ 
+-        /* kernel provided multi-device index */
++        /* kernel provided port index for multiple ports on a single PCI function */
+         attr = udev_device_get_sysattr_value(dev, "dev_id");
+         if (attr) {
+                 dev_id = strtol(attr, NULL, 16);

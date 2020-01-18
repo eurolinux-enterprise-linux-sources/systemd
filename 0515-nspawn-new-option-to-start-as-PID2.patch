@@ -1,0 +1,491 @@
+From 41e91ccdf9fa3097d7b90718cc83e743f4dc8d6b Mon Sep 17 00:00:00 2001
+From: Jan Rybar <jrybar@redhat.com>
+Date: Thu, 17 Aug 2017 18:01:42 +0200
+Subject: [PATCH] nspawn: new option to start as PID2
+
+Cherry-picked from: 7732f92
+Resolves: #1417387
+---
+ Makefile.am                   |   2 +
+ man/systemd-nspawn.xml        |  65 +++++++++--
+ src/nspawn/nspawn-stub-pid1.c | 196 ++++++++++++++++++++++++++++++++++
+ src/nspawn/nspawn-stub-pid1.h |  22 ++++
+ src/nspawn/nspawn.c           |  56 ++++++++--
+ 5 files changed, 328 insertions(+), 13 deletions(-)
+ create mode 100644 src/nspawn/nspawn-stub-pid1.c
+ create mode 100644 src/nspawn/nspawn-stub-pid1.h
+
+diff --git a/Makefile.am b/Makefile.am
+index 7c58fd050..0e2f8d561 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -2658,6 +2658,8 @@ systemd_cgtop_LDADD = \
+ # ------------------------------------------------------------------------------
+ systemd_nspawn_SOURCES = \
+ 	src/nspawn/nspawn.c \
++	src/nspawn/nspawn-stub-pid1.c \
++	src/nspawn/nspawn-stub-pid1.h \
+ 	src/core/mount-setup.c \
+ 	src/core/mount-setup.h \
+ 	src/core/loopback-setup.c \
+diff --git a/man/systemd-nspawn.xml b/man/systemd-nspawn.xml
+index cbd44d4ab..d0eddaacc 100644
+--- a/man/systemd-nspawn.xml
++++ b/man/systemd-nspawn.xml
+@@ -241,16 +241,69 @@
+         <option>--ephemeral</option>.</para></listitem>
+       </varlistentry>
+ 
++      <varlistentry>
++      <term><option>-a</option></term>
++        <term><option>--as-pid2</option></term>
++
++        <listitem><para>Invoke the shell or specified program as process ID (PID) 2 instead of PID 1 (init). By
++        default, if neither this option nor <option>--boot</option> is used, the selected binary is run as process with
++        PID 1, a mode only suitable for programs that are aware of the special semantics that the process with PID 1
++        has on UNIX. For example, it needs to reap all processes reparented to it, and should implement
++        <command>sysvinit</command> compatible signal handling (specifically: it needs to reboot on SIGINT, reexecute
++        on SIGTERM, reload configuration on SIGHUP, and so on). With <option>--as-pid2</option> a minimal stub init
++        process is run as PID 1 and the selected binary is executed as PID 2 (and hence does not need to implement any
++        special semantics). The stub init process will reap processes as necessary and react appropriately to
++        signals. It is recommended to use this mode to invoke arbitrary commands in containers, unless they have been
++        modified to run correctly as PID 1. Or in other words: this switch should be used for pretty much all commands,
++        except when the command refers to an init or shell implementation, as these are generally capable of running
++        correctly as PID 1). This option may not be combined with <option>--boot</option> or
++        <option>--share-system</option>.</para>
++        </listitem>
++      </varlistentry>
++
+       <varlistentry>
+         <term><option>-b</option></term>
+         <term><option>--boot</option></term>
+ 
+-        <listitem><para>Automatically search for an init binary and
+-        invoke it instead of a shell or a user supplied program. If
+-        this option is used, arguments specified on the command line
+-        are used as arguments for the init binary. This option may not
+-        be combined with <option>--share-system</option>.
+-        </para></listitem>
++        <listitem><para>Automatically search for an init binary and invoke it as PID 1, instead of a shell or a user
++        supplied program. If this option is used, arguments specified on the command line are used as arguments for the
++        init binary. This option may not be combined with <option>--as-pid2</option> or
++        <option>--share-system</option>.</para>
++
++        <para>The following table explains the different modes of invocation and relationship to
++        <option>--as-pid2</option> (see above):</para>
++
++        <table>
++          <title>Invocation Mode</title>
++          <tgroup cols='2' align='left' colsep='1' rowsep='1'>
++            <colspec colname="switch" />
++            <colspec colname="explanation" />
++            <thead>
++              <row>
++                <entry>Switch</entry>
++                <entry>Explanation</entry>
++              </row>
++            </thead>
++            <tbody>
++              <row>
++                <entry>Neither <option>--as-pid2</option> nor <option>--boot</option> specified</entry>
++                <entry>The passed parameters are interpreted as command line, which is executed as PID 1 in the container.</entry>
++              </row>
++
++              <row>
++                <entry><option>--as-pid2</option> specified</entry>
++                <entry>The passed parameters are interpreted as command line, which are executed as PID 2 in the container. A stub init process is run as PID 1.</entry>
++              </row>
++
++              <row>
++                <entry><option>--boot</option> specified</entry>
++                <entry>An init binary as automatically searched and run as PID 1 in the container. The passed parameters are used as invocation parameters for this process.</entry>
++              </row>
++
++            </tbody>
++          </tgroup>
++        </table>
++        </listitem>
+       </varlistentry>
+ 
+       <varlistentry>
+diff --git a/src/nspawn/nspawn-stub-pid1.c b/src/nspawn/nspawn-stub-pid1.c
+new file mode 100644
+index 000000000..11c11560c
+--- /dev/null
++++ b/src/nspawn/nspawn-stub-pid1.c
+@@ -0,0 +1,196 @@
++/***
++  This file is part of systemd.
++
++  Copyright 2016 Lennart Poettering
++
++  systemd is free software; you can redistribute it and/or modify it
++  under the terms of the GNU Lesser General Public License as published by
++  the Free Software Foundation; either version 2.1 of the License, or
++  (at your option) any later version.
++
++  systemd is distributed in the hope that it will be useful, but
++  WITHOUT ANY WARRANTY; without even the implied warranty of
++  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++  Lesser General Public License for more details.
++
++  You should have received a copy of the GNU Lesser General Public License
++  along with systemd; If not, see <http://www.gnu.org/licenses/>.
++***/
++
++#include <sys/reboot.h>
++#include <sys/unistd.h>
++#include <sys/wait.h>
++#include <sys/prctl.h>
++
++#include "log.h"
++#include "nspawn-stub-pid1.h"
++#include "util.h"
++#include "time-util.h"
++#include "def.h"
++
++static int reset_environ(const char *new_environment, size_t length) {
++        unsigned long start, end;
++
++        start = (unsigned long) new_environment;
++        end = start + length;
++
++        if (prctl(PR_SET_MM, PR_SET_MM_ENV_START, start, 0, 0) < 0)
++                return -errno;
++
++        if (prctl(PR_SET_MM, PR_SET_MM_ENV_END, end, 0, 0) < 0)
++                return -errno;
++
++        return 0;
++}
++
++int stub_pid1(sd_id128_t uuid) {
++        enum {
++                STATE_RUNNING,
++                STATE_REBOOT,
++                STATE_POWEROFF,
++        } state = STATE_RUNNING;
++
++        sigset_t fullmask, oldmask, waitmask;
++        usec_t quit_usec = USEC_INFINITY;
++        pid_t pid;
++        int r;
++
++        /* The new environment we set up, on the stack. */
++        char new_environment[] =
++                "container=systemd-nspawn\0"
++                "container_uuid=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
++
++        /* Implements a stub PID 1, that reaps all processes and processes a couple of standard signals. This is useful
++         * for allowing arbitrary processes run in a container, and still have all zombies reaped. */
++
++        assert_se(sigfillset(&fullmask) >= 0);
++        assert_se(sigprocmask(SIG_BLOCK, &fullmask, &oldmask) >= 0);
++
++        pid = fork();
++        if (pid < 0)
++                return log_error_errno(errno, "Failed to fork child pid: %m");
++
++        if (pid == 0) {
++                /* Return in the child */
++                assert_se(sigprocmask(SIG_SETMASK, &oldmask, NULL) >= 0);
++                setsid();
++                return 0;
++        }
++
++        reset_all_signal_handlers();
++
++        log_close();
++        close_all_fds(NULL, 0);
++        log_open();
++
++        /* Flush out /proc/self/environ, so that we don't leak the environment from the host into the container. Also,
++         * set $container= and $container_uuid= so that clients in the container that query it from /proc/1/environ
++         * find them set. */
++        sd_id128_to_string(uuid, new_environment + sizeof(new_environment) - SD_ID128_STRING_MAX);
++        reset_environ(new_environment, sizeof(new_environment));
++
++        rename_process("STUBINIT");
++
++        assert_se(sigemptyset(&waitmask) >= 0);
++
++        sigset_add_many(&waitmask,
++                        SIGCHLD,          /* posix: process died */
++                        SIGINT,           /* sysv: ctrl-alt-del */
++                        SIGRTMIN+3,       /* systemd: halt */
++                        SIGRTMIN+4,       /* systemd: poweroff */
++                        SIGRTMIN+5,       /* systemd: reboot */
++                        SIGRTMIN+6,       /* systemd: kexec */
++                        SIGRTMIN+13,      /* systemd: halt */
++                        SIGRTMIN+14,      /* systemd: poweroff */
++                        SIGRTMIN+15,      /* systemd: reboot */
++                        SIGRTMIN+16,      /* systemd: kexec */
++                        -1);
++
++        /* Note that we ignore SIGTERM (sysv's reexec), SIGHUP (reload), and all other signals here, since we don't
++         * support reexec/reloading in this stub process. */
++
++        for (;;) {
++                siginfo_t si;
++                usec_t current_usec;
++
++                si.si_pid = 0;
++                r = waitid(P_ALL, 0, &si, WEXITED|WNOHANG);
++                if (r < 0) {
++                        r = log_error_errno(errno, "Failed to reap children: %m");
++                        goto finish;
++                }
++
++                current_usec = now(CLOCK_MONOTONIC);
++
++                if (si.si_pid == pid || current_usec >= quit_usec) {
++
++                        /* The child we started ourselves died or we reached a timeout. */
++
++                        if (state == STATE_REBOOT) { /* dispatch a queued reboot */
++                                (void) reboot(RB_AUTOBOOT);
++                                r = log_error_errno(errno, "Failed to reboot: %m");
++                                goto finish;
++
++                        } else if (state == STATE_POWEROFF)
++                                (void) reboot(RB_POWER_OFF); /* if this fails, fall back to normal exit. */
++
++                        if (si.si_pid == pid && si.si_code == CLD_EXITED)
++                                r = si.si_status; /* pass on exit code */
++                        else
++                                r = 255; /* signal, coredump, timeout, … */
++
++                        goto finish;
++                }
++                if (si.si_pid != 0)
++                        /* We reaped something. Retry until there's nothing more to reap. */
++                        continue;
++
++                if (quit_usec == USEC_INFINITY)
++                        r = sigwaitinfo(&waitmask, &si);
++                else {
++                        struct timespec ts;
++                        r = sigtimedwait(&waitmask, &si, timespec_store(&ts, quit_usec - current_usec));
++                }
++                if (r < 0) {
++                        if (errno == EINTR) /* strace -p attach can result in EINTR, let's handle this nicely. */
++                                continue;
++                        if (errno == EAGAIN) /* timeout reached */
++                                continue;
++
++                        r = log_error_errno(errno, "Failed to wait for signal: %m");
++                        goto finish;
++                }
++
++                if (si.si_signo == SIGCHLD)
++                        continue; /* Let's reap this */
++
++                if (state != STATE_RUNNING)
++                        continue;
++
++                /* Would love to use a switch() statement here, but SIGRTMIN is actually a function call, not a
++                 * constant… */
++
++                if (si.si_signo == SIGRTMIN+3 ||
++                    si.si_signo == SIGRTMIN+4 ||
++                    si.si_signo == SIGRTMIN+13 ||
++                    si.si_signo == SIGRTMIN+14)
++
++                        state = STATE_POWEROFF;
++
++                else if (si.si_signo == SIGINT ||
++                         si.si_signo == SIGRTMIN+5 ||
++                         si.si_signo == SIGRTMIN+6 ||
++                         si.si_signo == SIGRTMIN+15 ||
++                         si.si_signo == SIGRTMIN+16)
++
++                        state = STATE_REBOOT;
++                else
++                        assert_not_reached("Got unexpected signal");
++
++                /* (void) kill_and_sigcont(pid, SIGTERM); */
++                quit_usec = now(CLOCK_MONOTONIC) + DEFAULT_TIMEOUT_USEC;
++        }
++
++finish:
++        _exit(r < 0 ? EXIT_FAILURE : r);
++}
+diff --git a/src/nspawn/nspawn-stub-pid1.h b/src/nspawn/nspawn-stub-pid1.h
+new file mode 100644
+index 000000000..be0f1af4c
+--- /dev/null
++++ b/src/nspawn/nspawn-stub-pid1.h
+@@ -0,0 +1,22 @@
++#pragma once
++
++/***
++  This file is part of systemd.
++
++  Copyright 2016 Lennart Poettering
++
++  systemd is free software; you can redistribute it and/or modify it
++  under the terms of the GNU Lesser General Public License as published by
++  the Free Software Foundation; either version 2.1 of the License, or
++  (at your option) any later version.
++
++  systemd is distributed in the hope that it will be useful, but
++  WITHOUT ANY WARRANTY; without even the implied warranty of
++  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++  Lesser General Public License for more details.
++
++  You should have received a copy of the GNU Lesser General Public License
++  along with systemd; If not, see <http://www.gnu.org/licenses/>.
++***/
++
++int stub_pid1(sd_id128_t uuid);
+diff --git a/src/nspawn/nspawn.c b/src/nspawn/nspawn.c
+index d0003d379..ea365b3f9 100644
+--- a/src/nspawn/nspawn.c
++++ b/src/nspawn/nspawn.c
+@@ -99,6 +99,7 @@
+ #include "in-addr-util.h"
+ #include "fw-util.h"
+ #include "local-addresses.h"
++#include "nspawn-stub-pid1.h"
+ 
+ #ifdef HAVE_SECCOMP
+ #include "seccomp-util.h"
+@@ -129,6 +130,14 @@ typedef enum Volatile {
+         VOLATILE_STATE,
+ } Volatile;
+ 
++typedef enum StartMode {
++        START_PID1, /* Run parameters as command line as process 1 */
++        START_PID2, /* Use stub init process as PID 1, run parameters as command line as process 2 */
++        START_BOOT, /* Search for init system, pass arguments as parameters */
++        _START_MODE_MAX,
++        _START_MODE_INVALID = -1
++} StartMode;
++
+ static char *arg_directory = NULL;
+ static char *arg_template = NULL;
+ static char *arg_user = NULL;
+@@ -139,7 +148,7 @@ static const char *arg_selinux_apifs_context = NULL;
+ static const char *arg_slice = NULL;
+ static bool arg_private_network = false;
+ static bool arg_read_only = false;
+-static bool arg_boot = false;
++static StartMode arg_start_mode = START_PID1;
+ static bool arg_ephemeral = false;
+ static LinkJournal arg_link_journal = LINK_AUTO;
+ static bool arg_link_journal_try = false;
+@@ -200,6 +209,7 @@ static void help(void) {
+                "  -x --ephemeral            Run container with snapshot of root directory, and\n"
+                "                            remove it after exit\n"
+                "  -i --image=PATH           File system device or disk image for the container\n"
++               "  -a --as-pid2              Maintain a stub init as PID1, invoke binary as PID2\n"
+                "  -b --boot                 Boot up full system (i.e. invoke init)\n"
+                "  -u --user=USER            Run the command under specified user or uid\n"
+                "  -M --machine=NAME         Set the machine name for the container\n"
+@@ -304,6 +314,7 @@ static int parse_argv(int argc, char *argv[]) {
+                 { "ephemeral",             no_argument,       NULL, 'x'                   },
+                 { "user",                  required_argument, NULL, 'u'                   },
+                 { "private-network",       no_argument,       NULL, ARG_PRIVATE_NETWORK   },
++                { "as-pid2",               no_argument,       NULL, 'a'                   },
+                 { "boot",                  no_argument,       NULL, 'b'                   },
+                 { "uuid",                  required_argument, NULL, ARG_UUID              },
+                 { "read-only",             no_argument,       NULL, ARG_READ_ONLY         },
+@@ -340,7 +351,7 @@ static int parse_argv(int argc, char *argv[]) {
+         assert(argc >= 0);
+         assert(argv);
+ 
+-        while ((c = getopt_long(argc, argv, "+hD:u:bL:M:jS:Z:qi:xp:n", options, NULL)) >= 0)
++        while ((c = getopt_long(argc, argv, "+hD:u:abL:M:jS:Z:qi:xp:n", options, NULL)) >= 0)
+ 
+                 switch (c) {
+ 
+@@ -421,7 +432,21 @@ static int parse_argv(int argc, char *argv[]) {
+                         break;
+ 
+                 case 'b':
+-                        arg_boot = true;
++                        if (arg_start_mode == START_PID2) {
++                                log_error("--boot and --as-pid2 may not be combined.");
++                                return -EINVAL;
++                        }
++
++                        arg_start_mode = START_BOOT;
++                        break;
++
++                case 'a':
++                        if (arg_start_mode == START_BOOT) {
++                                log_error("--boot and --as-pid2 may not be combined.");
++                                return -EINVAL;
++                        }
++
++                        arg_start_mode = START_PID2;
+                         break;
+ 
+                 case ARG_UUID:
+@@ -741,7 +766,7 @@ static int parse_argv(int argc, char *argv[]) {
+         if (arg_share_system)
+                 arg_register = false;
+ 
+-        if (arg_boot && arg_share_system) {
++        if (arg_start_mode != START_PID1 && arg_share_system) {
+                 log_error("--boot and --share-system may not be combined.");
+                 return -EINVAL;
+         }
+@@ -3586,6 +3611,10 @@ int main(int argc, char *argv[]) {
+         log_parse_environment();
+         log_open();
+ 
++        /* Make sure rename_process() in the stub init process can work */
++        saved_argv = argv;
++        saved_argc = argc;
++
+         r = parse_argv(argc, argv);
+         if (r <= 0)
+                 goto finish;
+@@ -3694,7 +3723,7 @@ int main(int argc, char *argv[]) {
+                         }
+                 }
+ 
+-                if (arg_boot) {
++                if (arg_start_mode == START_BOOT) {
+                         if (path_is_os_tree(arg_directory) <= 0) {
+                                 log_error("Directory %s doesn't look like an OS root directory (os-release file is missing). Refusing.", arg_directory);
+                                 r = -EINVAL;
+@@ -4109,7 +4138,19 @@ int main(int argc, char *argv[]) {
+                         if (!barrier_place_and_sync(&barrier))
+                                 _exit(EXIT_FAILURE);
+ 
+-                        if (arg_boot) {
++                        if (arg_start_mode == START_PID2) {
++                                r = stub_pid1(arg_uuid);
++                                if (r < 0)
++                                {
++                                        log_error_errno(r, "Failed to start as PID2: %m");
++                                        _exit(EXIT_FAILURE);
++                                }
++                        }
++
++                        log_close();
++                        (void) fdset_close_others(fds);
++
++                        if (arg_start_mode == START_BOOT) {
+                                 char **a;
+                                 size_t l;
+ 
+@@ -4135,6 +4176,7 @@ int main(int argc, char *argv[]) {
+                                 execle("/bin/sh", "-sh", NULL, env_use);
+                         }
+ 
++                        log_open();
+                         log_error_errno(errno, "execv() failed: %m");
+                         _exit(EXIT_FAILURE);
+                 }
+@@ -4210,7 +4252,7 @@ int main(int argc, char *argv[]) {
+                                         goto finish;
+                                 }
+ 
+-                                if (arg_boot) {
++                                if (arg_start_mode == START_BOOT) {
+                                         /* Try to kill the init system on SIGINT or SIGTERM */
+                                         sd_event_add_signal(event, NULL, SIGINT, on_orderly_shutdown, UINT32_TO_PTR(pid));
+                                         sd_event_add_signal(event, NULL, SIGTERM, on_orderly_shutdown, UINT32_TO_PTR(pid));

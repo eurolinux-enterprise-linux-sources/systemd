@@ -1,0 +1,32 @@
+From 16ea84cf76e69975336fc347226ee3f58be25bc2 Mon Sep 17 00:00:00 2001
+From: Daniel Mack <daniel@zonque.org>
+Date: Fri, 24 Apr 2015 16:14:48 +0200
+Subject: [PATCH] core: return 0 from device_serialize()
+
+Fixes:
+
+  CC       src/core/libsystemd_core_la-device.lo
+src/core/device.c: In function 'device_serialize':
+src/core/device.c:169:1: warning: control reaches end of non-void function [-Wreturn-type]
+ }
+ ^
+
+Cherry-picked from: 0108f6ecc85eccc0177579f575d7bc3d56d43bc6
+Resolves: #1403249
+---
+ src/core/device.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/core/device.c b/src/core/device.c
+index bdc8466ab..befbae83f 100644
+--- a/src/core/device.c
++++ b/src/core/device.c
+@@ -168,6 +168,8 @@ static int device_serialize(Unit *u, FILE *f, FDSet *fds) {
+         assert(fds);
+ 
+         unit_serialize_item(u, f, "state", device_state_to_string(d->state));
++
++        return 0;
+ }
+ 
+ static int device_deserialize_item(Unit *u, const char *key, const char *value, FDSet *fds) {

@@ -1,0 +1,201 @@
+From fc7fdb72096d2baeec3238a0ef324569a05da4ae Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 13 Nov 2015 17:13:55 +0100
+Subject: [PATCH] core: add new DefaultTasksMax= setting for system.conf
+
+This allows initializing the TasksMax= setting of all units by default
+to some fixed value, instead of leaving it at infinity as before.
+
+Cherry-picked from: 0af20ea2ee2af2bcf2258e7a8e1a13181a6a75d6
+Related: #1337244
+---
+ man/systemd-system.conf.xml           | 13 ++++++++++++-
+ man/systemd.resource-control.xml      |  5 ++++-
+ src/core/dbus-manager.c               |  1 +
+ src/core/load-fragment-gperf.gperf.m4 |  2 +-
+ src/core/load-fragment.c              |  7 ++++---
+ src/core/main.c                       |  3 +++
+ src/core/manager.h                    |  1 +
+ src/core/system.conf                  |  2 ++
+ src/core/unit.c                       |  3 +++
+ src/shared/cgroup-util.c              |  3 ++-
+ 10 files changed, 33 insertions(+), 7 deletions(-)
+
+diff --git a/man/systemd-system.conf.xml b/man/systemd-system.conf.xml
+index d367ccd13..53e8ff665 100644
+--- a/man/systemd-system.conf.xml
++++ b/man/systemd-system.conf.xml
+@@ -1,4 +1,4 @@
+-<?xml version='1.0'?> <!--*-nxml-*-->
++<?xml version='1.0'?> <!--*- Mode: nxml; nxml-child-indent: 2; indent-tabs-mode: nil -*-->
+ <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+   "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+ 
+@@ -319,6 +319,17 @@
+         for details on the per-unit settings.</para></listitem>
+       </varlistentry>
+ 
++      <varlistentry>
++        <term><varname>DefaultTasksMax=</varname></term>
++
++        <listitem><para>Configure the default value for the per-unit
++        <varname>TasksMax=</varname> setting. See
++        <citerefentry><refentrytitle>systemd.resource-control</refentrytitle><manvolnum>5</manvolnum></citerefentry>
++        for details. This setting applies to all unit types that
++        support resource control settings, with the exception of slice
++        units.</para></listitem>
++      </varlistentry>
++
+       <varlistentry>
+         <term><varname>DefaultLimitCPU=</varname></term>
+         <term><varname>DefaultLimitFSIZE=</varname></term>
+diff --git a/man/systemd.resource-control.xml b/man/systemd.resource-control.xml
+index 6b9329bbe..217105ee5 100644
+--- a/man/systemd.resource-control.xml
++++ b/man/systemd.resource-control.xml
+@@ -231,7 +231,10 @@
+           see <ulink
+           url="https://www.kernel.org/doc/Documentation/cgroups/pids.txt">pids.txt</ulink>.</para>
+ 
+-          <para>Implies <literal>TasksAccounting=true</literal>.</para>
++          <para>Implies <literal>TasksAccounting=true</literal>. The
++          system default for this setting may be controlled with
++          <varname>DefaultTasksMax=</varname> in
++          <citerefentry><refentrytitle>systemd-system.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>.</para>
+         </listitem>
+       </varlistentry>
+ 
+diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
+index 7ba1b519e..c92f8c6bf 100644
+--- a/src/core/dbus-manager.c
++++ b/src/core/dbus-manager.c
+@@ -2039,6 +2039,7 @@ const sd_bus_vtable bus_manager_vtable[] = {
+         SD_BUS_WRITABLE_PROPERTY("ShutdownWatchdogUSec", "t", bus_property_get_usec, bus_property_set_usec, offsetof(Manager, shutdown_watchdog), 0),
+         SD_BUS_PROPERTY("ControlGroup", "s", NULL, offsetof(Manager, cgroup_root), 0),
+         SD_BUS_PROPERTY("SystemState", "s", property_get_system_state, 0, 0),
++        SD_BUS_PROPERTY("DefaultTasksMax", "t", NULL, offsetof(Manager, default_tasks_max), SD_BUS_VTABLE_PROPERTY_CONST),
+ 
+         SD_BUS_METHOD("GetUnit", "s", "o", method_get_unit, SD_BUS_VTABLE_UNPRIVILEGED),
+         SD_BUS_METHOD("GetUnitByPID", "u", "o", method_get_unit_by_pid, SD_BUS_VTABLE_UNPRIVILEGED),
+diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
+index 26e4c618e..b2fe627af 100644
+--- a/src/core/load-fragment-gperf.gperf.m4
++++ b/src/core/load-fragment-gperf.gperf.m4
+@@ -126,7 +126,7 @@ $1.BlockIODeviceWeight,          config_parse_blockio_device_weight, 0,
+ $1.BlockIOReadBandwidth,         config_parse_blockio_bandwidth,     0,                             offsetof($1, cgroup_context)
+ $1.BlockIOWriteBandwidth,        config_parse_blockio_bandwidth,     0,                             offsetof($1, cgroup_context)
+ $1.TasksAccounting,              config_parse_bool,                  0,                             offsetof($1, cgroup_context.tasks_accounting)
+-$1.TasksMax,                     config_parse_tasks_max,             0,                             offsetof($1, cgroup_context)
++$1.TasksMax,                     config_parse_tasks_max,             0,                             offsetof($1, cgroup_context.tasks_max)
+ $1.Delegate,                     config_parse_bool,                  0,                             offsetof($1, cgroup_context.delegate)'
+ )m4_dnl
+ Unit.Description,                config_parse_unit_string_printf,    0,                             offsetof(Unit, description)
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index 7d2e737d0..c1ffee2c7 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -3081,12 +3081,11 @@ int config_parse_tasks_max(
+                 void *data,
+                 void *userdata) {
+ 
+-        CGroupContext *c = data;
+-        uint64_t u;
++        uint64_t *tasks_max = data, u;
+         int r;
+ 
+         if (isempty(rvalue) || streq(rvalue, "infinity")) {
+-                c->tasks_max = (uint64_t) -1;
++                *tasks_max = (uint64_t) -1;
+                 return 0;
+         }
+ 
+@@ -3096,6 +3095,8 @@ int config_parse_tasks_max(
+                 return 0;
+         }
+ 
++        *tasks_max = u;
++
+         return 0;
+ }
+ 
+diff --git a/src/core/main.c b/src/core/main.c
+index aca05a535..50c9714f7 100644
+--- a/src/core/main.c
++++ b/src/core/main.c
+@@ -118,6 +118,7 @@ static bool arg_default_blockio_accounting = false;
+ static bool arg_default_memory_accounting = false;
+ static EmergencyAction arg_cad_burst_action = EMERGENCY_ACTION_REBOOT_FORCE;
+ static bool arg_default_tasks_accounting = false;
++static uint64_t arg_default_tasks_max = (uint64_t) -1;
+ 
+ static void nop_handler(int sig) {}
+ 
+@@ -678,6 +679,7 @@ static int parse_config_file(void) {
+                 { "Manager", "DefaultMemoryAccounting",   config_parse_bool,             0, &arg_default_memory_accounting         },
+                 { "Manager", "CtrlAltDelBurstAction",     config_parse_emergency_action, 0, &arg_cad_burst_action                  },
+                 { "Manager", "DefaultTasksAccounting",    config_parse_bool,             0, &arg_default_tasks_accounting          },
++                { "Manager", "DefaultTasksMax",           config_parse_tasks_max,        0, &arg_default_tasks_max                 },
+                 {}
+         };
+ 
+@@ -1688,6 +1690,7 @@ int main(int argc, char *argv[]) {
+         m->default_blockio_accounting = arg_default_blockio_accounting;
+         m->default_memory_accounting = arg_default_memory_accounting;
+         m->default_tasks_accounting = arg_default_tasks_accounting;
++        m->default_tasks_max = arg_default_tasks_max;
+         m->runtime_watchdog = arg_runtime_watchdog;
+         m->shutdown_watchdog = arg_shutdown_watchdog;
+ 
+diff --git a/src/core/manager.h b/src/core/manager.h
+index 96dcd83dc..e91e7bd8b 100644
+--- a/src/core/manager.h
++++ b/src/core/manager.h
+@@ -263,6 +263,7 @@ struct Manager {
+         bool default_blockio_accounting;
+         bool default_tasks_accounting;
+ 
++        uint64_t default_tasks_max;
+         usec_t default_timer_accuracy_usec;
+ 
+         struct rlimit *rlimit[_RLIMIT_MAX];
+diff --git a/src/core/system.conf b/src/core/system.conf
+index a11f59903..91ef01cd0 100644
+--- a/src/core/system.conf
++++ b/src/core/system.conf
+@@ -40,6 +40,8 @@
+ #DefaultCPUAccounting=no
+ #DefaultBlockIOAccounting=no
+ #DefaultMemoryAccounting=no
++#DefaultTasksAccounting=no
++#DefaultTasksMax=
+ #DefaultLimitCPU=
+ #DefaultLimitFSIZE=
+ #DefaultLimitDATA=
+diff --git a/src/core/unit.c b/src/core/unit.c
+index 2fcb4fbf0..6a2ad6ed3 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -127,6 +127,9 @@ static void unit_init(Unit *u) {
+                 cc->blockio_accounting = u->manager->default_blockio_accounting;
+                 cc->memory_accounting = u->manager->default_memory_accounting;
+                 cc->tasks_accounting = u->manager->default_tasks_accounting;
++
++                if (u->type != UNIT_SLICE)
++                        cc->tasks_max = u->manager->default_tasks_max;
+         }
+ 
+         ec = unit_get_exec_context(u);
+diff --git a/src/shared/cgroup-util.c b/src/shared/cgroup-util.c
+index cf757d2b2..c5d9e4bb5 100644
+--- a/src/shared/cgroup-util.c
++++ b/src/shared/cgroup-util.c
+@@ -1606,7 +1606,8 @@ static const char mask_names[] =
+         "cpuacct\0"
+         "blkio\0"
+         "memory\0"
+-        "devices\0";
++        "devices\0"
++        "pids\0";
+ 
+ int cg_create_everywhere(CGroupControllerMask supported, CGroupControllerMask mask, const char *path) {
+         CGroupControllerMask bit = 1;

@@ -1,0 +1,31 @@
+From aff078e9ce3c43410de9bc3a2e9cf7042ac799aa Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 31 Aug 2016 20:09:31 +0200
+Subject: [PATCH] sd-bus: bump message queue size
+
+Let's bump it further, as this the current limit turns out to be problematic
+IRL. Let's bump it to more than twice what we know of is needed.
+
+Fixes: #4068
+
+Cherry-picked from: 5ddda46
+Resolves: #1371205
+---
+ src/libsystemd/sd-bus/bus-internal.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/libsystemd/sd-bus/bus-internal.h b/src/libsystemd/sd-bus/bus-internal.h
+index 071b3da79..6a106862e 100644
+--- a/src/libsystemd/sd-bus/bus-internal.h
++++ b/src/libsystemd/sd-bus/bus-internal.h
+@@ -326,8 +326,8 @@ struct sd_bus {
+ 
+ #define BUS_DEFAULT_TIMEOUT ((usec_t) (25 * USEC_PER_SEC))
+ 
+-#define BUS_WQUEUE_MAX 1024
+-#define BUS_RQUEUE_MAX 64*1024
++#define BUS_WQUEUE_MAX (192*1024)
++#define BUS_RQUEUE_MAX (192*1024)
+ 
+ #define BUS_MESSAGE_SIZE_MAX (64*1024*1024)
+ #define BUS_AUTH_SIZE_MAX (64*1024)

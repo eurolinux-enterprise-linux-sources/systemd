@@ -1,0 +1,60 @@
+From 5655999840f9c3d8b55a40c1751df400b425178a Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Mon, 24 Jul 2017 13:25:19 +0200
+Subject: [PATCH] tests: use fdisk instead of sfdisk
+
+In RHEL7 we have an older version of sfdisk that exits with an error
+when executed with sfdisk script that is used in upstream to create
+partitions on root disk.
+
+Let's use equivalent fdisk commands to achieve the (more less) same
+result.
+
+Also default size of disk image is bumped to 400M. Previous 300M doesn't
+work, probably due to some fdisk bug. Size of second partiotion (/var in
+TEST-02-CRYPTSETUP) is bumped to 50M to accommodate space requirements
+of xfs filesystem.
+
+RHEL-only
+
+Resolves: #1475870
+---
+ test/test-functions | 21 ++++++++++++++++-----
+ 1 file changed, 16 insertions(+), 5 deletions(-)
+
+diff --git a/test/test-functions b/test/test-functions
+index f8950e31e..cf5612370 100644
+--- a/test/test-functions
++++ b/test/test-functions
+@@ -141,15 +141,26 @@ install_missing_libraries() {
+ create_empty_image() {
+     rm -f "$TESTDIR/rootdisk.img"
+     # Create the blank file to use as a root filesystem
+-    dd if=/dev/null of="$TESTDIR/rootdisk.img" bs=1M seek=300
++    dd if=/dev/null of="$TESTDIR/rootdisk.img" bs=1M seek=400
+     LOOPDEV=$(losetup --show -P -f $TESTDIR/rootdisk.img)
+     [ -b "$LOOPDEV" ] || return 1
+     echo "LOOPDEV=$LOOPDEV" >> $STATEFILE
+-    sfdisk "$LOOPDEV" <<EOF
+-,290M
+-,
++    fdisk "$LOOPDEV" <<EOF
++o
++n
++p
++1
++
+++290M
++n
++p
++2
++
+++50M
++w
++q
+ EOF
+-
++    partprobe "$LOOPDEV"
+     mkfs.xfs -L systemd "${LOOPDEV}p1"
+ }
+ 

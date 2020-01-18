@@ -1,0 +1,111 @@
+From 048ed4b2fecef7003925772740bab651cb08b260 Mon Sep 17 00:00:00 2001
+From: brulon <barron@lexmark.com>
+Date: Fri, 26 Aug 2016 11:57:22 -0400
+Subject: [PATCH] mount: add new LazyUnmount= setting for mount units, mapping
+ to umount(8)'s "-l" switch (#3827)
+
+(cherry-picked commit from e520950a03419957875034bc27795b0b81d8e793)
+
+Resolves: #1497264
+---
+ man/systemd.mount.xml                 | 13 +++++++++++++
+ src/core/dbus-mount.c                 |  1 +
+ src/core/load-fragment-gperf.gperf.m4 |  1 +
+ src/core/mount.c                      |  8 ++++++--
+ src/core/mount.h                      |  2 ++
+ 5 files changed, 23 insertions(+), 2 deletions(-)
+
+diff --git a/man/systemd.mount.xml b/man/systemd.mount.xml
+index dfa437b5d..1590c44ce 100644
+--- a/man/systemd.mount.xml
++++ b/man/systemd.mount.xml
+@@ -329,6 +329,19 @@
+         off.</para></listitem>
+       </varlistentry>
+ 
++      <varlistentry>
++        <term><varname>LazyUnmount=</varname></term>
++
++        <listitem><para>Takes a boolean argument. If true, detach the
++        filesystem from the filesystem hierarchy at time of the unmount
++        operation, and clean up all references to the filesystem as
++        soon as they are not busy anymore.
++        This corresponds with
++        <citerefentry project='man-pages'><refentrytitle>umount</refentrytitle><manvolnum>8</manvolnum></citerefentry>'s
++        <parameter>-l</parameter> switch. Defaults to
++        off.</para></listitem>
++      </varlistentry>
++
+       <varlistentry>
+         <term><varname>DirectoryMode=</varname></term>
+         <listitem><para>Directories of mount points (and any parent
+diff --git a/src/core/dbus-mount.c b/src/core/dbus-mount.c
+index 04beba631..cbb842f70 100644
+--- a/src/core/dbus-mount.c
++++ b/src/core/dbus-mount.c
+@@ -110,6 +110,7 @@ const sd_bus_vtable bus_mount_vtable[] = {
+         SD_BUS_PROPERTY("ControlPID", "u", bus_property_get_pid, offsetof(Mount, control_pid), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+         SD_BUS_PROPERTY("DirectoryMode", "u", bus_property_get_mode, offsetof(Mount, directory_mode), SD_BUS_VTABLE_PROPERTY_CONST),
+         SD_BUS_PROPERTY("SloppyOptions", "b", bus_property_get_bool, offsetof(Mount, sloppy_options), SD_BUS_VTABLE_PROPERTY_CONST),
++        SD_BUS_PROPERTY("LazyUnmount", "b", bus_property_get_bool, offsetof(Mount, lazy_unmount), SD_BUS_VTABLE_PROPERTY_CONST),
+         SD_BUS_PROPERTY("Result", "s", property_get_result, offsetof(Mount, result), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+         BUS_EXEC_COMMAND_VTABLE("ExecMount", offsetof(Mount, exec_command[MOUNT_EXEC_MOUNT]), SD_BUS_VTABLE_PROPERTY_EMITS_INVALIDATION),
+         BUS_EXEC_COMMAND_VTABLE("ExecUnmount", offsetof(Mount, exec_command[MOUNT_EXEC_UNMOUNT]), SD_BUS_VTABLE_PROPERTY_EMITS_INVALIDATION),
+diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
+index b2fe627af..664bba0ef 100644
+--- a/src/core/load-fragment-gperf.gperf.m4
++++ b/src/core/load-fragment-gperf.gperf.m4
+@@ -316,6 +316,7 @@ Mount.Type,                      config_parse_string,                0,
+ Mount.TimeoutSec,                config_parse_sec,                   0,                             offsetof(Mount, timeout_usec)
+ Mount.DirectoryMode,             config_parse_mode,                  0,                             offsetof(Mount, directory_mode)
+ Mount.SloppyOptions,             config_parse_bool,                  0,                             offsetof(Mount, sloppy_options)
++Mount.LazyUnmount,               config_parse_bool,                  0,                             offsetof(Mount, lazy_unmount)
+ EXEC_CONTEXT_CONFIG_ITEMS(Mount)m4_dnl
+ CGROUP_CONTEXT_CONFIG_ITEMS(Mount)m4_dnl
+ KILL_CONTEXT_CONFIG_ITEMS(Mount)m4_dnl
+diff --git a/src/core/mount.c b/src/core/mount.c
+index 0dc67dde6..5fd7a86dd 100644
+--- a/src/core/mount.c
++++ b/src/core/mount.c
+@@ -690,7 +690,8 @@ static void mount_dump(Unit *u, FILE *f, const char *prefix) {
+                 "%sOptions: %s\n"
+                 "%sFrom /proc/self/mountinfo: %s\n"
+                 "%sFrom fragment: %s\n"
+-                "%sDirectoryMode: %04o\n",
++                "%sDirectoryMode: %04o\n"
++                "%sLazyUnmount: %s\n",
+                 prefix, mount_state_to_string(m->state),
+                 prefix, mount_result_to_string(m->result),
+                 prefix, m->where,
+@@ -699,7 +700,8 @@ static void mount_dump(Unit *u, FILE *f, const char *prefix) {
+                 prefix, p ? strna(p->options) : "n/a",
+                 prefix, yes_no(m->from_proc_self_mountinfo),
+                 prefix, yes_no(m->from_fragment),
+-                prefix, m->directory_mode);
++                prefix, m->directory_mode,
++                prefix, yes_no(m->lazy_unmount));
+ 
+         if (m->control_pid > 0)
+                 fprintf(f,
+@@ -891,6 +893,8 @@ static void mount_enter_unmounting(Mount *m) {
+         m->control_command = m->exec_command + MOUNT_EXEC_UNMOUNT;
+ 
+         r = exec_command_set(m->control_command, "/bin/umount", m->where, NULL);
++        if (r >= 0 && m->lazy_unmount)
++                r = exec_command_append(m->control_command, "-l", NULL);
+         if (r < 0)
+                 goto fail;
+ 
+diff --git a/src/core/mount.h b/src/core/mount.h
+index 353222000..4e870299c 100644
+--- a/src/core/mount.h
++++ b/src/core/mount.h
+@@ -90,6 +90,8 @@ struct Mount {
+ 
+         bool sloppy_options;
+ 
++        bool lazy_unmount;
++
+         MountResult result;
+         MountResult reload_result;
+ 

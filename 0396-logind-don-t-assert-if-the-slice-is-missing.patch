@@ -1,0 +1,26 @@
+From 7f681673fa2af8f1898447ee336763f2eeb00d57 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 13 Nov 2015 18:47:02 +0100
+Subject: [PATCH] logind: don't assert if the slice is missing
+
+After all, we don't actually really need the slice to work, it's just
+nice to have it.
+
+Cherry-picked from: 38599489e49e840291516488a3ef1b4a56198c58
+Resolves: #1371437
+---
+ src/login/logind-session.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/src/login/logind-session.c b/src/login/logind-session.c
+index 59f5a7ad5..746e50aa5 100644
+--- a/src/login/logind-session.c
++++ b/src/login/logind-session.c
+@@ -507,7 +507,6 @@ static int session_start_scope(Session *s) {
+ 
+         assert(s);
+         assert(s->user);
+-        assert(s->user->slice);
+ 
+         if (!s->scope) {
+                 _cleanup_bus_error_free_ sd_bus_error error = SD_BUS_ERROR_NULL;

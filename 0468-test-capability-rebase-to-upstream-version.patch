@@ -1,0 +1,353 @@
+From 900251c41dab192ff863024e07864c09462e86d2 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Mon, 20 Mar 2017 12:24:09 +0100
+Subject: [PATCH] test-capability: rebase to upstream version
+
+Related: #1387398
+---
+ src/test/test-capability.c                    | 80 +++++++++++++++++--
+ src/test/test-execute.c                       | 43 ++++++++++
+ ...pabilityambientset-merge-nfsnobody.service |  9 +++
+ test/exec-capabilityambientset-merge.service  |  9 +++
+ ...xec-capabilityambientset-nfsnobody.service |  8 ++
+ test/exec-capabilityambientset.service        |  8 ++
+ .../exec-capabilityboundingset-invert.service |  7 ++
+ test/exec-capabilityboundingset-merge.service |  8 ++
+ test/exec-capabilityboundingset-reset.service |  8 ++
+ .../exec-capabilityboundingset-simple.service |  7 ++
+ 10 files changed, 179 insertions(+), 8 deletions(-)
+ create mode 100644 test/exec-capabilityambientset-merge-nfsnobody.service
+ create mode 100644 test/exec-capabilityambientset-merge.service
+ create mode 100644 test/exec-capabilityambientset-nfsnobody.service
+ create mode 100644 test/exec-capabilityambientset.service
+ create mode 100644 test/exec-capabilityboundingset-invert.service
+ create mode 100644 test/exec-capabilityboundingset-merge.service
+ create mode 100644 test/exec-capabilityboundingset-reset.service
+ create mode 100644 test/exec-capabilityboundingset-simple.service
+
+diff --git a/src/test/test-capability.c b/src/test/test-capability.c
+index 43769923b..67a9ec2d1 100644
+--- a/src/test/test-capability.c
++++ b/src/test/test-capability.c
+@@ -17,21 +17,22 @@
+   along with systemd; If not, see <http://www.gnu.org/licenses/>.
+ ***/
+ 
+-#include <sys/types.h>
+-#include <sys/wait.h>
+-#include <sys/capability.h>
+-#include <sys/socket.h>
+ #include <netinet/in.h>
+ #include <pwd.h>
++#include <sys/capability.h>
++#include <sys/prctl.h>
++#include <sys/socket.h>
++#include <sys/wait.h>
+ #include <unistd.h>
+ 
+ #include "capability.h"
+-#include "util.h"
+ #include "macro.h"
++#include "util.h"
+ 
+ static uid_t test_uid = -1;
+ static gid_t test_gid = -1;
+-// We keep CAP_DAC_OVERRIDE to avoid errors with gcov when doing test coverage
++
++/* We keep CAP_DAC_OVERRIDE to avoid errors with gcov when doing test coverage */
+ static uint64_t test_flags = 1ULL << CAP_DAC_OVERRIDE;
+ 
+ static void fork_test(void (*test_func)(void)) {
+@@ -65,8 +66,9 @@ static void show_capabilities(void) {
+         cap_free(text);
+ }
+ 
+-static int setup_tests(void) {
++static int setup_tests(bool *run_ambient) {
+         struct passwd *nobody;
++        int r;
+ 
+         nobody = getpwnam("nobody");
+         if (!nobody) {
+@@ -76,6 +78,18 @@ static int setup_tests(void) {
+         test_uid = nobody->pw_uid;
+         test_gid = nobody->pw_gid;
+ 
++        *run_ambient = false;
++
++        r = prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_CLEAR_ALL, 0, 0, 0);
++
++        /* There's support for PR_CAP_AMBIENT if the prctl() call
++         * succeeded or error code was something else than EINVAL. The
++         * EINVAL check should be good enough to rule out false
++         * positives. */
++
++        if (r >= 0 || errno != EINVAL)
++                *run_ambient = true;
++
+         return 0;
+ }
+ 
+@@ -139,8 +153,53 @@ static void test_have_effective_cap(void) {
+         assert_se(!have_effective_cap(CAP_CHOWN));
+ }
+ 
++static void test_update_inherited_set(void) {
++        cap_t caps;
++        uint64_t set = 0;
++        cap_flag_value_t fv;
++
++        caps = cap_get_proc();
++        assert_se(caps);
++        assert_se(!cap_get_flag(caps, CAP_CHOWN, CAP_INHERITABLE, &fv));
++        assert(fv == CAP_CLEAR);
++
++        set = (UINT64_C(1) << CAP_CHOWN);
++
++        assert_se(!capability_update_inherited_set(caps, set));
++        assert_se(!cap_get_flag(caps, CAP_CHOWN, CAP_INHERITABLE, &fv));
++        assert(fv == CAP_SET);
++
++        cap_free(caps);
++}
++
++static void test_set_ambient_caps(void) {
++        cap_t caps;
++        uint64_t set = 0;
++        cap_flag_value_t fv;
++
++        caps = cap_get_proc();
++        assert_se(caps);
++        assert_se(!cap_get_flag(caps, CAP_CHOWN, CAP_INHERITABLE, &fv));
++        assert(fv == CAP_CLEAR);
++        cap_free(caps);
++
++        assert_se(prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_IS_SET, CAP_CHOWN, 0, 0) == 0);
++
++        set = (UINT64_C(1) << CAP_CHOWN);
++
++        assert_se(!capability_ambient_set_apply(set, true));
++
++        caps = cap_get_proc();
++        assert_se(!cap_get_flag(caps, CAP_CHOWN, CAP_INHERITABLE, &fv));
++        assert(fv == CAP_SET);
++        cap_free(caps);
++
++        assert_se(prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_IS_SET, CAP_CHOWN, 0, 0) == 1);
++}
++
+ int main(int argc, char *argv[]) {
+         int r;
++        bool run_ambient;
+ 
+         log_parse_environment();
+         log_open();
+@@ -148,14 +207,19 @@ int main(int argc, char *argv[]) {
+         if (getuid() != 0)
+                 return EXIT_TEST_SKIP;
+ 
+-        r = setup_tests();
++        r = setup_tests(&run_ambient);
+         if (r < 0)
+                 return -r;
+ 
+         show_capabilities();
+ 
+         test_drop_privileges();
++        test_update_inherited_set();
++
+         fork_test(test_have_effective_cap);
+ 
++        if (run_ambient)
++                fork_test(test_set_ambient_caps);
++
+         return 0;
+ }
+diff --git a/src/test/test-execute.c b/src/test/test-execute.c
+index 6e5567c3e..8e70702cb 100644
+--- a/src/test/test-execute.c
++++ b/src/test/test-execute.c
+@@ -17,7 +17,11 @@
+   along with systemd; If not, see <http://www.gnu.org/licenses/>.
+ ***/
+ 
++#include <grp.h>
++#include <pwd.h>
+ #include <stdio.h>
++#include <sys/prctl.h>
++#include <sys/types.h>
+ 
+ #include "unit.h"
+ #include "manager.h"
+@@ -25,6 +29,7 @@
+ #include "macro.h"
+ #include "strv.h"
+ #include "mkdir.h"
++#include "path-util.h"
+ 
+ typedef void (*test_function_t)(Manager *m);
+ 
+@@ -177,6 +182,42 @@ static void test_exec_runtimedirectory(Manager *m) {
+         test(m, "exec-runtimedirectory-owner.service", 0, CLD_EXITED);
+ }
+ 
++static void test_exec_capabilityboundingset(Manager *m) {
++        int r;
++
++        r = find_binary("capsh", true, NULL);
++        if (r < 0) {
++                log_error_errno(r, "Skipping %s, could not find capsh binary: %m", __func__);
++                return;
++        }
++
++        test(m, "exec-capabilityboundingset-simple.service", 0, CLD_EXITED);
++        test(m, "exec-capabilityboundingset-reset.service", 0, CLD_EXITED);
++        test(m, "exec-capabilityboundingset-merge.service", 0, CLD_EXITED);
++        test(m, "exec-capabilityboundingset-invert.service", 0, CLD_EXITED);
++}
++
++static void test_exec_capabilityambientset(Manager *m) {
++        int r;
++
++        /* Check if the kernel has support for ambient capabilities. Run
++         * the tests only if that's the case. Clearing all ambient
++         * capabilities is fine, since we are expecting them to be unset
++         * in the first place for the tests. */
++        r = prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_CLEAR_ALL, 0, 0, 0);
++        if (r >= 0 || errno != EINVAL) {
++                if (getpwnam("nobody")) {
++                        test(m, "exec-capabilityambientset.service", 0, CLD_EXITED);
++                        test(m, "exec-capabilityambientset-merge.service", 0, CLD_EXITED);
++                } else if (getpwnam("nfsnobody")) {
++                        test(m, "exec-capabilityambientset-nfsnobody.service", 0, CLD_EXITED);
++                        test(m, "exec-capabilityambientset-merge-nfsnobody.service", 0, CLD_EXITED);
++                } else
++                        log_error_errno(errno, "Skipping %s, could not find nobody/nfsnobody user: %m", __func__);
++        } else
++                log_error_errno(errno, "Skipping %s, the kernel does not support ambient capabilities: %m", __func__);
++}
++
+ int main(int argc, char *argv[]) {
+         test_function_t tests[] = {
+                 test_exec_workingdirectory,
+@@ -192,6 +233,8 @@ int main(int argc, char *argv[]) {
+                 test_exec_passenvironment,
+                 test_exec_umask,
+                 test_exec_runtimedirectory,
++                test_exec_capabilityboundingset,
++                test_exec_capabilityambientset,
+                 NULL,
+         };
+         test_function_t *test = NULL;
+diff --git a/test/exec-capabilityambientset-merge-nfsnobody.service b/test/exec-capabilityambientset-merge-nfsnobody.service
+new file mode 100644
+index 000000000..00bec581b
+--- /dev/null
++++ b/test/exec-capabilityambientset-merge-nfsnobody.service
+@@ -0,0 +1,9 @@
++[Unit]
++Description=Test for AmbientCapabilities
++
++[Service]
++ExecStart=/bin/sh -x -c 'c=$$(grep "CapAmb:" /proc/self/status); test "$$c" = "CapAmb:	0000000000003000"'
++Type=oneshot
++User=nfsnobody
++AmbientCapabilities=CAP_NET_ADMIN
++AmbientCapabilities=CAP_NET_RAW
+diff --git a/test/exec-capabilityambientset-merge.service b/test/exec-capabilityambientset-merge.service
+new file mode 100644
+index 000000000..64964380e
+--- /dev/null
++++ b/test/exec-capabilityambientset-merge.service
+@@ -0,0 +1,9 @@
++[Unit]
++Description=Test for AmbientCapabilities
++
++[Service]
++ExecStart=/bin/sh -x -c 'c=$$(grep "CapAmb:" /proc/self/status); test "$$c" = "CapAmb:	0000000000003000"'
++Type=oneshot
++User=nobody
++AmbientCapabilities=CAP_NET_ADMIN
++AmbientCapabilities=CAP_NET_RAW
+diff --git a/test/exec-capabilityambientset-nfsnobody.service b/test/exec-capabilityambientset-nfsnobody.service
+new file mode 100644
+index 000000000..614cfdd58
+--- /dev/null
++++ b/test/exec-capabilityambientset-nfsnobody.service
+@@ -0,0 +1,8 @@
++[Unit]
++Description=Test for AmbientCapabilities
++
++[Service]
++ExecStart=/bin/sh -x -c 'c=$$(grep "CapAmb:" /proc/self/status); test "$$c" = "CapAmb:	0000000000003000"'
++Type=oneshot
++User=nfsnobody
++AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW
+diff --git a/test/exec-capabilityambientset.service b/test/exec-capabilityambientset.service
+new file mode 100644
+index 000000000..d63f884ef
+--- /dev/null
++++ b/test/exec-capabilityambientset.service
+@@ -0,0 +1,8 @@
++[Unit]
++Description=Test for AmbientCapabilities
++
++[Service]
++ExecStart=/bin/sh -x -c 'c=$$(grep "CapAmb:" /proc/self/status); test "$$c" = "CapAmb:	0000000000003000"'
++Type=oneshot
++User=nobody
++AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW
+diff --git a/test/exec-capabilityboundingset-invert.service b/test/exec-capabilityboundingset-invert.service
+new file mode 100644
+index 000000000..fd5d24870
+--- /dev/null
++++ b/test/exec-capabilityboundingset-invert.service
+@@ -0,0 +1,7 @@
++[Unit]
++Description=Test for CapabilityBoundingSet
++
++[Service]
++ExecStart=/bin/sh -x -c 'c=$$(capsh --print | grep "^Bounding set .*cap_chown"); test -z "$$c"'
++Type=oneshot
++CapabilityBoundingSet=~CAP_CHOWN
+diff --git a/test/exec-capabilityboundingset-merge.service b/test/exec-capabilityboundingset-merge.service
+new file mode 100644
+index 000000000..5c7fcaf43
+--- /dev/null
++++ b/test/exec-capabilityboundingset-merge.service
+@@ -0,0 +1,8 @@
++[Unit]
++Description=Test for CapabilityBoundingSet
++
++[Service]
++ExecStart=/bin/sh -x -c 'c=$$(capsh --print | grep "Bounding set "); test "$$c" = "Bounding set =cap_chown,cap_fowner,cap_kill"'
++Type=oneshot
++CapabilityBoundingSet=CAP_FOWNER
++CapabilityBoundingSet=CAP_KILL CAP_CHOWN
+diff --git a/test/exec-capabilityboundingset-reset.service b/test/exec-capabilityboundingset-reset.service
+new file mode 100644
+index 000000000..d7d332020
+--- /dev/null
++++ b/test/exec-capabilityboundingset-reset.service
+@@ -0,0 +1,8 @@
++[Unit]
++Description=Test for CapabilityBoundingSet
++
++[Service]
++ExecStart=/bin/sh -x -c 'c=$$(capsh --print | grep "Bounding set "); test "$$c" = "Bounding set ="'
++Type=oneshot
++CapabilityBoundingSet=CAP_FOWNER CAP_KILL
++CapabilityBoundingSet=
+diff --git a/test/exec-capabilityboundingset-simple.service b/test/exec-capabilityboundingset-simple.service
+new file mode 100644
+index 000000000..bf1a7f575
+--- /dev/null
++++ b/test/exec-capabilityboundingset-simple.service
+@@ -0,0 +1,7 @@
++[Unit]
++Description=Test for CapabilityBoundingSet
++
++[Service]
++ExecStart=/bin/sh -x -c 'c=$$(capsh --print | grep "Bounding set "); test "$$c" = "Bounding set =cap_fowner,cap_kill"'
++Type=oneshot
++CapabilityBoundingSet=CAP_FOWNER CAP_KILL

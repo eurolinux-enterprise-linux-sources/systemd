@@ -1,0 +1,130 @@
+From f35b737bdd6e508cf73f43a1beb3f5cb8c1ebb07 Mon Sep 17 00:00:00 2001
+From: Filipe Brandenburger <filbranden@google.com>
+Date: Sun, 8 Nov 2015 10:37:05 -0800
+Subject: [PATCH] test-execute: Add tests for new PassEnvironment= directive
+
+Check the base case, plus erasing the list, listing the same variable
+name more than once and when variables are absent from the manager
+execution environment.
+
+Confirmed that `sudo ./test-execute` passes and that modifying the test
+cases (or the values of the set variables in test-execute.c) is enough
+to make the test cases fail.
+
+(cherry picked from commit 4c80d201ace0377312c27143afab04e9c9f1ee64)
+
+Related: #1426214
+---
+ Makefile.am                                |  4 ++++
+ src/test/test-execute.c                    | 14 ++++++++++++++
+ test/exec-passenvironment-absent.service   |  7 +++++++
+ test/exec-passenvironment-empty.service    |  8 ++++++++
+ test/exec-passenvironment-repeated.service |  8 ++++++++
+ test/exec-passenvironment.service          |  7 +++++++
+ 6 files changed, 48 insertions(+)
+ create mode 100644 test/exec-passenvironment-absent.service
+ create mode 100644 test/exec-passenvironment-empty.service
+ create mode 100644 test/exec-passenvironment-repeated.service
+ create mode 100644 test/exec-passenvironment.service
+
+diff --git a/Makefile.am b/Makefile.am
+index 924b34b69..e9ceac98a 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -1477,6 +1477,10 @@ EXTRA_DIST += \
+ 	test/exec-environment-empty.service \
+ 	test/exec-environment-multiple.service \
+ 	test/exec-environment.service \
++	test/exec-passenvironment-absent.service \
++	test/exec-passenvironment-empty.service \
++	test/exec-passenvironment-repeated.service \
++	test/exec-passenvironment.service \
+ 	test/exec-group.service \
+ 	test/exec-ignoresigpipe-no.service \
+ 	test/exec-ignoresigpipe-yes.service \
+diff --git a/src/test/test-execute.c b/src/test/test-execute.c
+index 5a02960e7..8def1946d 100644
+--- a/src/test/test-execute.c
++++ b/src/test/test-execute.c
+@@ -142,6 +142,19 @@ static void test_exec_environment(Manager *m) {
+         test(m, "exec-environment-empty.service", 0, CLD_EXITED);
+ }
+ 
++static void test_exec_passenvironment(Manager *m) {
++        assert_se(setenv("VAR1", "word1 word2", 1) == 0);
++        assert_se(setenv("VAR2", "word3", 1) == 0);
++        assert_se(setenv("VAR3", "$word 5 6", 1) == 0);
++        test(m, "exec-passenvironment.service", 0, CLD_EXITED);
++        test(m, "exec-passenvironment-repeated.service", 0, CLD_EXITED);
++        test(m, "exec-passenvironment-empty.service", 0, CLD_EXITED);
++        assert_se(unsetenv("VAR1") == 0);
++        assert_se(unsetenv("VAR2") == 0);
++        assert_se(unsetenv("VAR3") == 0);
++        test(m, "exec-passenvironment-absent.service", 0, CLD_EXITED);
++}
++
+ static void test_exec_umask(Manager *m) {
+         test(m, "exec-umask-default.service", 0, CLD_EXITED);
+         test(m, "exec-umask-0177.service", 0, CLD_EXITED);
+@@ -165,6 +178,7 @@ int main(int argc, char *argv[]) {
+                 test_exec_user,
+                 test_exec_group,
+                 test_exec_environment,
++                test_exec_passenvironment,
+                 test_exec_umask,
+                 test_exec_runtimedirectory,
+                 NULL,
+diff --git a/test/exec-passenvironment-absent.service b/test/exec-passenvironment-absent.service
+new file mode 100644
+index 000000000..7d5e32a4e
+--- /dev/null
++++ b/test/exec-passenvironment-absent.service
+@@ -0,0 +1,7 @@
++[Unit]
++Description=Test for PassEnvironment with variables absent from the execution environment
++
++[Service]
++ExecStart=/bin/sh -x -c 'test "$${VAR1-unset}" = "unset" && test "$${VAR2-unset}" = "unset" && test "$${VAR3-unset}" = "unset"'
++Type=oneshot
++PassEnvironment=VAR1 VAR2 VAR3
+diff --git a/test/exec-passenvironment-empty.service b/test/exec-passenvironment-empty.service
+new file mode 100644
+index 000000000..c93c197c1
+--- /dev/null
++++ b/test/exec-passenvironment-empty.service
+@@ -0,0 +1,8 @@
++[Unit]
++Description=Test for PassEnvironment and erasing the variable list
++
++[Service]
++ExecStart=/bin/sh -x -c 'test "$${VAR1-unset}" = "unset" && test "$${VAR2-unset}" = "unset" && test "$${VAR3-unset}" = "unset"'
++Type=oneshot
++PassEnvironment=VAR1 VAR2 VAR3
++PassEnvironment=
+diff --git a/test/exec-passenvironment-repeated.service b/test/exec-passenvironment-repeated.service
+new file mode 100644
+index 000000000..5e8c56f26
+--- /dev/null
++++ b/test/exec-passenvironment-repeated.service
+@@ -0,0 +1,8 @@
++[Unit]
++Description=Test for PassEnvironment with a variable name repeated
++
++[Service]
++ExecStart=/bin/sh -x -c 'test "$$VAR1" = "word1 word2" && test "$$VAR2" = word3 && test "$$VAR3" = "\\$$word 5 6"'
++Type=oneshot
++PassEnvironment=VAR1 VAR2
++PassEnvironment=VAR1 VAR3
+diff --git a/test/exec-passenvironment.service b/test/exec-passenvironment.service
+new file mode 100644
+index 000000000..b4a990968
+--- /dev/null
++++ b/test/exec-passenvironment.service
+@@ -0,0 +1,7 @@
++[Unit]
++Description=Test for PassEnvironment
++
++[Service]
++ExecStart=/bin/sh -x -c 'test "$$VAR1" = "word1 word2" && test "$$VAR2" = word3 && test "$$VAR3" = "\\$$word 5 6"'
++Type=oneshot
++PassEnvironment=VAR1 VAR2 VAR3

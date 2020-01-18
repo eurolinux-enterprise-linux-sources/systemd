@@ -1,0 +1,48 @@
+From e360c720533dccac39d8b88510b15c21a944b042 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 13 Nov 2015 18:46:50 +0100
+Subject: [PATCH] core: enable transient unit support for slice units
+
+Cherry-picked from: 17f62e9bd00f5fefd486475861b06d3ec6b7ee10
+Resolves: #1370299
+---
+ src/core/dbus-manager.c | 13 ++++++++++++-
+ src/core/slice.c        |  1 +
+ 2 files changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
+index 9eef290ca..8d3758ac7 100644
+--- a/src/core/dbus-manager.c
++++ b/src/core/dbus-manager.c
+@@ -633,7 +633,18 @@ static int transient_unit_from_message(
+         if (r < 0)
+                 return r;
+ 
+-        if (u->load_state != UNIT_NOT_FOUND ||
++        /* Check if the unit already exists or is already referenced,
++         * in a number of different ways. Note that to cater for unit
++         * types such as slice, we are generally fine with units that
++         * are marked UNIT_LOADED even even though nothing was
++         * actually loaded, as those unit types don't require a file
++         * on disk to validly load. */
++
++        if (!IN_SET(u->load_state, UNIT_NOT_FOUND, UNIT_LOADED) ||
++            u->fragment_path ||
++            u->source_path ||
++            !strv_isempty(u->dropin_paths) ||
++            u->refs ||
+             set_size(u->dependencies[UNIT_REFERENCED_BY]) > 0)
+                 return sd_bus_error_setf(error, BUS_ERROR_UNIT_EXISTS, "Unit %s already exists.", name);
+ 
+diff --git a/src/core/slice.c b/src/core/slice.c
+index 61ff9d331..9154558b7 100644
+--- a/src/core/slice.c
++++ b/src/core/slice.c
+@@ -272,6 +272,7 @@ const UnitVTable slice_vtable = {
+ 
+         .no_alias = true,
+         .no_instances = true,
++        .can_transient = true,
+ 
+         .load = slice_load,
+ 

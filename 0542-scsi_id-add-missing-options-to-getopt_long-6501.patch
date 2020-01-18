@@ -1,0 +1,25 @@
+From c7eef2f4f985dd427b120fd00a36fd3d7f9a001a Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jan.synacek@gmail.com>
+Date: Wed, 2 Aug 2017 10:12:33 +0200
+Subject: [PATCH] scsi_id: add missing options to getopt_long() (#6501)
+
+(cherry picked from commit ebc6f34a0b2359ac0da41037a1122d3abe02caee)
+
+Resolves: #1476910
+---
+ src/udev/scsi_id/scsi_id.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/udev/scsi_id/scsi_id.c b/src/udev/scsi_id/scsi_id.c
+index a1b8e75fa..eae7e2955 100644
+--- a/src/udev/scsi_id/scsi_id.c
++++ b/src/udev/scsi_id/scsi_id.c
+@@ -333,7 +333,7 @@ static int set_options(struct udev *udev,
+          * file) we have to reset this back to 1.
+          */
+         optind = 1;
+-        while ((option = getopt_long(argc, argv, "d:f:gp:uvVxh", options, NULL)) >= 0)
++        while ((option = getopt_long(argc, argv, "d:f:gp:uvVxhbs:", options, NULL)) >= 0)
+                 switch (option) {
+                 case 'b':
+                         all_good = false;

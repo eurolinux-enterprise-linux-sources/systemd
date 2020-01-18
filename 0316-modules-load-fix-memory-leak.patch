@@ -1,0 +1,41 @@
+From 3c3d3e3e040d980186fec05506018db2d24faa83 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Cristian=20Rodr=C3=ADguez?= <crrodriguez@opensuse.org>
+Date: Mon, 11 May 2015 15:37:47 -0300
+Subject: [PATCH] modules-load: fix memory leak
+
+=================================================================
+==64281==ERROR: LeakSanitizer: detected memory leaks
+
+Direct leak of 32 byte(s) in 1 object(s) allocated from:
+    #0 0x7f623c961c4a in malloc (/usr/lib64/libasan.so.2+0x96c4a)
+    #1 0x5651f79ad34e in malloc_multiply (/home/crrodriguez/scm/systemd/systemd-modules-load+0x2134e)
+    #2 0x5651f79b02d6 in strjoin (/home/crrodriguez/scm/systemd/systemd-modules-load+0x242d6)
+    #3 0x5651f79be1f5 in files_add (/home/crrodriguez/scm/systemd/systemd-modules-load+0x321f5)
+    #4 0x5651f79be6a3 in conf_files_list_strv_internal (/home/crrodriguez/scm/systemd/systemd-modules-load+0x326a3)
+    #5 0x5651f79bea24 in conf_files_list_nulstr (/home/crrodriguez/scm/systemd/systemd-modules-load+0x32a24)
+    #6 0x5651f79ad01a in main (/home/crrodriguez/scm/systemd/systemd-modules-load+0x2101a)
+    #7 0x7f623c11586f in __libc_start_main (/lib64/libc.so.6+0x2086f)
+
+SUMMARY: AddressSanitizer: 32 byte(s) leaked in 1 allocation(s).
+
+This happens due to the wrong cleanup attribute is used (free vs strv_free)
+
+Cherry-picked from: 4df3277881cffcd3bc9a5238203d6af7e1fd960f
+Related: #1331667
+---
+ src/modules-load/modules-load.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/modules-load/modules-load.c b/src/modules-load/modules-load.c
+index 5f678789c..bab9246a3 100644
+--- a/src/modules-load/modules-load.c
++++ b/src/modules-load/modules-load.c
+@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
+                 }
+ 
+         } else {
+-                _cleanup_free_ char **files = NULL;
++                _cleanup_strv_free_ char **files = NULL;
+                 char **fn, **i;
+ 
+                 STRV_FOREACH(i, arg_proc_cmdline_modules) {

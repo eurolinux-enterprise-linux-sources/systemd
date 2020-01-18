@@ -1,0 +1,31 @@
+From 47ad778fc50382b916683a628b3f6f62754cc17d Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Wed, 13 May 2015 15:20:30 +0200
+Subject: [PATCH] LSB: always add network-online.target to services with
+ priority over 10
+
+rhel-only
+
+Resolves: #1189253
+---
+ src/sysv-generator/sysv-generator.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/src/sysv-generator/sysv-generator.c b/src/sysv-generator/sysv-generator.c
+index 0125ca27d..cfc4a99e4 100644
+--- a/src/sysv-generator/sysv-generator.c
++++ b/src/sysv-generator/sysv-generator.c
+@@ -692,6 +692,13 @@ static int fix_order(SysvStub *s, Hashmap *all_services) {
+         if (s->sysv_start_priority < 0)
+                 return 0;
+ 
++        /* RHEL-only, services with more than 10 should be start after network */
++        if (s->sysv_start_priority > 10) {
++                r = strv_extend(&s->after, SPECIAL_NETWORK_ONLINE_TARGET);
++                if (r < 0)
++                        return log_oom();
++        }
++
+         HASHMAP_FOREACH(other, all_services, j) {
+                 if (s == other)
+                         continue;

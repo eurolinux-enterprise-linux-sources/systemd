@@ -1,0 +1,38 @@
+From 98b78068d13095fdd40883b2b6c815a9ebb59435 Mon Sep 17 00:00:00 2001
+From: Nir Soffer <nirsof@gmail.com>
+Date: Sun, 19 Apr 2015 03:41:26 +0300
+Subject: [PATCH] udev: settle should return immediately when timeout is 0
+
+udevadm manual says:
+
+    A value of 0 will check if the queue is empty and always return
+    immediately.
+
+However, currently we ignore the deadline if the value is 0, and wait
+without any limit.
+
+Zero timeout behaved according to the documentation until commit
+ead7c62ab7 (udevadm: settle - kill alarm()). Looking at this patch, it
+seems that the behavior change was unintended.
+
+This patch restores the documented behavior.
+
+Cherry-picked from: bf23b9f86f6807c3029a6a46e1999ae0c87ca22a
+Resolves: #1210981
+---
+ src/udev/udevadm-settle.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/udev/udevadm-settle.c b/src/udev/udevadm-settle.c
+index e60c4623b..40e3e28b1 100644
+--- a/src/udev/udevadm-settle.c
++++ b/src/udev/udevadm-settle.c
+@@ -149,7 +149,7 @@ static int adm_settle(struct udev *udev, int argc, char *argv[]) {
+                         break;
+                 }
+ 
+-                if (timeout > 0 && now(CLOCK_MONOTONIC) >= deadline)
++                if (now(CLOCK_MONOTONIC) >= deadline)
+                         break;
+ 
+                 /* wake up when queue is empty */

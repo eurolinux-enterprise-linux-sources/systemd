@@ -1,0 +1,27 @@
+From 75d982344e59e1dd916c214c5ccb6339c5c94254 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Fri, 25 Aug 2017 13:13:50 +0200
+Subject: [PATCH] sysctl: fix uninitialized variable
+
+RHEL-only
+
+Reported-by: HATAYAMA Daisuke <d.hatayama@jp.fujitsu.com>
+
+Resolves: #1485121
+---
+ src/sysctl/sysctl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/sysctl/sysctl.c b/src/sysctl/sysctl.c
+index bb2bea7cd..7fb016cee 100644
+--- a/src/sysctl/sysctl.c
++++ b/src/sysctl/sysctl.c
+@@ -91,7 +91,7 @@ static int apply_sysctl(const char *property, const char *value) {
+ }
+ 
+ static int apply_all(OrderedHashmap *sysctl_options) {
+-        int r;
++        int r = 0;
+         char *property, *value;
+         Iterator i;
+ 

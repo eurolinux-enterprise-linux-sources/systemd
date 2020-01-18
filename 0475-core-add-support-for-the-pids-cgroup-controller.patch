@@ -1,0 +1,622 @@
+From 7d44d0d43465892d4753ff50592588f49d56cf95 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Thu, 10 Sep 2015 12:32:16 +0200
+Subject: [PATCH] core: add support for the "pids" cgroup controller
+
+This adds support for the new "pids" cgroup controller of 4.3 kernels.
+It allows accounting the number of tasks in a cgroup and enforcing
+limits on it.
+
+This adds two new setting TasksAccounting= and TasksMax= to each unit,
+as well as a gloabl option DefaultTasksAccounting=.
+
+This also updated "cgtop" to optionally make use of the new
+kernel-provided accounting.
+
+systemctl has been updated to show the number of tasks for each service
+if it is available.
+
+This patch also adds correct support for undoing memory limits for units
+using a MemoryLimit=infinity syntax. We do the same for TasksMax= now
+and hence keep things in sync here.
+
+Cherry-picked from: 03a7b521e3ffb7f5d153d90480ba5d4bc29d1e8f
+Resolves: #1337244
+---
+ man/systemd-system.conf.xml           | 22 +++++-----
+ man/systemd.resource-control.xml      | 63 ++++++++++++++++++++++-----
+ src/core/cgroup.c                     | 44 +++++++++++++++++++
+ src/core/cgroup.h                     |  5 +++
+ src/core/dbus-cgroup.c                | 41 ++++++++++++++++-
+ src/core/dbus-unit.c                  | 25 +++++++++++
+ src/core/load-fragment-gperf.gperf.m4 |  2 +
+ src/core/load-fragment.c              | 37 ++++++++++++++--
+ src/core/load-fragment.h              |  1 +
+ src/core/main.c                       |  3 ++
+ src/core/manager.h                    |  1 +
+ src/core/unit.c                       |  1 +
+ src/shared/cgroup-util.h              |  1 +
+ src/systemctl/systemctl.c             | 17 ++++++++
+ 14 files changed, 236 insertions(+), 27 deletions(-)
+
+diff --git a/man/systemd-system.conf.xml b/man/systemd-system.conf.xml
+index 57b3b90be..d367ccd13 100644
+--- a/man/systemd-system.conf.xml
++++ b/man/systemd-system.conf.xml
+@@ -51,14 +51,14 @@
+   </refnamediv>
+ 
+   <refsynopsisdiv>
+-    <para><filename>/etc/systemd/system.conf</filename></para>
+-    <para><filename>/etc/systemd/system.conf.d/*.conf</filename></para>
+-    <para><filename>/run/systemd/system.conf.d/*.conf</filename></para>
+-    <para><filename>/usr/lib/systemd/system.conf.d/*.conf</filename></para>
+-    <para><filename>/etc/systemd/user.conf</filename></para>
+-    <para><filename>/etc/systemd/user.conf.d/*.conf</filename></para>
+-    <para><filename>/run/systemd/user.conf.d/*.conf</filename></para>
+-    <para><filename>/usr/lib/systemd/user.conf.d/*.conf</filename></para>
++    <para><filename>/etc/systemd/system.conf</filename>,
++    <filename>/etc/systemd/system.conf.d/*.conf</filename>,
++    <filename>/run/systemd/system.conf.d/*.conf</filename>,
++    <filename>/usr/lib/systemd/system.conf.d/*.conf</filename></para>
++    <para><filename>/etc/systemd/user.conf</filename>,
++    <filename>/etc/systemd/user.conf.d/*.conf</filename>,
++    <filename>/run/systemd/user.conf.d/*.conf</filename>,
++    <filename>/usr/lib/systemd/user.conf.d/*.conf</filename></para>
+   </refsynopsisdiv>
+ 
+   <refsect1>
+@@ -307,12 +307,14 @@
+         <term><varname>DefaultCPUAccounting=</varname></term>
+         <term><varname>DefaultBlockIOAccounting=</varname></term>
+         <term><varname>DefaultMemoryAccounting=</varname></term>
++        <term><varname>DefaultTasksAccounting=</varname></term>
+ 
+         <listitem><para>Configure the default resource accounting
+         settings, as configured per-unit by
+         <varname>CPUAccounting=</varname>,
+-        <varname>BlockIOAccounting=</varname> and
+-        <varname>MemoryAccounting=</varname>. See
++        <varname>BlockIOAccounting=</varname>,
++        <varname>MemoryAccounting=</varname> and
++        <varname>TasksAccounting=</varname>. See
+         <citerefentry><refentrytitle>systemd.resource-control</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+         for details on the per-unit settings.</para></listitem>
+       </varlistentry>
+diff --git a/man/systemd.resource-control.xml b/man/systemd.resource-control.xml
+index 8f4e7a3f1..6b9329bbe 100644
+--- a/man/systemd.resource-control.xml
++++ b/man/systemd.resource-control.xml
+@@ -103,10 +103,10 @@
+         <listitem>
+           <para>Turn on CPU usage accounting for this unit. Takes a
+           boolean argument. Note that turning on CPU accounting for
+-          one unit might also implicitly turn it on for all units
++          one unit will also implicitly turn it on for all units
+           contained in the same slice and for all its parent slices
+           and the units contained therein. The system default for this
+-          setting maybe controlled with
++          setting may be controlled with
+           <varname>DefaultCPUAccounting=</varname> in
+           <citerefentry><refentrytitle>systemd-system.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>.</para>
+         </listitem>
+@@ -134,7 +134,7 @@
+           prioritizing specific services at boot-up differently than
+           during normal runtime.</para>
+ 
+-          <para>Those options imply
++          <para>These options imply
+           <literal>CPUAccounting=true</literal>.</para>
+         </listitem>
+       </varlistentry>
+@@ -168,9 +168,10 @@
+         <listitem>
+           <para>Turn on process and kernel memory accounting for this
+           unit. Takes a boolean argument. Note that turning on memory
+-          accounting for one unit might also implicitly turn it on for
+-          all its parent slices. The system default for this setting
+-          maybe controlled with
++          accounting for one unit will also implicitly turn it on for
++          all units contained in the same slice and for all its parent
++          slices and the units contained therein. The system default
++          for this setting may be controlled with
+           <varname>DefaultMemoryAccounting=</varname> in
+           <citerefentry><refentrytitle>systemd-system.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>.</para>
+         </listitem>
+@@ -186,26 +187,64 @@
+           memory size in bytes. If the value is suffixed with K, M, G
+           or T, the specified memory size is parsed as Kilobytes,
+           Megabytes, Gigabytes, or Terabytes (with the base 1024),
+-          respectively. This controls the
+-          <literal>memory.limit_in_bytes</literal> control group
+-          attribute. For details about this control group attribute,
+-          see <ulink
++          respectively. If assigned the special value
++          <literal>infinity</literal> no memory limit is applied. This
++          controls the <literal>memory.limit_in_bytes</literal>
++          control group attribute. For details about this control
++          group attribute, see <ulink
+           url="https://www.kernel.org/doc/Documentation/cgroups/memory.txt">memory.txt</ulink>.</para>
+ 
+           <para>Implies <literal>MemoryAccounting=true</literal>.</para>
+         </listitem>
+       </varlistentry>
+ 
++      <varlistentry>
++        <term><varname>TasksAccounting=</varname></term>
++
++        <listitem>
++          <para>Turn on task accounting for this unit. Takes a
++          boolean argument. If enabled, the system manager will keep
++          track of the number of tasks in the unit. The number of
++          tasks accounted this way includes both kernel threads and
++          userspace processes, with each thread counting
++          individually. Note that turning on tasks accounting for one
++          unit will also implicitly turn it on for all units contained
++          in the same slice and for all its parent slices and the
++          units contained therein. The system default for this setting
++          may be controlled with
++          <varname>DefaultTasksAccounting=</varname> in
++          <citerefentry><refentrytitle>systemd-system.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>.</para>
++        </listitem>
++      </varlistentry>
++
++      <varlistentry>
++        <term><varname>TasksMax=<replaceable>N</replaceable></varname></term>
++
++        <listitem>
++          <para>Specify the maximum number of tasks that may be
++          created in the unit. This ensures that the number of tasks
++          accounted for the unit (see above) stays below a specific
++          limit. If assigned the special value
++          <literal>infinity</literal> no tasks limit is applied. This
++          controls the <literal>pids.max</literal> control group
++          attribute. For details about this control group attribute,
++          see <ulink
++          url="https://www.kernel.org/doc/Documentation/cgroups/pids.txt">pids.txt</ulink>.</para>
++
++          <para>Implies <literal>TasksAccounting=true</literal>.</para>
++        </listitem>
++      </varlistentry>
++
+       <varlistentry>
+         <term><varname>BlockIOAccounting=</varname></term>
+ 
+         <listitem>
+           <para>Turn on Block IO accounting for this unit. Takes a
+           boolean argument. Note that turning on block IO accounting
+-          for one unit might also implicitly turn it on for all units
++          for one unit will also implicitly turn it on for all units
+           contained in the same slice and all for its parent slices
+           and the units contained therein. The system default for this
+-          setting maybe controlled with
++          setting may be controlled with
+           <varname>DefaultBlockIOAccounting=</varname> in
+           <citerefentry><refentrytitle>systemd-system.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>.</para>
+         </listitem>
+diff --git a/src/core/cgroup.c b/src/core/cgroup.c
+index b7f08fb42..d4a8f9cbe 100644
+--- a/src/core/cgroup.c
++++ b/src/core/cgroup.c
+@@ -40,6 +40,7 @@ void cgroup_context_init(CGroupContext *c) {
+         c->memory_limit = (uint64_t) -1;
+         c->blockio_weight = (unsigned long) -1;
+         c->startup_blockio_weight = (unsigned long) -1;
++        c->tasks_max = (uint64_t) -1;
+ 
+         c->cpu_quota_per_sec_usec = USEC_INFINITY;
+ }
+@@ -105,6 +106,7 @@ void cgroup_context_dump(CGroupContext *c, FILE* f, const char *prefix) {
+                 "%sBlockIOWeight=%lu\n"
+                 "%sStartupBlockIOWeight=%lu\n"
+                 "%sMemoryLimit=%" PRIu64 "\n"
++                "%sTasksMax=%" PRIu64 "\n"
+                 "%sDevicePolicy=%s\n"
+                 "%sDelegate=%s\n",
+                 prefix, yes_no(c->cpu_accounting),
+@@ -116,6 +118,7 @@ void cgroup_context_dump(CGroupContext *c, FILE* f, const char *prefix) {
+                 prefix, c->blockio_weight,
+                 prefix, c->startup_blockio_weight,
+                 prefix, c->memory_limit,
++                prefix, c->tasks_max,
+                 prefix, cgroup_device_policy_to_string(c->device_policy),
+                 prefix, yes_no(c->delegate));
+ 
+@@ -456,6 +459,21 @@ void cgroup_context_apply(CGroupContext *c, CGroupControllerMask mask, const cha
+                                 log_debug("Ignoring device %s while writing cgroup attribute.", a->path);
+                 }
+         }
++
++        if ((mask & CGROUP_PIDS) && !is_root) {
++
++                if (c->tasks_max != (uint64_t) -1) {
++                        char buf[DECIMAL_STR_MAX(uint64_t) + 2];
++
++                        sprintf(buf, "%" PRIu64 "\n", c->tasks_max);
++                        r = cg_set_attribute("pids", path, "pids.max", buf);
++                } else
++                        r = cg_set_attribute("pids", path, "pids.max", "max");
++
++                if (r < 0)
++                        log_full_errno(IN_SET(r, -ENOENT, -EROFS) ? LOG_DEBUG : LOG_WARNING, r,
++                                       "Failed to set pids.max on %s: %m", path);
++        }
+ }
+ 
+ CGroupControllerMask cgroup_context_get_mask(CGroupContext *c) {
+@@ -484,6 +502,10 @@ CGroupControllerMask cgroup_context_get_mask(CGroupContext *c) {
+             c->device_policy != CGROUP_AUTO)
+                 mask |= CGROUP_DEVICE;
+ 
++        if (c->tasks_accounting ||
++            c->tasks_max != (uint64_t) -1)
++                mask |= CGROUP_PIDS;
++
+         return mask;
+ }
+ 
+@@ -1044,6 +1066,28 @@ int manager_notify_cgroup_empty(Manager *m, const char *cgroup) {
+         return 0;
+ }
+ 
++int unit_get_tasks_current(Unit *u, uint64_t *ret) {
++        _cleanup_free_ char *v = NULL;
++        int r;
++
++        assert(u);
++       assert(ret);
++
++        if (!u->cgroup_path)
++                return -ENODATA;
++
++        if ((u->cgroup_realized_mask & CGROUP_PIDS) == 0)
++                return -ENODATA;
++
++        r = cg_get_attribute("pids", u->cgroup_path, "pids.current", &v);
++        if (r == -ENOENT)
++                return -ENODATA;
++        if (r < 0)
++                return r;
++
++        return safe_atou64(v, ret);
++}
++
+ static const char* const cgroup_device_policy_table[_CGROUP_DEVICE_POLICY_MAX] = {
+         [CGROUP_AUTO] = "auto",
+         [CGROUP_CLOSED] = "closed",
+diff --git a/src/core/cgroup.h b/src/core/cgroup.h
+index 8fa851de3..8af3eaa3a 100644
+--- a/src/core/cgroup.h
++++ b/src/core/cgroup.h
+@@ -72,6 +72,7 @@ struct CGroupContext {
+         bool cpu_accounting;
+         bool blockio_accounting;
+         bool memory_accounting;
++        bool tasks_accounting;
+ 
+         unsigned long cpu_shares;
+         unsigned long startup_cpu_shares;
+@@ -88,6 +89,8 @@ struct CGroupContext {
+         LIST_HEAD(CGroupDeviceAllow, device_allow);
+ 
+         bool delegate;
++
++        uint64_t tasks_max;
+ };
+ 
+ #include "unit.h"
+@@ -127,5 +130,7 @@ pid_t unit_search_main_pid(Unit *u);
+ 
+ int manager_notify_cgroup_empty(Manager *m, const char *group);
+ 
++int unit_get_tasks_current(Unit *u, uint64_t *ret);
++
+ const char* cgroup_device_policy_to_string(CGroupDevicePolicy i) _const_;
+ CGroupDevicePolicy cgroup_device_policy_from_string(const char *s) _pure_;
+diff --git a/src/core/dbus-cgroup.c b/src/core/dbus-cgroup.c
+index 4a9df0601..a4465dc7a 100644
+--- a/src/core/dbus-cgroup.c
++++ b/src/core/dbus-cgroup.c
+@@ -168,6 +168,8 @@ const sd_bus_vtable bus_cgroup_vtable[] = {
+         SD_BUS_PROPERTY("MemoryLimit", "t", NULL, offsetof(CGroupContext, memory_limit), 0),
+         SD_BUS_PROPERTY("DevicePolicy", "s", property_get_cgroup_device_policy, offsetof(CGroupContext, device_policy), 0),
+         SD_BUS_PROPERTY("DeviceAllow", "a(ss)", property_get_device_allow, 0, 0),
++        SD_BUS_PROPERTY("TasksAccounting", "b", bus_property_get_bool, offsetof(CGroupContext, tasks_accounting), 0),
++        SD_BUS_PROPERTY("TasksMax", "t", NULL, offsetof(CGroupContext, tasks_max), 0),
+         SD_BUS_VTABLE_END
+ };
+ 
+@@ -551,7 +553,11 @@ int bus_cgroup_set_property(
+                 if (mode != UNIT_CHECK) {
+                         c->memory_limit = limit;
+                         u->cgroup_realized_mask &= ~CGROUP_MEMORY;
+-                        unit_write_drop_in_private_format(u, mode, name, "%s=%" PRIu64, name, limit);
++
++                        if (limit == (uint64_t) -1)
++                                unit_write_drop_in_private(u, mode, name, "MemoryLimit=infinity");
++                        else
++                                unit_write_drop_in_private_format(u, mode, name, "MemoryLimit=%" PRIu64, limit);
+                 }
+ 
+                 return 1;
+@@ -667,6 +673,39 @@ int bus_cgroup_set_property(
+ 
+                 return 1;
+ 
++        } else if (streq(name, "TasksAccounting")) {
++                int b;
++
++                r = sd_bus_message_read(message, "b", &b);
++                if (r < 0)
++                        return r;
++
++                if (mode != UNIT_CHECK) {
++                        c->tasks_accounting = b;
++                        u->cgroup_realized_mask &= ~CGROUP_PIDS;
++                        unit_write_drop_in_private(u, mode, name, b ? "TasksAccounting=yes" : "TasksAccounting=no");
++                }
++
++                return 1;
++
++        } else if (streq(name, "TasksMax")) {
++                uint64_t limit;
++
++                r = sd_bus_message_read(message, "t", &limit);
++                if (r < 0)
++                        return r;
++
++                if (mode != UNIT_CHECK) {
++                        c->tasks_max = limit;
++                        u->cgroup_realized_mask &= ~CGROUP_PIDS;
++
++                        if (limit == (uint64_t) -1)
++                                unit_write_drop_in_private(u, mode, name, "TasksMax=infinity");
++                        else
++                                unit_write_drop_in_private_format(u, mode, name, "TasksMax=%" PRIu64, limit);
++                }
++
++                return 1;
+         }
+ 
+         if (u->transient && u->load_state == UNIT_STUB) {
+diff --git a/src/core/dbus-unit.c b/src/core/dbus-unit.c
+index 056a17ac1..1d0d6f67c 100644
+--- a/src/core/dbus-unit.c
++++ b/src/core/dbus-unit.c
+@@ -673,11 +673,36 @@ static int property_get_current_memory(
+         return sd_bus_message_append(reply, "t", sz);
+ }
+ 
++static int property_get_current_tasks(
++                sd_bus *bus,
++                const char *path,
++                const char *interface,
++                const char *property,
++                sd_bus_message *reply,
++                void *userdata,
++                sd_bus_error *error) {
++
++        uint64_t cn = (uint64_t) -1;
++        Unit *u = userdata;
++        int r;
++
++        assert(bus);
++        assert(reply);
++        assert(u);
++
++        r = unit_get_tasks_current(u, &cn);
++        if (r < 0 && r != -ENODATA)
++                log_unit_warning_errno(u->id, r, "Failed to get pids.current attribute: %m");
++
++        return sd_bus_message_append(reply, "t", cn);
++}
++
+ const sd_bus_vtable bus_unit_cgroup_vtable[] = {
+         SD_BUS_VTABLE_START(0),
+         SD_BUS_PROPERTY("Slice", "s", property_get_slice, 0, 0),
+         SD_BUS_PROPERTY("ControlGroup", "s", NULL, offsetof(Unit, cgroup_path), 0),
+         SD_BUS_PROPERTY("MemoryCurrent", "t", property_get_current_memory, 0, 0),
++        SD_BUS_PROPERTY("TasksCurrent", "t", property_get_current_tasks, 0, 0),
+         SD_BUS_VTABLE_END
+ };
+ 
+diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
+index f996032cf..26e4c618e 100644
+--- a/src/core/load-fragment-gperf.gperf.m4
++++ b/src/core/load-fragment-gperf.gperf.m4
+@@ -125,6 +125,8 @@ $1.StartupBlockIOWeight,         config_parse_blockio_weight,        0,
+ $1.BlockIODeviceWeight,          config_parse_blockio_device_weight, 0,                             offsetof($1, cgroup_context)
+ $1.BlockIOReadBandwidth,         config_parse_blockio_bandwidth,     0,                             offsetof($1, cgroup_context)
+ $1.BlockIOWriteBandwidth,        config_parse_blockio_bandwidth,     0,                             offsetof($1, cgroup_context)
++$1.TasksAccounting,              config_parse_bool,                  0,                             offsetof($1, cgroup_context.tasks_accounting)
++$1.TasksMax,                     config_parse_tasks_max,             0,                             offsetof($1, cgroup_context)
+ $1.Delegate,                     config_parse_bool,                  0,                             offsetof($1, cgroup_context.delegate)'
+ )m4_dnl
+ Unit.Description,                config_parse_unit_string_printf,    0,                             offsetof(Unit, description)
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index 7d1ac6c25..7d2e737d0 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -3052,7 +3052,7 @@ int config_parse_memory_limit(
+         off_t bytes;
+         int r;
+ 
+-        if (isempty(rvalue)) {
++        if (isempty(rvalue) || streq(rvalue, "infinity")) {
+                 c->memory_limit = (uint64_t) -1;
+                 return 0;
+         }
+@@ -3060,9 +3060,8 @@ int config_parse_memory_limit(
+         assert_cc(sizeof(uint64_t) == sizeof(off_t));
+ 
+         r = parse_size(rvalue, 1024, &bytes);
+-        if (r < 0) {
+-                log_syntax(unit, LOG_ERR, filename, line, EINVAL,
+-                           "Memory limit '%s' invalid. Ignoring.", rvalue);
++        if (r < 0 || bytes < 1) {
++                log_syntax(unit, LOG_ERR, filename, line, EINVAL, "Memory limit '%s' invalid. Ignoring.", rvalue);
+                 return 0;
+         }
+ 
+@@ -3070,6 +3069,36 @@ int config_parse_memory_limit(
+         return 0;
+ }
+ 
++int config_parse_tasks_max(
++                const char *unit,
++                const char *filename,
++                unsigned line,
++                const char *section,
++                unsigned section_line,
++                const char *lvalue,
++                int ltype,
++                const char *rvalue,
++                void *data,
++                void *userdata) {
++
++        CGroupContext *c = data;
++        uint64_t u;
++        int r;
++
++        if (isempty(rvalue) || streq(rvalue, "infinity")) {
++                c->tasks_max = (uint64_t) -1;
++                return 0;
++        }
++
++        r = safe_atou64(rvalue, &u);
++        if (r < 0 || u < 1) {
++                log_syntax(unit, LOG_ERR, filename, line, EINVAL, "Maximum tasks value '%s' invalid. Ignoring.", rvalue);
++                return 0;
++        }
++
++        return 0;
++}
++
+ int config_parse_device_allow(
+                 const char *unit,
+                 const char *filename,
+diff --git a/src/core/load-fragment.h b/src/core/load-fragment.h
+index 2059353d3..8d334f2c8 100644
+--- a/src/core/load-fragment.h
++++ b/src/core/load-fragment.h
+@@ -89,6 +89,7 @@ int config_parse_pass_environ(const char *unit, const char *filename, unsigned l
+ int config_parse_unit_slice(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_cpu_shares(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_memory_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
++int config_parse_tasks_max(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_device_policy(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_device_allow(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_blockio_weight(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+diff --git a/src/core/main.c b/src/core/main.c
+index cba992cea..aca05a535 100644
+--- a/src/core/main.c
++++ b/src/core/main.c
+@@ -117,6 +117,7 @@ static bool arg_default_cpu_accounting = false;
+ static bool arg_default_blockio_accounting = false;
+ static bool arg_default_memory_accounting = false;
+ static EmergencyAction arg_cad_burst_action = EMERGENCY_ACTION_REBOOT_FORCE;
++static bool arg_default_tasks_accounting = false;
+ 
+ static void nop_handler(int sig) {}
+ 
+@@ -676,6 +677,7 @@ static int parse_config_file(void) {
+                 { "Manager", "DefaultBlockIOAccounting",  config_parse_bool,             0, &arg_default_blockio_accounting        },
+                 { "Manager", "DefaultMemoryAccounting",   config_parse_bool,             0, &arg_default_memory_accounting         },
+                 { "Manager", "CtrlAltDelBurstAction",     config_parse_emergency_action, 0, &arg_cad_burst_action                  },
++                { "Manager", "DefaultTasksAccounting",    config_parse_bool,             0, &arg_default_tasks_accounting          },
+                 {}
+         };
+ 
+@@ -1685,6 +1687,7 @@ int main(int argc, char *argv[]) {
+         m->default_cpu_accounting = arg_default_cpu_accounting;
+         m->default_blockio_accounting = arg_default_blockio_accounting;
+         m->default_memory_accounting = arg_default_memory_accounting;
++        m->default_tasks_accounting = arg_default_tasks_accounting;
+         m->runtime_watchdog = arg_runtime_watchdog;
+         m->shutdown_watchdog = arg_shutdown_watchdog;
+ 
+diff --git a/src/core/manager.h b/src/core/manager.h
+index 231c076b1..96dcd83dc 100644
+--- a/src/core/manager.h
++++ b/src/core/manager.h
+@@ -261,6 +261,7 @@ struct Manager {
+         bool default_cpu_accounting;
+         bool default_memory_accounting;
+         bool default_blockio_accounting;
++        bool default_tasks_accounting;
+ 
+         usec_t default_timer_accuracy_usec;
+ 
+diff --git a/src/core/unit.c b/src/core/unit.c
+index 103f92084..2fcb4fbf0 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -126,6 +126,7 @@ static void unit_init(Unit *u) {
+                 cc->cpu_accounting = u->manager->default_cpu_accounting;
+                 cc->blockio_accounting = u->manager->default_blockio_accounting;
+                 cc->memory_accounting = u->manager->default_memory_accounting;
++                cc->tasks_accounting = u->manager->default_tasks_accounting;
+         }
+ 
+         ec = unit_get_exec_context(u);
+diff --git a/src/shared/cgroup-util.h b/src/shared/cgroup-util.h
+index 96a3d3baf..31bd8d311 100644
+--- a/src/shared/cgroup-util.h
++++ b/src/shared/cgroup-util.h
+@@ -35,6 +35,7 @@ typedef enum CGroupControllerMask {
+         CGROUP_BLKIO = 4,
+         CGROUP_MEMORY = 8,
+         CGROUP_DEVICE = 16,
++        CGROUP_PIDS = 32,
+         _CGROUP_CONTROLLER_MASK_ALL = 31
+ } CGroupControllerMask;
+ 
+diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
+index 0333599c8..b1862b567 100644
+--- a/src/systemctl/systemctl.c
++++ b/src/systemctl/systemctl.c
+@@ -3280,6 +3280,8 @@ typedef struct UnitStatusInfo {
+         /* CGroup */
+         uint64_t memory_current;
+         uint64_t memory_limit;
++        uint64_t tasks_current;
++        uint64_t tasks_max;
+ 
+         LIST_HEAD(ExecStatusInfo, exec);
+ } UnitStatusInfo;
+@@ -3539,6 +3541,15 @@ static void print_status_info(
+         if (i->status_errno > 0)
+                 printf("    Error: %i (%s)\n", i->status_errno, strerror(i->status_errno));
+ 
++        if (i->tasks_current != (uint64_t) -1) {
++                printf("    Tasks: %" PRIu64, i->tasks_current);
++
++                if (i->tasks_max != (uint64_t) -1)
++                        printf(" (limit: %" PRIi64 ")\n", i->tasks_max);
++                else
++                        printf("\n");
++        }
++
+         if (i->memory_current != (uint64_t) -1) {
+                 char buf[FORMAT_BYTES_MAX];
+ 
+@@ -3768,6 +3779,10 @@ static int status_property(const char *name, sd_bus_message *m, UnitStatusInfo *
+                         i->memory_current = u;
+                 else if (streq(name, "MemoryLimit"))
+                         i->memory_limit = u;
++                else if (streq(name, "TasksCurrent"))
++                        i->tasks_current = u;
++                else if (streq(name, "TasksMax"))
++                        i->tasks_max = u;
+ 
+                 break;
+         }
+@@ -4248,6 +4263,8 @@ static int show_one(
+         UnitStatusInfo info = {
+                 .memory_current = (uint64_t) -1,
+                 .memory_limit = (uint64_t) -1,
++                .tasks_current = (uint64_t) -1,
++                .tasks_max = (uint64_t) -1,
+         };
+         ExecStatusInfo *p;
+         int r;

@@ -1,0 +1,163 @@
+From c56c1f6c2b683d6f20a7e8caeecec6c3cb76798f Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Tue, 3 Jan 2017 14:21:25 +0100
+Subject: [PATCH] core: make parsing of RLIMIT_NICE aware of actual nice levels
+
+RHEL-only
+(most of code taken from 29857001854a02c292f1f3b324e7a66831e859c8)
+
+Resolves: #1409588
+---
+ man/systemd.exec.xml                  |  7 ++-
+ src/core/load-fragment-gperf.gperf.m4 |  2 +-
+ src/core/load-fragment.c              | 72 +++++++++++++++++++++++++++
+ src/core/load-fragment.h              |  1 +
+ src/core/main.c                       |  2 +-
+ 5 files changed, 81 insertions(+), 3 deletions(-)
+
+diff --git a/man/systemd.exec.xml b/man/systemd.exec.xml
+index 0cd469cd9..c5199d3a5 100644
+--- a/man/systemd.exec.xml
++++ b/man/systemd.exec.xml
+@@ -575,7 +575,12 @@
+         granularity of the limits might influence their
+         enforcement. For example, time limits specified for
+         <varname>LimitCPU=</varname> will be rounded up implicitly to
+-        multiples of 1s.</para>
++        multiples of 1s. For <varname>LimitNICE=</varname> the value
++        may be specified in two syntaxes: if prefixed with <literal>+</literal>
++        or <literal>-</literal>, the value is understood as regular Linux
++        nice value in the range -20..19. If not prefixed like this the value
++        is understood as raw resource limit parameter in the range 0..40 (with 0 being
++        equivalent to 1).</para>
+ 
+         <para>Note that most process resource limits configured with
+         these options are per-process, and processes may fork in order
+diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
+index 45d1ead45..f3a6e13d9 100644
+--- a/src/core/load-fragment-gperf.gperf.m4
++++ b/src/core/load-fragment-gperf.gperf.m4
+@@ -71,7 +71,7 @@ $1.LimitMEMLOCK,                 config_parse_bytes_limit,           RLIMIT_MEML
+ $1.LimitLOCKS,                   config_parse_limit,                 RLIMIT_LOCKS,                  offsetof($1, exec_context.rlimit)
+ $1.LimitSIGPENDING,              config_parse_limit,                 RLIMIT_SIGPENDING,             offsetof($1, exec_context.rlimit)
+ $1.LimitMSGQUEUE,                config_parse_bytes_limit,           RLIMIT_MSGQUEUE,               offsetof($1, exec_context.rlimit)
+-$1.LimitNICE,                    config_parse_limit,                 RLIMIT_NICE,                   offsetof($1, exec_context.rlimit)
++$1.LimitNICE,                    config_parse_nice_limit,            RLIMIT_NICE,                   offsetof($1, exec_context.rlimit)
+ $1.LimitRTPRIO,                  config_parse_limit,                 RLIMIT_RTPRIO,                 offsetof($1, exec_context.rlimit)
+ $1.LimitRTTIME,                  config_parse_usec_limit,            RLIMIT_RTTIME,                 offsetof($1, exec_context.rlimit)
+ $1.ReadWriteDirectories,         config_parse_namespace_path_strv,   0,                             offsetof($1, exec_context.read_write_dirs)
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index 705641971..3a3c456da 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -1154,6 +1154,56 @@ static int rlim_parse_usec(const char *val, rlim_t *res) {
+         return r;
+ }
+ 
++static int rlim_parse_nice(const char *val, rlim_t *ret) {
++        uint64_t rl;
++        int r;
++
++        /* So, Linux is weird. The range for RLIMIT_NICE is 40..1, mapping to the nice levels -20..19. However, the
++         * RLIMIT_NICE limit defaults to 0 by the kernel, i.e. a value that maps to nice level 20, which of course is
++         * bogus and does not exist. In order to permit parsing the RLIMIT_NICE of 0 here we hence implement a slight
++         * asymmetry: when parsing as positive nice level we permit 0..19. When parsing as negative nice level, we
++         * permit -20..0. But when parsing as raw resource limit value then we also allow the special value 0.
++         *
++         * Yeah, Linux is quality engineering sometimes... */
++
++        if (val[0] == '+') {
++
++                /* Prefixed with "+": Parse as positive user-friendly nice value */
++                r = safe_atou64(val + 1, &rl);
++                if (r < 0)
++                        return r;
++
++                if (rl >= PRIO_MAX)
++                        return -ERANGE;
++
++                rl = 20 - rl;
++
++        } else if (val[0] == '-') {
++
++                /* Prefixed with "-": Parse as negative user-friendly nice value */
++                r = safe_atou64(val + 1, &rl);
++                if (r < 0)
++                        return r;
++
++                if (rl > (uint64_t) (-PRIO_MIN))
++                        return -ERANGE;
++
++                rl = 20 + rl;
++        } else {
++
++                /* Not prefixed: parse as raw resource limit value */
++                r = safe_atou64(val, &rl);
++                if (r < 0)
++                        return r;
++
++                if (rl > (uint64_t) (20 - PRIO_MIN))
++                        return -ERANGE;
++        }
++
++        *ret = (rlim_t) rl;
++        return 0;
++}
++
+ static int parse_rlimit_range(
+                 const char *unit,
+                 const char *filename,
+@@ -1286,6 +1336,28 @@ int config_parse_usec_limit(
+         return parse_rlimit_range(unit, filename, line, rvalue, rl, rlim_parse_usec);
+ }
+ 
++int config_parse_nice_limit(
++                const char *unit,
++                const char *filename,
++                unsigned line,
++                const char *section,
++                unsigned section_line,
++                const char *lvalue,
++                int ltype,
++                const char *rvalue,
++                void *data,
++                void *userdata) {
++
++        struct rlimit **rl = data;
++
++        assert(filename);
++        assert(lvalue);
++        assert(rvalue);
++        assert(data);
++
++        rl += ltype;
++        return parse_rlimit_range(unit, filename, line, rvalue, rl, rlim_parse_nice);
++}
+ 
+ #ifdef HAVE_SYSV_COMPAT
+ int config_parse_sysv_priority(const char *unit,
+diff --git a/src/core/load-fragment.h b/src/core/load-fragment.h
+index 611479612..7c69e5369 100644
+--- a/src/core/load-fragment.h
++++ b/src/core/load-fragment.h
+@@ -59,6 +59,7 @@ int config_parse_limit(const char *unit, const char *filename, unsigned line, co
+ int config_parse_bytes_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_sec_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_usec_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
++int config_parse_nice_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_sysv_priority(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_kill_signal(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_exec_mount_flags(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+diff --git a/src/core/main.c b/src/core/main.c
+index 6f8367632..820cbc3e5 100644
+--- a/src/core/main.c
++++ b/src/core/main.c
+@@ -669,7 +669,7 @@ static int parse_config_file(void) {
+                 { "Manager", "DefaultLimitLOCKS",         config_parse_limit,            0, &arg_default_rlimit[RLIMIT_LOCKS]      },
+                 { "Manager", "DefaultLimitSIGPENDING",    config_parse_limit,            0, &arg_default_rlimit[RLIMIT_SIGPENDING] },
+                 { "Manager", "DefaultLimitMSGQUEUE",      config_parse_bytes_limit,      0, &arg_default_rlimit[RLIMIT_MSGQUEUE]   },
+-                { "Manager", "DefaultLimitNICE",          config_parse_limit,            0, &arg_default_rlimit[RLIMIT_NICE]       },
++                { "Manager", "DefaultLimitNICE",          config_parse_nice_limit,       0, &arg_default_rlimit[RLIMIT_NICE]       },
+                 { "Manager", "DefaultLimitRTPRIO",        config_parse_limit,            0, &arg_default_rlimit[RLIMIT_RTPRIO]     },
+                 { "Manager", "DefaultLimitRTTIME",        config_parse_limit,            0, &arg_default_rlimit[RLIMIT_RTTIME]     },
+                 { "Manager", "DefaultCPUAccounting",      config_parse_bool,             0, &arg_default_cpu_accounting            },

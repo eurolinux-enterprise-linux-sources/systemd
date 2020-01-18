@@ -1,0 +1,70 @@
+From c87355bc80da9e2cba7f7723d7c6568dfa56f1a1 Mon Sep 17 00:00:00 2001
+From: Vito Caputo <vito.caputo@coreos.com>
+Date: Fri, 8 Jan 2016 12:11:44 -0800
+Subject: [PATCH] journal: normalize priority of logging sources
+
+The stream event source has a priority of SD_EVENT_PRIORITY_NORMAL+5,
+and stdout source +10, but the native and syslog event sources are left
+at the default of 0.
+
+As a result, any heavy native or syslog logger can cause starvation of
+the other loggers.  This is trivially demonstrated by running:
+
+ dd if=/dev/urandom bs=8k | od | systemd-cat & # native spammer
+ systemd-run echo hello & # stream logger
+ journalctl --follow --output=verbose --no-pager --identifier=echo &
+
+... and wait, and wait, the "hello" never comes.
+
+Now kill %1, "hello" arrives finally.
+
+Cherry-picked from: 48cef29504b1ffc0df9929f2d8b2af2ad74d2b4a
+Related: #1318994
+---
+ src/journal/journald-native.c | 4 ++++
+ src/journal/journald-stream.c | 2 +-
+ src/journal/journald-syslog.c | 4 ++++
+ 3 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/src/journal/journald-native.c b/src/journal/journald-native.c
+index 851625de0..2c9cf6e7a 100644
+--- a/src/journal/journald-native.c
++++ b/src/journal/journald-native.c
+@@ -457,5 +457,9 @@ int server_open_native_socket(Server*s) {
+         if (r < 0)
+                 return log_error_errno(r, "Failed to add native server fd to event loop: %m");
+ 
++        r = sd_event_source_set_priority(s->native_event_source, SD_EVENT_PRIORITY_NORMAL+5);
++        if (r < 0)
++                return log_error_errno(r, "Failed to adjust native event source priority: %m");
++
+         return 0;
+ }
+diff --git a/src/journal/journald-stream.c b/src/journal/journald-stream.c
+index 15a554c34..b8607144b 100644
+--- a/src/journal/journald-stream.c
++++ b/src/journal/journald-stream.c
+@@ -448,7 +448,7 @@ int server_open_stdout_socket(Server *s) {
+         if (r < 0)
+                 return log_error_errno(r, "Failed to add stdout server fd to event source: %m");
+ 
+-        r = sd_event_source_set_priority(s->stdout_event_source, SD_EVENT_PRIORITY_NORMAL+10);
++        r = sd_event_source_set_priority(s->stdout_event_source, SD_EVENT_PRIORITY_NORMAL+5);
+         if (r < 0)
+                 return log_error_errno(r, "Failed to adjust priority of stdout server event source: %m");
+ 
+diff --git a/src/journal/journald-syslog.c b/src/journal/journald-syslog.c
+index 4e118aabc..8602b4a95 100644
+--- a/src/journal/journald-syslog.c
++++ b/src/journal/journald-syslog.c
+@@ -421,6 +421,10 @@ int server_open_syslog_socket(Server *s) {
+         if (r < 0)
+                 return log_error_errno(r, "Failed to add syslog server fd to event loop: %m");
+ 
++        r = sd_event_source_set_priority(s->syslog_event_source, SD_EVENT_PRIORITY_NORMAL+5);
++        if (r < 0)
++                return log_error_errno(r, "Failed to adjust syslog event source priority: %m");
++
+         return 0;
+ }
+ 

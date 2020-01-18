@@ -1,0 +1,55 @@
+From 42026958cced6fe111bbaccad04d24d8ca3d6c55 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Fri, 14 Nov 2014 17:07:57 +0100
+Subject: [PATCH] Revert "fsck: re-enable fsck -l"
+
+This reverts commit 48d3e8d07f2978f001cc85b2dddb7f8ec9d07006.
+
+(We have older util-linux in rhel7))
+
+Conflicts:
+	README
+---
+ README          |  3 ++-
+ src/fsck/fsck.c | 13 +++++++++----
+ 2 files changed, 11 insertions(+), 5 deletions(-)
+
+diff --git a/README b/README
+index c72209262..5f5783a68 100644
+--- a/README
++++ b/README
+@@ -135,7 +135,8 @@ REQUIREMENTS:
+         During runtime, you need the following additional
+         dependencies:
+ 
+-        util-linux >= v2.25 required
++        util-linux >= v2.19 (requires fsck -l, agetty -s),
++                      v2.21 required for tests in test/
+         dbus >= 1.4.0 (strictly speaking optional, but recommended)
+         dracut (optional)
+         PolicyKit (optional)
+diff --git a/src/fsck/fsck.c b/src/fsck/fsck.c
+index 78ceeb6fa..d8976809d 100644
+--- a/src/fsck/fsck.c
++++ b/src/fsck/fsck.c
+@@ -323,11 +323,16 @@ int main(int argc, char *argv[]) {
+         cmdline[i++] = "-T";
+ 
+         /*
+-         * Since util-linux v2.25 fsck uses /run/fsck/<diskname>.lock files.
+-         * The previous versions use flock for the device and conflict with
+-         * udevd, see https://bugs.freedesktop.org/show_bug.cgi?id=79576#c5
++         * Disable locking which conflict with udev's event
++         * ownershipi, until util-linux moves the flock
++         * synchronization file which prevents multiple fsck running
++         * on the same rotationg media, from the disk device
++         * node to a privately owned regular file.
++         *
++         * https://bugs.freedesktop.org/show_bug.cgi?id=79576#c5
++         *
++         * cmdline[i++] = "-l";
+          */
+-        cmdline[i++] = "-l";
+ 
+         if (!root_directory)
+                 cmdline[i++] = "-M";

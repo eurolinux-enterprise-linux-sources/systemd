@@ -1,0 +1,32 @@
+From f79f65a2957cca23e0347eb2c9dfbd53be5c8dba Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Mon, 8 Aug 2016 15:15:14 +0200
+Subject: [PATCH] Revert "install: fix disable via unit file path"
+
+This reverts commit 96df052a6a9d09cde2d437861727bf37fe6446b4.
+
+Related: #1348208
+---
+ src/shared/install.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/src/shared/install.c b/src/shared/install.c
+index f7f9866f4..9962508b1 100644
+--- a/src/shared/install.c
++++ b/src/shared/install.c
+@@ -1910,12 +1910,10 @@ int unit_file_disable(
+                 return r;
+ 
+         STRV_FOREACH(i, files) {
++                if (!unit_name_is_valid(*i, UNIT_NAME_ANY))
++                        return -EINVAL;
+ 
+-                if (!is_path(*i))
+-                        r = install_info_add(&c, *i, NULL, NULL);
+-                else
+-                        r = install_info_add(&c, NULL, *i, NULL);
+-
++                r = install_info_add(&c, *i, NULL, NULL);
+                 if (r < 0)
+                         return r;
+         }

@@ -1,0 +1,28 @@
+From 3231718bd58d86cc52da68d72fabf0cef48aebbd Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Fri, 3 Apr 2015 08:28:21 -0400
+Subject: [PATCH] man: remove 'fs' from 'rootfsflags'
+
+rootfsflags does not appear anywhere else.
+
+(cherry picked from commit d6a12e7ca3a17ce0224fd6c95d827e4f97fe2c9a)
+
+Cherry-picked from: 589a5b6
+Resolves: #1222517
+---
+ man/kernel-command-line.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/man/kernel-command-line.xml b/man/kernel-command-line.xml
+index 919bd1374..eb7372702 100644
+--- a/man/kernel-command-line.xml
++++ b/man/kernel-command-line.xml
+@@ -295,7 +295,7 @@
+       <varlistentry>
+         <term><varname>root=</varname></term>
+         <term><varname>rootfstype=</varname></term>
+-        <term><varname>rootfsflags=</varname></term>
++        <term><varname>rootflags=</varname></term>
+         <term><varname>ro</varname></term>
+         <term><varname>rw</varname></term>
+ 

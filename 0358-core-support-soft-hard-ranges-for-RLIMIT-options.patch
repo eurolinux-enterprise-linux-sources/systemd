@@ -1,0 +1,1003 @@
+From 81a95ec724b7b874f850cb0f32f1981ccc4fb062 Mon Sep 17 00:00:00 2001
+From: Karel Zak <kzak@redhat.com>
+Date: Fri, 20 Nov 2015 12:54:10 +0100
+Subject: [PATCH] core: support <soft:hard> ranges for RLIMIT options
+
+The new parser supports:
+
+ <value>       - specify both limits to the same value
+ <soft:hard>   - specify both limits
+
+the size or time specific suffixes are supported, for example
+
+  LimitRTTIME=1sec
+  LimitAS=4G:16G
+
+The patch introduces parse_rlimit_range() and rlim type (size, sec,
+usec, etc.) specific parsers. No code is duplicated now.
+
+The patch also sync docs for DefaultLimitXXX= and LimitXXX=.
+
+References: https://github.com/systemd/systemd/issues/1769
+
+Cherry-picked from: 91518d20ddf0376808544576d0ef0883cedc67d4
+Resolves: #1351415
+---
+ man/systemd-system.conf.xml |  27 ++-
+ man/systemd.exec.xml        |   5 +-
+ src/core/load-fragment.c    | 243 ++++++++++---------
+ src/shared/util.c           | 467 ++++++++++++++++++++++++++++++++++++
+ src/shared/util.h           |  14 ++
+ src/test/test-unit-file.c   |  31 +++
+ 6 files changed, 667 insertions(+), 120 deletions(-)
+
+diff --git a/man/systemd-system.conf.xml b/man/systemd-system.conf.xml
+index b7d9cdee0..39d19bc71 100644
+--- a/man/systemd-system.conf.xml
++++ b/man/systemd-system.conf.xml
+@@ -326,13 +326,26 @@
+         <listitem><para>These settings control various default
+         resource limits for units. See
+         <citerefentry><refentrytitle>setrlimit</refentrytitle><manvolnum>2</manvolnum></citerefentry>
+-        for details. Use the string <varname>infinity</varname> to
+-        configure no limit on a specific resource. The multiplicative suffixes
+-        K (=1024), M (=1024*1024) and so on for G, T, P and E may be used for
+-        resource limits measured in bytes (e.g. DefaultLimitAS=16G). These
+-        settings may be overridden in individual units using the corresponding
+-        LimitXXX= directives. Note that these resource limits are only
+-        defaults for units, they are not applied to PID 1
++        for details. The resource limit is possible to specify in two formats,
++        <option>value</option> to set soft and hard limits to the same value,
++        or <option>soft:hard</option> to set both limits individually (e.g. DefaultLimitAS=4G:16G).
++        Use the string <varname>infinity</varname> to
++        configure no limit on a specific resource. The multiplicative
++        suffixes K (=1024), M (=1024*1024) and so on for G, T, P and E
++        may be used for resource limits measured in bytes
++        (e.g. DefaultLimitAS=16G). For the limits referring to time values,
++        the usual time units ms, s, min, h and so on may be used (see
++        <citerefentry><refentrytitle>systemd.time</refentrytitle><manvolnum>7</manvolnum></citerefentry>
++        for details). Note that if no time unit is specified for
++        <varname>DefaultLimitCPU=</varname> the default unit of seconds is
++        implied, while for <varname>DefaultLimitRTTIME=</varname> the default
++        unit of microseconds is implied. Also, note that the effective
++        granularity of the limits might influence their
++        enforcement. For example, time limits specified for
++        <varname>DefaultLimitCPU=</varname> will be rounded up implicitly to
++        multiples of 1s. These  settings may be overridden in individual units
++        using the corresponding LimitXXX= directives. Note that these resource
++        limits are only defaults for units, they are not applied to PID 1
+         itself.</para></listitem>
+       </varlistentry>
+     </variablelist>
+diff --git a/man/systemd.exec.xml b/man/systemd.exec.xml
+index cfdcc3d17..0cd469cd9 100644
+--- a/man/systemd.exec.xml
++++ b/man/systemd.exec.xml
+@@ -558,7 +558,10 @@
+         <listitem><para>These settings set both soft and hard limits
+         of various resources for executed processes. See
+         <citerefentry><refentrytitle>setrlimit</refentrytitle><manvolnum>2</manvolnum></citerefentry>
+-        for details. Use the string <varname>infinity</varname> to
++        for details. The resource limit is possible to specify in two formats,
++        <option>value</option> to set soft and hard limits to the same value,
++        or <option>soft:hard</option> to set both limits individually (e.g. LimitAS=4G:16G).
++        Use the string <varname>infinity</varname> to
+         configure no limit on a specific resource. The multiplicative
+         suffixes K (=1024), M (=1024*1024) and so on for G, T, P and E
+         may be used for resource limits measured in bytes
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index 8afe9d7e8..d307f1c74 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -1075,81 +1075,108 @@ int config_parse_bounding_set(const char *unit,
+         return 0;
+ }
+ 
+-int config_parse_limit(const char *unit,
+-                       const char *filename,
+-                       unsigned line,
+-                       const char *section,
+-                       unsigned section_line,
+-                       const char *lvalue,
+-                       int ltype,
+-                       const char *rvalue,
+-                       void *data,
+-                       void *userdata) {
+ 
+-        struct rlimit **rl = data;
+-        unsigned long long u;
++static int rlim_parse_u64(const char *val, rlim_t *res) {
++        int r = 0;
+ 
+-        assert(filename);
+-        assert(lvalue);
+-        assert(rvalue);
+-        assert(data);
++        if (streq(val, "infinity"))
++                *res = RLIM_INFINITY;
++        else {
++                uint64_t u;
+ 
+-        rl += ltype;
++                /* setrlimit(2) suggests rlim_t is always 64bit on Linux. */
++                assert_cc(sizeof(rlim_t) == sizeof(uint64_t));
++
++                r = safe_atou64(val, &u);
++                if (r >= 0 && u >= (uint64_t) RLIM_INFINITY)
++                        r = -ERANGE;
++                if (r == 0)
++                        *res = (rlim_t) u;
++        }
++        return r;
++}
+ 
+-        if (streq(rvalue, "infinity"))
+-                u = (unsigned long long) RLIM_INFINITY;
++static int rlim_parse_size(const char *val, rlim_t *res) {
++        int r = 0;
++
++        if (streq(val, "infinity"))
++                *res = RLIM_INFINITY;
+         else {
+-                int r;
++                off_t u;
+ 
+-                r = safe_atollu(rvalue, &u);
+-                if (r < 0) {
+-                        log_syntax(unit, LOG_ERR, filename, line, -r,
+-                                   "Failed to parse resource value, ignoring: %s", rvalue);
+-                        return 0;
+-                }
++                r = parse_size(val, 1024, &u);
++                if (r >= 0 && u >= (off_t) RLIM_INFINITY)
++                        r = -ERANGE;
++                if (r == 0)
++                        *res = (rlim_t) u;
+         }
++        return r;
++}
+ 
+-        if (!*rl) {
+-                *rl = new(struct rlimit, 1);
+-                if (!*rl)
+-                        return log_oom();
+-        }
++static int rlim_parse_sec(const char *val, rlim_t *res) {
++        int r = 0;
+ 
+-        (*rl)->rlim_cur = (*rl)->rlim_max = (rlim_t) u;
+-        return 0;
++        if (streq(val, "infinity"))
++                *res = RLIM_INFINITY;
++        else {
++                usec_t t;
++
++                r = parse_sec(val, &t);
++                if (r < 0)
++                        return r;
++                if (t == USEC_INFINITY)
++                        *res = RLIM_INFINITY;
++                else
++                        *res = (rlim_t) (DIV_ROUND_UP(t, USEC_PER_SEC));
++
++        }
++        return r;
+ }
+ 
+-int config_parse_bytes_limit(const char *unit,
+-                       const char *filename,
+-                       unsigned line,
+-                       const char *section,
+-                       unsigned section_line,
+-                       const char *lvalue,
+-                       int ltype,
+-                       const char *rvalue,
+-                       void *data,
+-                       void *userdata) {
++static int rlim_parse_usec(const char *val, rlim_t *res) {
++        int r = 0;
+ 
+-        struct rlimit **rl = data;
+-        uint64_t bytes;
++        if (streq(val, "infinity"))
++                *res = RLIM_INFINITY;
++        else {
++                usec_t t;
+ 
+-        assert(filename);
+-        assert(lvalue);
+-        assert(rvalue);
+-        assert(data);
++                r = parse_time(val, &t, 1);
++                if (r < 0)
++                        return r;
++                if (t == USEC_INFINITY)
++                        *res = RLIM_INFINITY;
++                else
++                        *res = (rlim_t) t;
++        }
++        return r;
++}
+ 
+-        rl += ltype;
++static int parse_rlimit_range(
++                const char *unit,
++                const char *filename,
++                unsigned line,
++                const char *value,
++                struct rlimit **rl,
++                int (*rlim_parser)(const char *, rlim_t *)) {
+ 
+-        if (streq(rvalue, "infinity"))
+-                bytes = (uint64_t) RLIM_INFINITY;
+-        else {
+-                int r;
++        rlim_t soft, hard;
++        _cleanup_free_ char *sword = NULL, *hword = NULL;
++        int nwords, r;
+ 
+-                r = parse_size(rvalue, 1024, &bytes);
+-                if (r < 0) {
+-                        log_syntax(unit, LOG_ERR, filename, line, r, "Failed to parse resource value, ignoring: %s", rvalue);
+-                        return 0;
+-                }
++        assert(value);
++
++        /* <value> or <soft:hard> */
++        nwords = extract_many_words(&value, ":", EXTRACT_DONT_COALESCE_SEPARATORS, &sword, &hword, NULL);
++        r = nwords < 0 ? nwords : nwords == 0 ? -EINVAL : 0;
++
++        if (r == 0)
++                r = rlim_parser(sword, &soft);
++        if (r == 0 && nwords == 2)
++                r = rlim_parser(hword, &hard);
++        if (r < 0) {
++                log_syntax(unit, LOG_ERR, filename, line, r, "Failed to parse resource value, ignoring: %s", value);
++                return 0;
+         }
+ 
+         if (!*rl) {
+@@ -1157,12 +1184,12 @@ int config_parse_bytes_limit(const char *unit,
+                 if (!*rl)
+                         return log_oom();
+         }
+-
+-        (*rl)->rlim_cur = (*rl)->rlim_max = (rlim_t) bytes;
++        (*rl)->rlim_cur = soft;
++        (*rl)->rlim_max = nwords == 2 ? hard : soft;
+         return 0;
+ }
+ 
+-int config_parse_sec_limit(
++int config_parse_limit(
+                 const char *unit,
+                 const char *filename,
+                 unsigned line,
+@@ -1175,8 +1202,6 @@ int config_parse_sec_limit(
+                 void *userdata) {
+ 
+         struct rlimit **rl = data;
+-        rlim_t seconds;
+-        int r;
+ 
+         assert(filename);
+         assert(lvalue);
+@@ -1184,36 +1209,33 @@ int config_parse_sec_limit(
+         assert(data);
+ 
+         rl += ltype;
++        return parse_rlimit_range(unit, filename, line, rvalue, rl, rlim_parse_u64);
++}
+ 
+-        if (streq(rvalue, "infinity"))
+-                seconds = RLIM_INFINITY;
+-        else {
+-                usec_t t;
+-
+-                r = parse_sec(rvalue, &t);
+-                if (r < 0) {
+-                        log_syntax(unit, LOG_ERR, filename, line, r, "Failed to parse resource value, ignoring: %s", rvalue);
+-                        return 0;
+-                }
++int config_parse_bytes_limit(
++                const char *unit,
++                const char *filename,
++                unsigned line,
++                const char *section,
++                unsigned section_line,
++                const char *lvalue,
++                int ltype,
++                const char *rvalue,
++                void *data,
++                void *userdata) {
+ 
+-                if (t == USEC_INFINITY)
+-                        seconds = RLIM_INFINITY;
+-                else
+-                        seconds = (rlim_t) (DIV_ROUND_UP(t, USEC_PER_SEC));
+-        }
++        struct rlimit **rl = data;
+ 
+-        if (!*rl) {
+-                *rl = new(struct rlimit, 1);
+-                if (!*rl)
+-                        return log_oom();
+-        }
++        assert(filename);
++        assert(lvalue);
++        assert(rvalue);
++        assert(data);
+ 
+-        (*rl)->rlim_cur = (*rl)->rlim_max = seconds;
+-        return 0;
++        rl += ltype;
++        return parse_rlimit_range(unit, filename, line, rvalue, rl, rlim_parse_size);
+ }
+ 
+-
+-int config_parse_usec_limit(
++int config_parse_sec_limit(
+                 const char *unit,
+                 const char *filename,
+                 unsigned line,
+@@ -1226,8 +1248,6 @@ int config_parse_usec_limit(
+                 void *userdata) {
+ 
+         struct rlimit **rl = data;
+-        rlim_t useconds;
+-        int r;
+ 
+         assert(filename);
+         assert(lvalue);
+@@ -1235,34 +1255,33 @@ int config_parse_usec_limit(
+         assert(data);
+ 
+         rl += ltype;
++        return parse_rlimit_range(unit, filename, line, rvalue, rl, rlim_parse_sec);
++}
+ 
+-        if (streq(rvalue, "infinity"))
+-                useconds = RLIM_INFINITY;
+-        else {
+-                usec_t t;
+-
+-                r = parse_time(rvalue, &t, 1);
+-                if (r < 0) {
+-                        log_syntax(unit, LOG_ERR, filename, line, r, "Failed to parse resource value, ignoring: %s", rvalue);
+-                        return 0;
+-                }
++int config_parse_usec_limit(
++                const char *unit,
++                const char *filename,
++                unsigned line,
++                const char *section,
++                unsigned section_line,
++                const char *lvalue,
++                int ltype,
++                const char *rvalue,
++                void *data,
++                void *userdata) {
+ 
+-                if (t == USEC_INFINITY)
+-                        useconds = RLIM_INFINITY;
+-                else
+-                        useconds = (rlim_t) t;
+-        }
++        struct rlimit **rl = data;
+ 
+-        if (!*rl) {
+-                *rl = new(struct rlimit, 1);
+-                if (!*rl)
+-                        return log_oom();
+-        }
++        assert(filename);
++        assert(lvalue);
++        assert(rvalue);
++        assert(data);
+ 
+-        (*rl)->rlim_cur = (*rl)->rlim_max = useconds;
+-        return 0;
++        rl += ltype;
++        return parse_rlimit_range(unit, filename, line, rvalue, rl, rlim_parse_usec);
+ }
+ 
++
+ #ifdef HAVE_SYSV_COMPAT
+ int config_parse_sysv_priority(const char *unit,
+                                const char *filename,
+diff --git a/src/shared/util.c b/src/shared/util.c
+index 036677eb4..f75ed9dd4 100644
+--- a/src/shared/util.c
++++ b/src/shared/util.c
+@@ -93,6 +93,7 @@
+ #include "virt.h"
+ #include "def.h"
+ #include "sparse-endian.h"
++#include "conf-parser.h"
+ 
+ int saved_argc = 0;
+ char **saved_argv = NULL;
+@@ -100,6 +101,8 @@ char **saved_argv = NULL;
+ static volatile unsigned cached_columns = 0;
+ static volatile unsigned cached_lines = 0;
+ 
++bool unichar_is_valid(int32_t ch);
++
+ size_t page_size(void) {
+         static thread_local size_t pgsz = 0;
+         long r;
+@@ -1365,6 +1368,207 @@ char *cescape(const char *s) {
+         return r;
+ }
+ 
++bool unichar_is_valid(int32_t ch) {
++
++        if (ch >= 0x110000) /* End of unicode space */
++                return false;
++        if ((ch & 0xFFFFF800) == 0xD800) /* Reserved area for UTF-16 */
++                return false;
++        if ((ch >= 0xFDD0) && (ch <= 0xFDEF)) /* Reserved */
++                return false;
++        if ((ch & 0xFFFE) == 0xFFFE) /* BOM (Byte Order Mark) */
++                return false;
++
++        return true;
++}
++
++int cunescape_one(const char *p, size_t length, int32_t *ret, bool *eight_bit) {
++        int r = 1;
++
++        assert(p);
++        assert(*p);
++        assert(ret);
++
++        /* Unescapes C style. Returns the unescaped character in ret.
++         * Sets *eight_bit to true if the escaped sequence either fits in
++         * one byte in UTF-8 or is a non-unicode literal byte and should
++         * instead be copied directly.
++         */
++
++        if (length != (size_t) -1 && length < 1)
++                return -EINVAL;
++
++        switch (p[0]) {
++
++        case 'a':
++                *ret = '\a';
++                break;
++        case 'b':
++                *ret = '\b';
++                break;
++        case 'f':
++                *ret = '\f';
++                break;
++        case 'n':
++                *ret = '\n';
++                break;
++        case 'r':
++                *ret = '\r';
++                break;
++        case 't':
++                *ret = '\t';
++                break;
++        case 'v':
++                *ret = '\v';
++                break;
++        case '\\':
++                *ret = '\\';
++                break;
++        case '"':
++                *ret = '"';
++                break;
++        case '\'':
++                *ret = '\'';
++                break;
++
++        case 's':
++                /* This is an extension of the XDG syntax files */
++                *ret = ' ';
++                break;
++
++        case 'x': {
++                /* hexadecimal encoding */
++                int a, b;
++
++                if (length != (size_t) -1 && length < 3)
++                        return -EINVAL;
++
++                a = unhexchar(p[1]);
++                if (a < 0)
++                        return -EINVAL;
++
++                b = unhexchar(p[2]);
++                if (b < 0)
++                        return -EINVAL;
++
++                /* Don't allow NUL bytes */
++                if (a == 0 && b == 0)
++                        return -EINVAL;
++
++                *ret = (a << 4U) | b;
++                *eight_bit = true;
++                r = 3;
++                break;
++        }
++
++        case 'u': {
++                /* C++11 style 16bit unicode */
++
++                int a[4];
++                unsigned i;
++                uint32_t c;
++
++                if (length != (size_t) -1 && length < 5)
++                        return -EINVAL;
++
++                for (i = 0; i < 4; i++) {
++                        a[i] = unhexchar(p[1 + i]);
++                        if (a[i] < 0)
++                                return a[i];
++                }
++
++                c = ((uint32_t) a[0] << 12U) | ((uint32_t) a[1] << 8U) | ((uint32_t) a[2] << 4U) | (uint32_t) a[3];
++
++                /* Don't allow 0 chars */
++                if (c == 0)
++                        return -EINVAL;
++
++                *ret = c;
++                r = 5;
++                break;
++        }
++
++        case 'U': {
++                /* C++11 style 32bit unicode */
++
++                int a[8];
++                unsigned i;
++                int32_t c;
++
++                if (length != (size_t) -1 && length < 9)
++                        return -EINVAL;
++
++                for (i = 0; i < 8; i++) {
++                        a[i] = unhexchar(p[1 + i]);
++                        if (a[i] < 0)
++                                return a[i];
++                }
++
++                c = ((uint32_t) a[0] << 28U) | ((uint32_t) a[1] << 24U) | ((uint32_t) a[2] << 20U) | ((uint32_t) a[3] << 16U) |
++                    ((uint32_t) a[4] << 12U) | ((uint32_t) a[5] <<  8U) | ((uint32_t) a[6] <<  4U) |  (uint32_t) a[7];
++
++                /* Don't allow 0 chars */
++                if (c == 0)
++                        return -EINVAL;
++
++                /* Don't allow invalid code points */
++                if (!unichar_is_valid(c))
++                        return -EINVAL;
++
++                *ret = c;
++                r = 9;
++                break;
++        }
++
++        case '0':
++        case '1':
++        case '2':
++        case '3':
++        case '4':
++        case '5':
++        case '6':
++        case '7': {
++                /* octal encoding */
++                int a, b, c;
++                int32_t m;
++
++                if (length != (size_t) -1 && length < 3)
++                        return -EINVAL;
++
++                a = unoctchar(p[0]);
++                if (a < 0)
++                        return -EINVAL;
++
++                b = unoctchar(p[1]);
++                if (b < 0)
++                        return -EINVAL;
++
++                c = unoctchar(p[2]);
++                if (c < 0)
++                        return -EINVAL;
++
++                /* don't allow NUL bytes */
++                if (a == 0 && b == 0 && c == 0)
++                        return -EINVAL;
++
++                /* Don't allow bytes above 255 */
++                m = ((uint32_t) a << 6U) | ((uint32_t) b << 3U) | (uint32_t) c;
++                if (m > 255)
++                        return -EINVAL;
++
++                *ret = m;
++                *eight_bit = true;
++                r = 3;
++                break;
++        }
++
++        default:
++                return -EINVAL;
++        }
++
++        return r;
++}
++
+ char *cunescape_length_with_prefix(const char *s, size_t length, const char *prefix) {
+         char *r, *t;
+         const char *f;
+@@ -8207,3 +8411,266 @@ bool colors_enabled(void) {
+ 
+         return parse_boolean(colors) != 0;
+ }
++
++int extract_first_word(const char **p, char **ret, const char *separators, ExtractFlags flags) {
++        _cleanup_free_ char *s = NULL;
++        size_t allocated = 0, sz = 0;
++        char c;
++        int r;
++
++        char quote = 0;                 /* 0 or ' or " */
++        bool backslash = false;         /* whether we've just seen a backslash */
++
++        assert(p);
++        assert(ret);
++
++        /* Bail early if called after last value or with no input */
++        if (!*p)
++                goto finish_force_terminate;
++        c = **p;
++
++        if (!separators)
++                separators = WHITESPACE;
++
++        /* Parses the first word of a string, and returns it in
++         * *ret. Removes all quotes in the process. When parsing fails
++         * (because of an uneven number of quotes or similar), leaves
++         * the pointer *p at the first invalid character. */
++
++        if (flags & EXTRACT_DONT_COALESCE_SEPARATORS)
++                if (!GREEDY_REALLOC(s, allocated, sz+1))
++                        return -ENOMEM;
++
++        for (;; (*p)++, c = **p) {
++                if (c == 0)
++                        goto finish_force_terminate;
++                else if (strchr(separators, c)) {
++                        if (flags & EXTRACT_DONT_COALESCE_SEPARATORS) {
++                                (*p)++;
++                                goto finish_force_next;
++                        }
++                } else {
++                        /* We found a non-blank character, so we will always
++                         * want to return a string (even if it is empty),
++                         * allocate it here. */
++                        if (!GREEDY_REALLOC(s, allocated, sz+1))
++                                return -ENOMEM;
++                        break;
++                }
++        }
++
++        for (;; (*p)++, c = **p) {
++                if (backslash) {
++                        if (!GREEDY_REALLOC(s, allocated, sz+7))
++                                return -ENOMEM;
++
++                        if (c == 0) {
++                                if ((flags & EXTRACT_CUNESCAPE_RELAX) &&
++                                    (!quote || flags & EXTRACT_RELAX)) {
++                                        /* If we find an unquoted trailing backslash and we're in
++                                         * EXTRACT_CUNESCAPE_RELAX mode, keep it verbatim in the
++                                         * output.
++                                         *
++                                         * Unbalanced quotes will only be allowed in EXTRACT_RELAX
++                                         * mode, EXTRACT_CUNESCAPE_RELAX mode does not allow them.
++                                         */
++                                        s[sz++] = '\\';
++                                        goto finish_force_terminate;
++                                }
++                                if (flags & EXTRACT_RELAX)
++                                        goto finish_force_terminate;
++                                return -EINVAL;
++                        }
++
++                        if (flags & EXTRACT_CUNESCAPE) {
++                                bool eight_bit = false;
++                                int32_t u;
++
++                                r = cunescape_one(*p, (size_t) -1, &u, &eight_bit);
++                                if (r < 0) {
++                                        if (flags & EXTRACT_CUNESCAPE_RELAX) {
++                                                s[sz++] = '\\';
++                                                s[sz++] = c;
++                                        } else
++                                                return -EINVAL;
++                                } else {
++                                        (*p) += r - 1;
++
++                                        if (eight_bit)
++                                                s[sz++] = u;
++                                        else
++                                                sz += utf8_encode_unichar(s + sz, u);
++                                }
++                        } else
++                                s[sz++] = c;
++
++                        backslash = false;
++
++                } else if (quote) {     /* inside either single or double quotes */
++                        for (;; (*p)++, c = **p) {
++                                if (c == 0) {
++                                        if (flags & EXTRACT_RELAX)
++                                                goto finish_force_terminate;
++                                        return -EINVAL;
++                                } else if (c == quote) {        /* found the end quote */
++                                        quote = 0;
++                                        break;
++                                } else if (c == '\\' && !(flags & EXTRACT_RETAIN_ESCAPE)) {
++                                        backslash = true;
++                                        break;
++                                } else {
++                                        if (!GREEDY_REALLOC(s, allocated, sz+2))
++                                                return -ENOMEM;
++
++                                        s[sz++] = c;
++                                }
++                        }
++
++                } else {
++                        for (;; (*p)++, c = **p) {
++                                if (c == 0)
++                                        goto finish_force_terminate;
++                                else if ((c == '\'' || c == '"') && (flags & EXTRACT_QUOTES)) {
++                                        quote = c;
++                                        break;
++                                } else if (c == '\\' && !(flags & EXTRACT_RETAIN_ESCAPE)) {
++                                        backslash = true;
++                                        break;
++                                } else if (strchr(separators, c)) {
++                                        if (flags & EXTRACT_DONT_COALESCE_SEPARATORS) {
++                                                (*p)++;
++                                                goto finish_force_next;
++                                        }
++                                        /* Skip additional coalesced separators. */
++                                        for (;; (*p)++, c = **p) {
++                                                if (c == 0)
++                                                        goto finish_force_terminate;
++                                                if (!strchr(separators, c))
++                                                        break;
++                                        }
++                                        goto finish;
++
++                                } else {
++                                        if (!GREEDY_REALLOC(s, allocated, sz+2))
++                                                return -ENOMEM;
++
++                                        s[sz++] = c;
++                                }
++                        }
++                }
++        }
++
++finish_force_terminate:
++        *p = NULL;
++finish:
++        if (!s) {
++                *p = NULL;
++                *ret = NULL;
++                return 0;
++        }
++
++finish_force_next:
++        s[sz] = 0;
++        *ret = s;
++        s = NULL;
++
++        return 1;
++}
++
++int extract_first_word_and_warn(
++                const char **p,
++                char **ret,
++                const char *separators,
++                ExtractFlags flags,
++                const char *unit,
++                const char *filename,
++                unsigned line,
++                const char *rvalue) {
++
++        /* Try to unquote it, if it fails, warn about it and try again
++         * but this time using EXTRACT_CUNESCAPE_RELAX to keep the
++         * backslashes verbatim in invalid escape sequences. */
++
++        const char *save;
++        int r;
++
++        save = *p;
++        r = extract_first_word(p, ret, separators, flags);
++        if (r >= 0)
++                return r;
++
++        if (r == -EINVAL && !(flags & EXTRACT_CUNESCAPE_RELAX)) {
++
++                /* Retry it with EXTRACT_CUNESCAPE_RELAX. */
++                *p = save;
++                r = extract_first_word(p, ret, separators, flags|EXTRACT_CUNESCAPE_RELAX);
++                if (r >= 0) {
++                        /* It worked this time, hence it must have been an invalid escape sequence we could correct. */
++                        log_syntax(unit, LOG_WARNING, filename, line, EINVAL, "Invalid escape sequences in line, correcting: \"%s\"", rvalue);
++                        return r;
++                }
++
++                /* If it's still EINVAL; then it must be unbalanced quoting, report this. */
++                if (r == -EINVAL)
++                        return log_syntax(unit, LOG_ERR, filename, line, r, "Unbalanced quoting, ignoring: \"%s\"", rvalue);
++        }
++
++        /* Can be any error, report it */
++        return log_syntax(unit, LOG_ERR, filename, line, r, "Unable to decode word \"%s\", ignoring: %m", rvalue);
++}
++
++int extract_many_words(const char **p, const char *separators, ExtractFlags flags, ...) {
++        va_list ap;
++        char **l;
++        int n = 0, i, c, r;
++
++        /* Parses a number of words from a string, stripping any
++         * quotes if necessary. */
++
++        assert(p);
++
++        /* Count how many words are expected */
++        va_start(ap, flags);
++        for (;;) {
++                if (!va_arg(ap, char **))
++                        break;
++                n++;
++        }
++        va_end(ap);
++
++        if (n <= 0)
++                return 0;
++
++        /* Read all words into a temporary array */
++        l = newa0(char*, n);
++        for (c = 0; c < n; c++) {
++
++                r = extract_first_word(p, &l[c], separators, flags);
++                if (r < 0) {
++                        int j;
++
++                        for (j = 0; j < c; j++)
++                                free(l[j]);
++
++                        return r;
++                }
++
++                if (r == 0)
++                        break;
++        }
++
++        /* If we managed to parse all words, return them in the passed
++         * in parameters */
++        va_start(ap, flags);
++        for (i = 0; i < n; i++) {
++                char **v;
++
++                v = va_arg(ap, char **);
++                assert(v);
++
++                *v = l[i];
++        }
++        va_end(ap);
++
++        return c;
++}
+diff --git a/src/shared/util.h b/src/shared/util.h
+index a441e44ff..be04524cc 100644
+--- a/src/shared/util.h
++++ b/src/shared/util.h
+@@ -315,6 +315,7 @@ int undecchar(char c) _const_;
+ char *cescape(const char *s);
+ char *cunescape(const char *s);
+ char *cunescape_length(const char *s, size_t length);
++int cunescape_one(const char *p, size_t length, int32_t *ret, bool *eight_bit);
+ char *cunescape_length_with_prefix(const char *s, size_t length, const char *prefix);
+ 
+ char *xescape(const char *s, const char *bad);
+@@ -1082,3 +1083,16 @@ void sigkill_wait(pid_t *pid);
+ int syslog_parse_priority(const char **p, int *priority, bool with_facility);
+ 
+ char *shell_maybe_quote(const char *s);
++
++typedef enum ExtractFlags {
++        EXTRACT_RELAX                    = 1,
++        EXTRACT_CUNESCAPE                = 2,
++        EXTRACT_CUNESCAPE_RELAX          = 4,
++        EXTRACT_QUOTES                   = 8,
++        EXTRACT_DONT_COALESCE_SEPARATORS = 16,
++        EXTRACT_RETAIN_ESCAPE            = 32,
++} ExtractFlags;
++
++int extract_first_word(const char **p, char **ret, const char *separators, ExtractFlags flags);
++int extract_first_word_and_warn(const char **p, char **ret, const char *separators, ExtractFlags flags, const char *unit, const char *filename, unsigned line, const char *rvalue);
++int extract_many_words(const char **p, const char *separators, ExtractFlags flags, ...) _sentinel_;
+diff --git a/src/test/test-unit-file.c b/src/test/test-unit-file.c
+index 87c81ccd7..931dfeda8 100644
+--- a/src/test/test-unit-file.c
++++ b/src/test/test-unit-file.c
+@@ -554,11 +554,22 @@ static void test_config_parse_rlimit(void) {
+         assert_se(rl[RLIMIT_NOFILE]->rlim_cur == 55);
+         assert_se(rl[RLIMIT_NOFILE]->rlim_cur == rl[RLIMIT_NOFILE]->rlim_max);
+ 
++
++        assert_se(config_parse_limit(NULL, "fake", 1, "section", 1, "LimitNOFILE", RLIMIT_NOFILE, "55:66", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_NOFILE]);
++        assert_se(rl[RLIMIT_NOFILE]->rlim_cur == 55);
++        assert_se(rl[RLIMIT_NOFILE]->rlim_max == 66);
++
+         assert_se(config_parse_limit(NULL, "fake", 1, "section", 1, "LimitNOFILE", RLIMIT_NOFILE, "infinity", rl, NULL) >= 0);
+         assert_se(rl[RLIMIT_NOFILE]);
+         assert_se(rl[RLIMIT_NOFILE]->rlim_cur == RLIM_INFINITY);
+         assert_se(rl[RLIMIT_NOFILE]->rlim_cur == rl[RLIMIT_NOFILE]->rlim_max);
+ 
++        assert_se(config_parse_limit(NULL, "fake", 1, "section", 1, "LimitNOFILE", RLIMIT_NOFILE, "infinity:infinity", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_NOFILE]);
++        assert_se(rl[RLIMIT_NOFILE]->rlim_cur == RLIM_INFINITY);
++        assert_se(rl[RLIMIT_NOFILE]->rlim_cur == rl[RLIMIT_NOFILE]->rlim_max);
++
+         free(rl[RLIMIT_NOFILE]);
+         assert_se(config_parse_sec_limit(NULL, "fake", 1, "section", 1, "LimitCPU", RLIMIT_CPU, "56", rl, NULL) >= 0);
+         assert_se(rl[RLIMIT_CPU]);
+@@ -570,6 +581,11 @@ static void test_config_parse_rlimit(void) {
+         assert_se(rl[RLIMIT_CPU]->rlim_cur == 57);
+         assert_se(rl[RLIMIT_CPU]->rlim_cur == rl[RLIMIT_CPU]->rlim_max);
+ 
++        assert_se(config_parse_sec_limit(NULL, "fake", 1, "section", 1, "LimitCPU", RLIMIT_CPU, "40s:1m", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_CPU]);
++        assert_se(rl[RLIMIT_CPU]->rlim_cur == 40);
++        assert_se(rl[RLIMIT_CPU]->rlim_max == 60);
++
+         assert_se(config_parse_sec_limit(NULL, "fake", 1, "section", 1, "LimitCPU", RLIMIT_CPU, "infinity", rl, NULL) >= 0);
+         assert_se(rl[RLIMIT_CPU]);
+         assert_se(rl[RLIMIT_CPU]->rlim_cur == RLIM_INFINITY);
+@@ -587,16 +603,31 @@ static void test_config_parse_rlimit(void) {
+         assert_se(rl[RLIMIT_RTTIME]->rlim_cur == 58);
+         assert_se(rl[RLIMIT_RTTIME]->rlim_cur == rl[RLIMIT_RTTIME]->rlim_max);
+ 
++        assert_se(config_parse_usec_limit(NULL, "fake", 1, "section", 1, "LimitRTTIME", RLIMIT_RTTIME, "58:60", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_RTTIME]);
++        assert_se(rl[RLIMIT_RTTIME]->rlim_cur == 58);
++        assert_se(rl[RLIMIT_RTTIME]->rlim_max == 60);
++
+         assert_se(config_parse_usec_limit(NULL, "fake", 1, "section", 1, "LimitRTTIME", RLIMIT_RTTIME, "59s", rl, NULL) >= 0);
+         assert_se(rl[RLIMIT_RTTIME]);
+         assert_se(rl[RLIMIT_RTTIME]->rlim_cur == 59 * USEC_PER_SEC);
+         assert_se(rl[RLIMIT_RTTIME]->rlim_cur == rl[RLIMIT_RTTIME]->rlim_max);
+ 
++        assert_se(config_parse_usec_limit(NULL, "fake", 1, "section", 1, "LimitRTTIME", RLIMIT_RTTIME, "59s:123s", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_RTTIME]);
++        assert_se(rl[RLIMIT_RTTIME]->rlim_cur == 59 * USEC_PER_SEC);
++        assert_se(rl[RLIMIT_RTTIME]->rlim_max == 123 * USEC_PER_SEC);
++
+         assert_se(config_parse_usec_limit(NULL, "fake", 1, "section", 1, "LimitRTTIME", RLIMIT_RTTIME, "infinity", rl, NULL) >= 0);
+         assert_se(rl[RLIMIT_RTTIME]);
+         assert_se(rl[RLIMIT_RTTIME]->rlim_cur == RLIM_INFINITY);
+         assert_se(rl[RLIMIT_RTTIME]->rlim_cur == rl[RLIMIT_RTTIME]->rlim_max);
+ 
++        assert_se(config_parse_usec_limit(NULL, "fake", 1, "section", 1, "LimitRTTIME", RLIMIT_RTTIME, "infinity:infinity", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_RTTIME]);
++        assert_se(rl[RLIMIT_RTTIME]->rlim_cur == RLIM_INFINITY);
++        assert_se(rl[RLIMIT_RTTIME]->rlim_cur == rl[RLIMIT_RTTIME]->rlim_max);
++
+         assert_se(config_parse_usec_limit(NULL, "fake", 1, "section", 1, "LimitRTTIME", RLIMIT_RTTIME, "2345ms", rl, NULL) >= 0);
+         assert_se(rl[RLIMIT_RTTIME]);
+         assert_se(rl[RLIMIT_RTTIME]->rlim_cur == 2345 * USEC_PER_MSEC);

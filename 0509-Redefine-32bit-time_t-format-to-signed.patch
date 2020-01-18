@@ -1,0 +1,37 @@
+From 10a1adc237ada061f557a7ae422456aa7d8c2c05 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Thu, 7 Sep 2017 14:41:09 +0200
+Subject: [PATCH] Redefine 32bit time_t format to signed
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+It seems that it is signed both on i386 and arm.
+
+Avoids a stupid gcc warning on arm:
+
+src/udev/udevadm-monitor.c: In function ‘print_device’:
+src/udev/udevadm-monitor.c:44:16: warning: format ‘%u’ expects argument of type ‘unsigned int’, but argument 3 has type ‘__time_t {aka long int}’ [-Wformat=]
+         printf("%-6s[%"PRI_TIME".%06ld] %-8s %s (%s)\n",
+                ^
+
+(cherry picked from commit 6307c39b94344b901c1d6e0df7ee58644a8809bf)
+
+Related: #1447937
+---
+ src/shared/util.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/shared/util.h b/src/shared/util.h
+index f1b6c348f..80ad18c0a 100644
+--- a/src/shared/util.h
++++ b/src/shared/util.h
+@@ -72,7 +72,7 @@
+ #if SIZEOF_TIME_T == 8
+ #  define PRI_TIME PRIi64
+ #elif SIZEOF_TIME_T == 4
+-#  define PRI_TIME PRIu32
++#  define PRI_TIME "li"
+ #else
+ #  error Unknown time_t size
+ #endif

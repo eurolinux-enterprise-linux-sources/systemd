@@ -1,0 +1,45 @@
+From b5eddaf0dea35bda7b68a401119c5f9f9104fb99 Mon Sep 17 00:00:00 2001
+From: Martin Pitt <martin.pitt@ubuntu.com>
+Date: Mon, 11 Apr 2016 21:03:29 +0200
+Subject: [PATCH] Install: correctly report symlink creations
+
+All callers of create_symlink(), such as install_info_symlink_wants(), expect
+that to return > 0 if it actually did something, and then return that number.
+unit_file_enable() uses that to determine if any action was done
+(carries_install_info != 0) and if not, show a "The unit files have no
+[Install] section" warning.
+
+Return 1 instead of 0 in the two code paths of create_symlink() when the link
+was created or replaced with a new value.
+
+This fixes getting a bogus "No [Install] section" warning when enabling a unit
+with full path, like "systemctl enable /some/path/myunit.service".
+
+(cherry picked from commit 3de1521427dee61000c1c124a521182b301a50de)
+Resolves: #1435098
+---
+ src/shared/install.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/shared/install.c b/src/shared/install.c
+index bdfd7b96a..e73f0c95b 100644
+--- a/src/shared/install.c
++++ b/src/shared/install.c
+@@ -283,7 +283,7 @@ static int create_symlink(
+ 
+         if (symlink(old_path, new_path) >= 0) {
+                 unit_file_changes_add(changes, n_changes, UNIT_FILE_SYMLINK, new_path, old_path);
+-                return 0;
++                return 1;
+         }
+ 
+         if (errno != EEXIST)
+@@ -306,7 +306,7 @@ static int create_symlink(
+         unit_file_changes_add(changes, n_changes, UNIT_FILE_UNLINK, new_path, NULL);
+         unit_file_changes_add(changes, n_changes, UNIT_FILE_SYMLINK, new_path, old_path);
+ 
+-        return 0;
++        return 1;
+ }
+ 
+ static int mark_symlink_for_removal(

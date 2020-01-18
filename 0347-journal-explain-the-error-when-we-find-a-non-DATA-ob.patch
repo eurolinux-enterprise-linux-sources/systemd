@@ -1,0 +1,31 @@
+From 8cfa250db93688a0796475cb911215e4edb252aa Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 24 Jul 2015 02:02:07 +0200
+Subject: [PATCH] journal: explain the error when we find a non-DATA object
+ that is compressed
+
+Only objects of type DATA may be compressed, generate a message about
+that, like we do for all other errros.
+
+Cherry-picked from: bca9e39dfadaefc4b02c0dd378adc3d6221071de
+Related: #1350232
+---
+ src/journal/journal-verify.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/journal/journal-verify.c b/src/journal/journal-verify.c
+index 53f0550da..77fb4090d 100644
+--- a/src/journal/journal-verify.c
++++ b/src/journal/journal-verify.c
+@@ -123,8 +123,10 @@ static int journal_file_object_verify(JournalFile *f, uint64_t offset, Object *o
+          * other objects. */
+ 
+         if ((o->object.flags & OBJECT_COMPRESSED_XZ) &&
+-            o->object.type != OBJECT_DATA)
++            o->object.type != OBJECT_DATA) {
++                error(offset, "Found compressed object that isn't of type DATA, which is not allowed.");
+                 return -EBADMSG;
++        }
+ 
+         switch (o->object.type) {
+ 

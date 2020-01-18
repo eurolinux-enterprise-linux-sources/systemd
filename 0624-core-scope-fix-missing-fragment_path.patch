@@ -1,0 +1,56 @@
+From f838bf376249b68205641d1736da2622c0279ed2 Mon Sep 17 00:00:00 2001
+From: chenglin130 <cheng.lin130@zte.com.cn>
+Date: Sat, 20 Jan 2018 17:45:27 +0800
+Subject: [PATCH] core:scope: fix missing fragment_path
+
+fragment_path in struct unit is a record of unit file, which will
+be deleted (unlink) in unit_free().
+
+After a daemon-reload process, the u->fragment_path of scope unit
+will be missing (NULL). Then, the discarded session scope unit file
+will be redundant until reboot.
+
+Steps to Reproduce problem:
+1. ssh access and login
+2. systemctl daemon-reload
+3. ssh logout
+4. discarded session-xxx.scope file will be found in /run/systemd/system/
+
+So in a daemon-reload case, scope_load() need unit_load_fragment() to reload
+u->fragment_path.
+---
+ src/core/load-fragment.c | 5 +++++
+ src/core/scope.c         | 4 ++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index da58bcc5c..f3d0851fe 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -3950,6 +3950,11 @@ int unit_load_fragment(Unit *u) {
+         assert(u->load_state == UNIT_STUB);
+         assert(u->id);
+ 
++        if (u->transient && u->fragment_path) {
++                u->load_state = UNIT_LOADED;
++                return 0;
++        }
++
+         /* First, try to find the unit under its id. We always look
+          * for unit files in the default directories, to make it easy
+          * to override things by placing things in /etc/systemd/system */
+diff --git a/src/core/scope.c b/src/core/scope.c
+index ae6614fbf..29954ba28 100644
+--- a/src/core/scope.c
++++ b/src/core/scope.c
+@@ -150,6 +150,10 @@ static int scope_load(Unit *u) {
+         if (!u->transient && UNIT(s)->manager->n_reloading <= 0)
+                 return -ENOENT;
+ 
++        r = unit_load_fragment(u);
++        if (r < 0)
++                return r;
++
+         u->load_state = UNIT_LOADED;
+ 
+         r = unit_load_dropin(u);

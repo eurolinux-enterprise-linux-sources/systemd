@@ -1,0 +1,189 @@
+From 6772555b226a116bff07b7d8af28b16032273866 Mon Sep 17 00:00:00 2001
+From: David Tardon <dtardon@redhat.com>
+Date: Wed, 9 May 2018 09:35:52 +0200
+Subject: [PATCH] systemd-analyze: make dump work for large # of units
+
+If there is a large number of units, the size of the generated dump
+string can overstep DBus message size limit. So let's pass that string
+via a fd.
+
+(cherry picked from commit c0a1bfacfea9c65ea79fd07682a5b60b5d711a33)
+
+Resolves: #1446095
+---
+ src/analyze/analyze.c                  | 57 ++++++++++++++++++++++----
+ src/core/dbus-manager.c                | 26 +++++++++++-
+ src/core/org.freedesktop.systemd1.conf |  4 ++
+ 3 files changed, 76 insertions(+), 11 deletions(-)
+
+diff --git a/src/analyze/analyze.c b/src/analyze/analyze.c
+index ff84f6894..7116aaa88 100644
+--- a/src/analyze/analyze.c
++++ b/src/analyze/analyze.c
+@@ -29,6 +29,7 @@
+ #include "sd-bus.h"
+ #include "bus-util.h"
+ #include "bus-error.h"
++#include "copy.h"
+ #include "install.h"
+ #include "log.h"
+ #include "build.h"
+@@ -1096,12 +1097,42 @@ static int dot(sd_bus *bus, char* patterns[]) {
+         return 0;
+ }
+ 
+-static int dump(sd_bus *bus, char **args) {
+-        _cleanup_bus_message_unref_ sd_bus_message *reply = NULL;
+-        _cleanup_bus_error_free_ sd_bus_error error = SD_BUS_ERROR_NULL;
++static int dump_fallback(sd_bus *bus) {
++        _cleanup_(sd_bus_error_free) sd_bus_error error = SD_BUS_ERROR_NULL;
++        _cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
+         const char *text = NULL;
+         int r;
+ 
++        assert(bus);
++
++        r = sd_bus_call_method(
++                        bus,
++                        "org.freedesktop.systemd1",
++                        "/org/freedesktop/systemd1",
++                        "org.freedesktop.systemd1.Manager",
++                        "Dump",
++                        &error,
++                        &reply,
++                        "");
++        if (r < 0) {
++                log_error("Failed to issue method call Dump: %s", bus_error_message(&error, -r));
++                return r;
++        }
++
++        r = sd_bus_message_read(reply, "s", &text);
++        if (r < 0)
++                return bus_log_parse_error(r);
++
++        fputs(text, stdout);
++        return 0;
++}
++
++static int dump(sd_bus *bus, char **args) {
++        _cleanup_(sd_bus_error_free) sd_bus_error error = SD_BUS_ERROR_NULL;
++        _cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
++        int fd = -1;
++        int r;
++
+         if (!strv_isempty(args)) {
+                 log_error("Too many arguments.");
+                 return -E2BIG;
+@@ -1109,26 +1140,34 @@ static int dump(sd_bus *bus, char **args) {
+ 
+         pager_open_if_enabled();
+ 
++        if (!sd_bus_can_send(bus, SD_BUS_TYPE_UNIX_FD))
++                return dump_fallback(bus);
++
+         r = sd_bus_call_method(
+                         bus,
+                        "org.freedesktop.systemd1",
+                        "/org/freedesktop/systemd1",
+                        "org.freedesktop.systemd1.Manager",
+-                       "Dump",
++                       "DumpByFileDescriptor",
+                        &error,
+                        &reply,
+                        "");
+         if (r < 0) {
+-                log_error("Failed issue method call: %s", bus_error_message(&error, -r));
+-                return r;
++                /* fall back to Dump if DumpByFileDescriptor is not supported */
++                if (!IN_SET(r, -EACCES, -EBADR)) {
++                        log_error("Failed to issue method call DumpByFileDescriptor: %s", bus_error_message(&error, -r));
++                        return r;
++                }
++
++                return dump_fallback(bus);
+         }
+ 
+-        r = sd_bus_message_read(reply, "s", &text);
++        r = sd_bus_message_read(reply, "h", &fd);
+         if (r < 0)
+                 return bus_log_parse_error(r);
+ 
+-        fputs(text, stdout);
+-        return 0;
++        fflush(stdout);
++        return copy_bytes(fd, STDOUT_FILENO, (uint64_t) -1, 0);
+ }
+ 
+ static int set_log_level(sd_bus *bus, char **args) {
+diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
+index d34ed042f..1766163b3 100644
+--- a/src/core/dbus-manager.c
++++ b/src/core/dbus-manager.c
+@@ -1064,7 +1064,7 @@ static int method_unsubscribe(sd_bus *bus, sd_bus_message *message, void *userda
+         return sd_bus_reply_method_return(message, NULL);
+ }
+ 
+-static int method_dump(sd_bus *bus, sd_bus_message *message, void *userdata, sd_bus_error *error) {
++static int dump_impl(sd_bus *bus, sd_bus_message *message, void *userdata, sd_bus_error *error, int (*reply)(sd_bus_message *, char *)) {
+         _cleanup_free_ char *dump = NULL;
+         _cleanup_fclose_ FILE *f = NULL;
+         Manager *m = userdata;
+@@ -1089,13 +1089,34 @@ static int method_dump(sd_bus *bus, sd_bus_message *message, void *userdata, sd_
+         manager_dump_jobs(m, f, NULL);
+ 
+         fflush(f);
+-
+         if (ferror(f))
+                 return -ENOMEM;
+ 
++        return reply(message, dump);
++}
++
++static int reply_dump(sd_bus_message *message, char *dump) {
+         return sd_bus_reply_method_return(message, "s", dump);
+ }
+ 
++static int method_dump(sd_bus *bus, sd_bus_message *message, void *userdata, sd_bus_error *error) {
++        return dump_impl(bus, message, userdata, error, reply_dump);
++}
++
++static int reply_dump_by_fd(sd_bus_message *message, char *dump) {
++        _cleanup_close_ int fd = -1;
++
++        fd = acquire_data_fd(dump, strlen(dump), 0);
++        if (fd < 0)
++                return fd;
++
++        return sd_bus_reply_method_return(message, "h", fd);
++}
++
++static int method_dump_by_fd(sd_bus *bus, sd_bus_message *message, void *userdata, sd_bus_error *error) {
++        return dump_impl(bus, message, userdata, error, reply_dump_by_fd);
++}
++
+ static int method_create_snapshot(sd_bus *bus, sd_bus_message *message, void *userdata, sd_bus_error *error) {
+         _cleanup_free_ char *path = NULL;
+         Manager *m = userdata;
+@@ -2092,6 +2113,7 @@ const sd_bus_vtable bus_manager_vtable[] = {
+         SD_BUS_METHOD("Subscribe", NULL, NULL, method_subscribe, SD_BUS_VTABLE_UNPRIVILEGED),
+         SD_BUS_METHOD("Unsubscribe", NULL, NULL, method_unsubscribe, SD_BUS_VTABLE_UNPRIVILEGED),
+         SD_BUS_METHOD("Dump", NULL, "s", method_dump, SD_BUS_VTABLE_UNPRIVILEGED),
++        SD_BUS_METHOD("DumpByFileDescriptor", NULL, "h", method_dump_by_fd, SD_BUS_VTABLE_UNPRIVILEGED),
+         SD_BUS_METHOD("CreateSnapshot", "sb", "o", method_create_snapshot, 0),
+         SD_BUS_METHOD("RemoveSnapshot", "s", NULL, method_remove_snapshot, 0),
+         SD_BUS_METHOD("Reload", NULL, NULL, method_reload, SD_BUS_VTABLE_UNPRIVILEGED),
+diff --git a/src/core/org.freedesktop.systemd1.conf b/src/core/org.freedesktop.systemd1.conf
+index 3997dd0b4..8187cf173 100644
+--- a/src/core/org.freedesktop.systemd1.conf
++++ b/src/core/org.freedesktop.systemd1.conf
+@@ -96,6 +96,10 @@
+                        send_interface="org.freedesktop.systemd1.Manager"
+                        send_member="Dump"/>
+ 
++                <allow send_destination="org.freedesktop.systemd1"
++                       send_interface="org.freedesktop.systemd1.Manager"
++                       send_member="DumpByFileDescriptor"/>
++
+                 <allow send_destination="org.freedesktop.systemd1"
+                        send_interface="org.freedesktop.systemd1.Manager"
+                        send_member="GetDefaultTarget"/>

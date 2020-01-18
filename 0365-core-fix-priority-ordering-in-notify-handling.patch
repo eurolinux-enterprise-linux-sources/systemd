@@ -1,0 +1,228 @@
+From 64e21697bdefe0a37edc8557fd110daea2667771 Mon Sep 17 00:00:00 2001
+From: David Herrmann <dh.herrmann@gmail.com>
+Date: Wed, 28 Oct 2015 19:11:36 +0100
+Subject: [PATCH] core: fix priority ordering in notify-handling
+
+Currently, we dispatch NOTIFY messages in a tight loop. Regardless how
+much data is incoming, we always dispatch everything that is queued.
+This, however, completely breaks priority event-handling of sd-event.
+When dispatching one NOTIFY event, another completely different event
+might fire, or might be queued by the NOTIFY handling. However, this
+event will not get dispatched until all other further NOTIFY messages are
+handled. Those might even arrive _after_ the other event fired, and as
+such completely break priority ordering of sd-event (which several code
+paths rely on).
+
+Break this by never dispatching multiple messages. Just return after each
+message that was read and let sd-event handle everything else.
+
+(The patch looks scarier that it is. It basically just drops the for(;;)
+ loop and re-indents the loop-content.)
+
+(cherry picked from commit b215b0ede11c0dda90009c8412609d2416150075)
+Related: #1267707
+---
+ src/core/manager.c | 158 ++++++++++++++++++++++-----------------------
+ 1 file changed, 78 insertions(+), 80 deletions(-)
+
+diff --git a/src/core/manager.c b/src/core/manager.c
+index 5da836593..c5021993e 100644
+--- a/src/core/manager.c
++++ b/src/core/manager.c
+@@ -1635,9 +1635,33 @@ static void manager_invoke_notify_message(Manager *m, Unit *u, pid_t pid, char *
+ }
+ 
+ static int manager_dispatch_notify_fd(sd_event_source *source, int fd, uint32_t revents, void *userdata) {
++        _cleanup_fdset_free_ FDSet *fds = NULL;
+         Manager *m = userdata;
++
++        char buf[NOTIFY_BUFFER_MAX+1];
++        struct iovec iovec = {
++                .iov_base = buf,
++                .iov_len = sizeof(buf)-1,
++        };
++        union {
++                struct cmsghdr cmsghdr;
++                uint8_t buf[CMSG_SPACE(sizeof(struct ucred)) +
++                            CMSG_SPACE(sizeof(int) * NOTIFY_FD_MAX)];
++        } control = {};
++        struct msghdr msghdr = {
++                .msg_iov = &iovec,
++                .msg_iovlen = 1,
++                .msg_control = &control,
++                .msg_controllen = sizeof(control),
++        };
++
++        struct cmsghdr *cmsg;
++        struct ucred *ucred = NULL;
++        bool found = false;
++        Unit *u1, *u2, *u3;
++        int r, *fd_array = NULL;
++        unsigned n_fds = 0;
+         ssize_t n;
+-        int r;
+ 
+         assert(m);
+         assert(m->notify_fd == fd);
+@@ -1647,108 +1671,82 @@ static int manager_dispatch_notify_fd(sd_event_source *source, int fd, uint32_t
+                 return 0;
+         }
+ 
+-        for (;;) {
+-                _cleanup_fdset_free_ FDSet *fds = NULL;
+-                char buf[NOTIFY_BUFFER_MAX+1];
+-                struct iovec iovec = {
+-                        .iov_base = buf,
+-                        .iov_len = sizeof(buf)-1,
+-                };
+-                union {
+-                        struct cmsghdr cmsghdr;
+-                        uint8_t buf[CMSG_SPACE(sizeof(struct ucred)) +
+-                                    CMSG_SPACE(sizeof(int) * NOTIFY_FD_MAX)];
+-                } control = {};
+-                struct msghdr msghdr = {
+-                        .msg_iov = &iovec,
+-                        .msg_iovlen = 1,
+-                        .msg_control = &control,
+-                        .msg_controllen = sizeof(control),
+-                };
+-                struct cmsghdr *cmsg;
+-                struct ucred *ucred = NULL;
+-                bool found = false;
+-                Unit *u1, *u2, *u3;
+-                int *fd_array = NULL;
+-                unsigned n_fds = 0;
+-
+-                n = recvmsg(m->notify_fd, &msghdr, MSG_DONTWAIT|MSG_CMSG_CLOEXEC);
+-                if (n < 0) {
+-                        if (errno == EAGAIN || errno == EINTR)
+-                                break;
++        n = recvmsg(m->notify_fd, &msghdr, MSG_DONTWAIT|MSG_CMSG_CLOEXEC);
++        if (n < 0) {
++                if (errno == EAGAIN || errno == EINTR)
++                        return 0;
+ 
+-                        return -errno;
+-                }
++                return -errno;
++        }
+ 
+-                for (cmsg = CMSG_FIRSTHDR(&msghdr); cmsg; cmsg = CMSG_NXTHDR(&msghdr, cmsg)) {
+-                        if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
++        for (cmsg = CMSG_FIRSTHDR(&msghdr); cmsg; cmsg = CMSG_NXTHDR(&msghdr, cmsg)) {
++                if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
+ 
+-                                fd_array = (int*) CMSG_DATA(cmsg);
+-                                n_fds = (cmsg->cmsg_len - CMSG_LEN(0)) / sizeof(int);
++                        fd_array = (int*) CMSG_DATA(cmsg);
++                        n_fds = (cmsg->cmsg_len - CMSG_LEN(0)) / sizeof(int);
+ 
+-                        } else if (cmsg->cmsg_level == SOL_SOCKET &&
+-                                   cmsg->cmsg_type == SCM_CREDENTIALS &&
+-                                   cmsg->cmsg_len == CMSG_LEN(sizeof(struct ucred))) {
++                } else if (cmsg->cmsg_level == SOL_SOCKET &&
++                           cmsg->cmsg_type == SCM_CREDENTIALS &&
++                           cmsg->cmsg_len == CMSG_LEN(sizeof(struct ucred))) {
+ 
+-                                ucred = (struct ucred*) CMSG_DATA(cmsg);
+-                        }
++                        ucred = (struct ucred*) CMSG_DATA(cmsg);
+                 }
++        }
+ 
+-                if (n_fds > 0) {
+-                        assert(fd_array);
++        if (n_fds > 0) {
++                assert(fd_array);
+ 
+-                        r = fdset_new_array(&fds, fd_array, n_fds);
+-                        if (r < 0) {
+-                                close_many(fd_array, n_fds);
+-                                return log_oom();
+-                        }
++                r = fdset_new_array(&fds, fd_array, n_fds);
++                if (r < 0) {
++                        close_many(fd_array, n_fds);
++                        return log_oom();
+                 }
++        }
+ 
+-                if (!ucred || ucred->pid <= 0) {
+-                        log_warning("Received notify message without valid credentials. Ignoring.");
+-                        continue;
+-                }
++        if (!ucred || ucred->pid <= 0) {
++                log_warning("Received notify message without valid credentials. Ignoring.");
++                return 0;
++        }
+ 
+-                if ((size_t) n >= sizeof(buf)) {
+-                        log_warning("Received notify message exceeded maximum size. Ignoring.");
+-                        continue;
+-                }
++        if ((size_t) n >= sizeof(buf)) {
++                log_warning("Received notify message exceeded maximum size. Ignoring.");
++                return 0;
++        }
+ 
+-                buf[n] = 0;
++        buf[n] = 0;
+ 
+-                /* Notify every unit that might be interested, but try
+-                 * to avoid notifying the same one multiple times. */
+-                u1 = manager_get_unit_by_pid(m, ucred->pid);
+-                if (u1) {
+-                        manager_invoke_notify_message(m, u1, ucred->pid, buf, n, fds);
+-                        found = true;
+-                }
++        /* Notify every unit that might be interested, but try
++         * to avoid notifying the same one multiple times. */
++        u1 = manager_get_unit_by_pid(m, ucred->pid);
++        if (u1) {
++                manager_invoke_notify_message(m, u1, ucred->pid, buf, n, fds);
++                found = true;
++        }
+ 
+-                u2 = hashmap_get(m->watch_pids1, LONG_TO_PTR(ucred->pid));
+-                if (u2 && u2 != u1) {
+-                        manager_invoke_notify_message(m, u2, ucred->pid, buf, n, fds);
+-                        found = true;
+-                }
++        u2 = hashmap_get(m->watch_pids1, LONG_TO_PTR(ucred->pid));
++        if (u2 && u2 != u1) {
++                manager_invoke_notify_message(m, u2, ucred->pid, buf, n, fds);
++                found = true;
++        }
+ 
+-                u3 = hashmap_get(m->watch_pids2, LONG_TO_PTR(ucred->pid));
+-                if (u3 && u3 != u2 && u3 != u1) {
+-                        manager_invoke_notify_message(m, u3, ucred->pid, buf, n, fds);
+-                        found = true;
+-                }
++        u3 = hashmap_get(m->watch_pids2, LONG_TO_PTR(ucred->pid));
++        if (u3 && u3 != u2 && u3 != u1) {
++                manager_invoke_notify_message(m, u3, ucred->pid, buf, n, fds);
++                found = true;
++        }
+ 
+-                if (!found)
+-                        log_warning("Cannot find unit for notify message of PID "PID_FMT".", ucred->pid);
++        if (!found)
++                log_warning("Cannot find unit for notify message of PID "PID_FMT".", ucred->pid);
+ 
+-                if (fdset_size(fds) > 0)
+-                        log_warning("Got auxiliary fds with notification message, closing all.");
+-        }
++        if (fdset_size(fds) > 0)
++                log_warning("Got auxiliary fds with notification message, closing all.");
+ 
+         return 0;
+ }
+ 
+ static void invoke_sigchld_event(Manager *m, Unit *u, siginfo_t *si) {
+         uint64_t iteration;
+-        
++
+         assert(m);
+         assert(u);
+         assert(si);

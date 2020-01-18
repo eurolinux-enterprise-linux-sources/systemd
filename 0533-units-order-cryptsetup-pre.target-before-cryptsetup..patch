@@ -1,0 +1,25 @@
+From acf59b657e23e3b5b0f038823fe57dcfb4f914a4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Tue, 5 Sep 2017 09:14:51 +0200
+Subject: [PATCH] units: order cryptsetup-pre.target before cryptsetup.target
+
+Normally this happens automatically, but if it happened that both targets were
+pulled in, even though there were no cryptsetup units, they could be started
+in reverse order, which would be somewhat confusing. Add an explicit ordering
+to avoid this potential issue.
+
+Cherry-picked from: 947d21171bdd8375db6482bc7d758d74b27f7dd4
+Resolves: #1384014
+---
+ units/cryptsetup-pre.target | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/units/cryptsetup-pre.target b/units/cryptsetup-pre.target
+index 65353419f..42e35dd4e 100644
+--- a/units/cryptsetup-pre.target
++++ b/units/cryptsetup-pre.target
+@@ -9,3 +9,4 @@
+ Description=Encrypted Volumes (Pre)
+ Documentation=man:systemd.special(7)
+ RefuseManualStart=yes
++Before=cryptsetup.target

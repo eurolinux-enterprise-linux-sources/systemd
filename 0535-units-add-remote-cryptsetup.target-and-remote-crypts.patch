@@ -1,0 +1,140 @@
+From ea1a15b35b70573ab61ca0b8123205c6885c69e4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Tue, 5 Sep 2017 10:15:13 +0200
+Subject: [PATCH] units: add remote-cryptsetup.target and
+ remote-cryptsetup-pre.target
+
+The pair is similar to remote-fs.target and remote-fs-pre.target. Any
+cryptsetup devices which require network shall be ordered after
+remote-cryptsetup-pre.target and before remote-cryptsetup.target.
+
+Cherry-picked from: 889128b8b27abb13e1691a72e4ce0562c564e257
+Resolves: #1384014
+---
+ Makefile.am                        |  4 +++-
+ man/systemd.special.xml            | 23 +++++++++++++++++++++++
+ units/cryptsetup-pre.target        |  2 +-
+ units/cryptsetup.target            |  2 +-
+ units/remote-cryptsetup-pre.target | 15 +++++++++++++++
+ units/remote-cryptsetup.target     | 10 ++++++++++
+ 6 files changed, 53 insertions(+), 3 deletions(-)
+ create mode 100644 units/remote-cryptsetup-pre.target
+ create mode 100644 units/remote-cryptsetup.target
+
+diff --git a/Makefile.am b/Makefile.am
+index 0e2f8d561..a1ebf5cb0 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -4861,7 +4861,9 @@ systemgenerator_PROGRAMS += \
+ 
+ dist_systemunit_DATA += \
+ 	units/cryptsetup.target \
+-	units/cryptsetup-pre.target
++	units/cryptsetup-pre.target \
++	units/remote-cryptsetup.target \
++	units/remote-cryptsetup-pre.target
+ 
+ systemd_cryptsetup_SOURCES = \
+ 	src/cryptsetup/cryptsetup.c
+diff --git a/man/systemd.special.xml b/man/systemd.special.xml
+index eb464f9f8..5529d3bf7 100644
+--- a/man/systemd.special.xml
++++ b/man/systemd.special.xml
+@@ -81,6 +81,8 @@
+     <filename>poweroff.target</filename>,
+     <filename>printer.target</filename>,
+     <filename>reboot.target</filename>,
++    <filename>remote-cryptsetup-pre.target</filename>,
++    <filename>remote-cryptsetup.target</filename>,
+     <filename>remote-fs.target</filename>,
+     <filename>remote-fs-pre.target</filename>,
+     <filename>rescue.target</filename>,
+@@ -404,6 +406,27 @@
+           this target unit, for compatibility with SysV.</para>
+         </listitem>
+       </varlistentry>
++      <varlistentry>
++        <term><filename>remote-cryptsetup-pre.target</filename></term>
++        <listitem>
++          <para>This target unit is automatically ordered before all cryptsetup devices
++          marked with the <option>_netdev</option>. It can be used to execute additional
++          units before such devices are set up.</para>
++
++          <para>It is ordered after <filename>network.target</filename> and
++          <filename>network-online.target</filename>, and also pulls the latter in as a
++          <varname>Wants=</varname> dependency.</para>
++        </listitem>
++      </varlistentry>
++      <varlistentry>
++        <term><filename>remote-cryptsetup.target</filename></term>
++        <listitem>
++          <para>Similar to <filename>cryptsetup.target</filename>, but for encrypted
++          devices which are accessed over the network. It is used for
++          <citerefentry><refentrytitle>crypttab</refentrytitle><manvolnum>8</manvolnum></citerefentry>
++          entries marked with <option>_netdev</option>.</para>
++        </listitem>
++      </varlistentry>
+       <varlistentry>
+         <term><filename>remote-fs.target</filename></term>
+         <listitem>
+diff --git a/units/cryptsetup-pre.target b/units/cryptsetup-pre.target
+index 42e35dd4e..6cb28a61a 100644
+--- a/units/cryptsetup-pre.target
++++ b/units/cryptsetup-pre.target
+@@ -6,7 +6,7 @@
+ #  (at your option) any later version.
+ 
+ [Unit]
+-Description=Encrypted Volumes (Pre)
++Description=Local Encrypted Volumes (Pre)
+ Documentation=man:systemd.special(7)
+ RefuseManualStart=yes
+ Before=cryptsetup.target
+diff --git a/units/cryptsetup.target b/units/cryptsetup.target
+index 25d3e33f6..10b17fd38 100644
+--- a/units/cryptsetup.target
++++ b/units/cryptsetup.target
+@@ -6,5 +6,5 @@
+ #  (at your option) any later version.
+ 
+ [Unit]
+-Description=Encrypted Volumes
++Description=Local Encrypted Volumes
+ Documentation=man:systemd.special(7)
+diff --git a/units/remote-cryptsetup-pre.target b/units/remote-cryptsetup-pre.target
+new file mode 100644
+index 000000000..a375e6188
+--- /dev/null
++++ b/units/remote-cryptsetup-pre.target
+@@ -0,0 +1,15 @@
++#  This file is part of systemd.
++#
++#  systemd is free software; you can redistribute it and/or modify it
++#  under the terms of the GNU Lesser General Public License as published by
++#  the Free Software Foundation; either version 2.1 of the License, or
++#  (at your option) any later version.
++
++[Unit]
++Description=Remote Encrypted Volumes (Pre)
++Documentation=man:systemd.special(7)
++RefuseManualStart=yes
++Before=remote-cryptsetup.target
++
++After=network.target network-online.target
++Wants=network-online.target
+diff --git a/units/remote-cryptsetup.target b/units/remote-cryptsetup.target
+new file mode 100644
+index 000000000..60943bd1c
+--- /dev/null
++++ b/units/remote-cryptsetup.target
+@@ -0,0 +1,10 @@
++#  This file is part of systemd.
++#
++#  systemd is free software; you can redistribute it and/or modify it
++#  under the terms of the GNU Lesser General Public License as published by
++#  the Free Software Foundation; either version 2.1 of the License, or
++#  (at your option) any later version.
++
++[Unit]
++Description=Remote Encrypted Volumes
++Documentation=man:systemd.special(7)

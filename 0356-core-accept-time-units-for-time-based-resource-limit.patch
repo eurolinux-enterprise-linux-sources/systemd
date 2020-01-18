@@ -1,0 +1,416 @@
+From 128ef85392f68fa32650deab12d6cd2e01ad52cf Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Tue, 10 Nov 2015 16:52:52 +0100
+Subject: [PATCH] core: accept time units for time-based resource limits
+
+Let's make sure "LimitCPU=30min" can be parsed properly, following the
+usual logic how we parse time values. Similar for LimitRTTIME=.
+
+While we are at it, extend a bit on the man page section about resource
+limits.
+
+Fixes: #1772
+
+Cherry-picked from: a4c1800284e3546bbfab2dc19eb59bcb91c4a2ca
+Related: #1351415
+---
+ man/systemd.exec.xml                  |  86 ++++++++++++++++------
+ src/core/load-fragment-gperf.gperf.m4 |   4 +-
+ src/core/load-fragment.c              | 101 ++++++++++++++++++++++++++
+ src/core/load-fragment.h              |   2 +
+ src/test/test-unit-file.c             |  61 ++++++++++++++++
+ 5 files changed, 231 insertions(+), 23 deletions(-)
+
+diff --git a/man/systemd.exec.xml b/man/systemd.exec.xml
+index 25aea1655..cfdcc3d17 100644
+--- a/man/systemd.exec.xml
++++ b/man/systemd.exec.xml
+@@ -559,90 +559,133 @@
+         of various resources for executed processes. See
+         <citerefentry><refentrytitle>setrlimit</refentrytitle><manvolnum>2</manvolnum></citerefentry>
+         for details. Use the string <varname>infinity</varname> to
+-        configure no limit on a specific resource. The multiplicative suffixes
+-        K (=1024), M (=1024*1024) and so on for G, T, P and E may be used for
+-        resource limits measured in bytes (e.g. LimitAS=16G).</para></listitem>
++        configure no limit on a specific resource. The multiplicative
++        suffixes K (=1024), M (=1024*1024) and so on for G, T, P and E
++        may be used for resource limits measured in bytes
++        (e.g. LimitAS=16G). For the limits referring to time values,
++        the usual time units ms, s, min, h and so on may be used (see
++        <citerefentry><refentrytitle>systemd.time</refentrytitle><manvolnum>7</manvolnum></citerefentry>
++        for details). Note that if no time unit is specified for
++        <varname>LimitCPU=</varname> the default unit of seconds is
++        implied, while for <varname>LimitRTTIME=</varname> the default
++        unit of microseconds is implied. Also, note that the effective
++        granularity of the limits might influence their
++        enforcement. For example, time limits specified for
++        <varname>LimitCPU=</varname> will be rounded up implicitly to
++        multiples of 1s.</para>
++
++        <para>Note that most process resource limits configured with
++        these options are per-process, and processes may fork in order
++        to acquire a new set of resources that are accounted
++        independently of the original process, and may thus escape
++        limits set. Also note that <varname>LimitRSS=</varname> is not
++        implemented on Linux, and setting it has no effect. Often it
++        is advisable to prefer the resource controls listed in
++        <citerefentry><refentrytitle>systemd.resource-control</refentrytitle><manvolnum>5</manvolnum></citerefentry>
++        over these per-process limits, as they apply to services as a
++        whole, may be altered dynamically at runtime, and are
++        generally more expressive. For example,
++        <varname>MemoryLimit=</varname> is a more powerful (and
++        working) replacement for <varname>LimitRSS=</varname>.</para>
+ 
+         <table>
+           <title>Limit directives and their equivalent with ulimit</title>
+ 
+-          <tgroup cols='2'>
++          <tgroup cols='3'>
+             <colspec colname='directive' />
+             <colspec colname='equivalent' />
++            <colspec colname='unit' />
+             <thead>
+               <row>
+                 <entry>Directive</entry>
+                 <entry>ulimit equivalent</entry>
++                <entry>Unit</entry>
+               </row>
+             </thead>
+             <tbody>
+               <row>
+-                <entry>LimitCPU</entry>
++                <entry>LimitCPU=</entry>
+                 <entry>ulimit -t</entry>
++                <entry>Seconds</entry>
+               </row>
+               <row>
+-                <entry>LimitFSIZE</entry>
++                <entry>LimitFSIZE=</entry>
+                 <entry>ulimit -f</entry>
++                <entry>Bytes</entry>
+               </row>
+               <row>
+-                <entry>LimitDATA</entry>
++                <entry>LimitDATA=</entry>
+                 <entry>ulimit -d</entry>
++                <entry>Bytes</entry>
+               </row>
+               <row>
+-                <entry>LimitSTACK</entry>
++                <entry>LimitSTACK=</entry>
+                 <entry>ulimit -s</entry>
++                <entry>Bytes</entry>
+               </row>
+               <row>
+-                <entry>LimitCORE</entry>
++                <entry>LimitCORE=</entry>
+                 <entry>ulimit -c</entry>
++                <entry>Bytes</entry>
+               </row>
+               <row>
+-                <entry>LimitRSS</entry>
++                <entry>LimitRSS=</entry>
+                 <entry>ulimit -m</entry>
++                <entry>Bytes</entry>
+               </row>
+               <row>
+-                <entry>LimitNOFILE</entry>
++                <entry>LimitNOFILE=</entry>
+                 <entry>ulimit -n</entry>
++                <entry>Number of File Descriptors</entry>
+               </row>
+               <row>
+-                <entry>LimitAS</entry>
++                <entry>LimitAS=</entry>
+                 <entry>ulimit -v</entry>
++                <entry>Bytes</entry>
+               </row>
+               <row>
+-                <entry>LimitNPROC</entry>
++                <entry>LimitNPROC=</entry>
+                 <entry>ulimit -u</entry>
++                <entry>Number of Processes</entry>
+               </row>
+               <row>
+-                <entry>LimitMEMLOCK</entry>
++                <entry>LimitMEMLOCK=</entry>
+                 <entry>ulimit -l</entry>
++                <entry>Bytes</entry>
+               </row>
+               <row>
+-                <entry>LimitLOCKS</entry>
++                <entry>LimitLOCKS=</entry>
+                 <entry>ulimit -x</entry>
++                <entry>Number of Locks</entry>
+               </row>
+               <row>
+-                <entry>LimitSIGPENDING</entry>
++                <entry>LimitSIGPENDING=</entry>
+                 <entry>ulimit -i</entry>
++                <entry>Number of Queued Signals</entry>
+               </row>
+               <row>
+-                <entry>LimitMSGQUEUE</entry>
++                <entry>LimitMSGQUEUE=</entry>
+                 <entry>ulimit -q</entry>
++                <entry>Bytes</entry>
+               </row>
+               <row>
+-                <entry>LimitNICE</entry>
++                <entry>LimitNICE=</entry>
+                 <entry>ulimit -e</entry>
++                <entry>Nice Level</entry>
+               </row>
+               <row>
+-                <entry>LimitRTPRIO</entry>
++                <entry>LimitRTPRIO=</entry>
+                 <entry>ulimit -r</entry>
++                <entry>Realtime Priority</entry>
+               </row>
+               <row>
+-                <entry>LimitRTTIME</entry>
++                <entry>LimitRTTIME=</entry>
+                 <entry>No equivalent</entry>
++                <entry>Microseconds</entry>
+               </row>
+             </tbody>
+           </tgroup>
+-        </table>
++        </table></listitem>
+       </varlistentry>
+ 
+       <varlistentry>
+@@ -1266,6 +1309,7 @@
+         <citerefentry><refentrytitle>systemd.mount</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+         <citerefentry><refentrytitle>systemd.kill</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+         <citerefentry><refentrytitle>systemd.resource-control</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
++        <citerefentry><refentrytitle>systemd.time</refentrytitle><manvolnum>7</manvolnum></citerefentry>,
+         <citerefentry><refentrytitle>systemd.directives</refentrytitle><manvolnum>7</manvolnum></citerefentry>,
+         <citerefentry><refentrytitle>tmpfiles.d</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+         <citerefentry project='man-pages'><refentrytitle>exec</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
+index c3461a0a6..ce1397c7e 100644
+--- a/src/core/load-fragment-gperf.gperf.m4
++++ b/src/core/load-fragment-gperf.gperf.m4
+@@ -58,7 +58,7 @@ $1.RestrictAddressFamilies,      config_parse_address_families,      0,
+ $1.SystemCallArchitectures,      config_parse_warn_compat,           DISABLED_CONFIGURATION,        0
+ $1.SystemCallErrorNumber,        config_parse_warn_compat,           DISABLED_CONFIGURATION,        0
+ $1.RestrictAddressFamilies,      config_parse_warn_compat,           DISABLED_CONFIGURATION,        0')
+-$1.LimitCPU,                     config_parse_limit,                 RLIMIT_CPU,                    offsetof($1, exec_context.rlimit)
++$1.LimitCPU,                     config_parse_sec_limit,             RLIMIT_CPU,                    offsetof($1, exec_context.rlimit)
+ $1.LimitFSIZE,                   config_parse_bytes_limit,           RLIMIT_FSIZE,                  offsetof($1, exec_context.rlimit)
+ $1.LimitDATA,                    config_parse_bytes_limit,           RLIMIT_DATA,                   offsetof($1, exec_context.rlimit)
+ $1.LimitSTACK,                   config_parse_bytes_limit,           RLIMIT_STACK,                  offsetof($1, exec_context.rlimit)
+@@ -73,7 +73,7 @@ $1.LimitSIGPENDING,              config_parse_limit,                 RLIMIT_SIGP
+ $1.LimitMSGQUEUE,                config_parse_bytes_limit,           RLIMIT_MSGQUEUE,               offsetof($1, exec_context.rlimit)
+ $1.LimitNICE,                    config_parse_limit,                 RLIMIT_NICE,                   offsetof($1, exec_context.rlimit)
+ $1.LimitRTPRIO,                  config_parse_limit,                 RLIMIT_RTPRIO,                 offsetof($1, exec_context.rlimit)
+-$1.LimitRTTIME,                  config_parse_limit,                 RLIMIT_RTTIME,                 offsetof($1, exec_context.rlimit)
++$1.LimitRTTIME,                  config_parse_usec_limit,            RLIMIT_RTTIME,                 offsetof($1, exec_context.rlimit)
+ $1.ReadWriteDirectories,         config_parse_namespace_path_strv,   0,                             offsetof($1, exec_context.read_write_dirs)
+ $1.ReadOnlyDirectories,          config_parse_namespace_path_strv,   0,                             offsetof($1, exec_context.read_only_dirs)
+ $1.InaccessibleDirectories,      config_parse_namespace_path_strv,   0,                             offsetof($1, exec_context.inaccessible_dirs)
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index dbb45b20f..8afe9d7e8 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -1162,6 +1162,107 @@ int config_parse_bytes_limit(const char *unit,
+         return 0;
+ }
+ 
++int config_parse_sec_limit(
++                const char *unit,
++                const char *filename,
++                unsigned line,
++                const char *section,
++                unsigned section_line,
++                const char *lvalue,
++                int ltype,
++                const char *rvalue,
++                void *data,
++                void *userdata) {
++
++        struct rlimit **rl = data;
++        rlim_t seconds;
++        int r;
++
++        assert(filename);
++        assert(lvalue);
++        assert(rvalue);
++        assert(data);
++
++        rl += ltype;
++
++        if (streq(rvalue, "infinity"))
++                seconds = RLIM_INFINITY;
++        else {
++                usec_t t;
++
++                r = parse_sec(rvalue, &t);
++                if (r < 0) {
++                        log_syntax(unit, LOG_ERR, filename, line, r, "Failed to parse resource value, ignoring: %s", rvalue);
++                        return 0;
++                }
++
++                if (t == USEC_INFINITY)
++                        seconds = RLIM_INFINITY;
++                else
++                        seconds = (rlim_t) (DIV_ROUND_UP(t, USEC_PER_SEC));
++        }
++
++        if (!*rl) {
++                *rl = new(struct rlimit, 1);
++                if (!*rl)
++                        return log_oom();
++        }
++
++        (*rl)->rlim_cur = (*rl)->rlim_max = seconds;
++        return 0;
++}
++
++
++int config_parse_usec_limit(
++                const char *unit,
++                const char *filename,
++                unsigned line,
++                const char *section,
++                unsigned section_line,
++                const char *lvalue,
++                int ltype,
++                const char *rvalue,
++                void *data,
++                void *userdata) {
++
++        struct rlimit **rl = data;
++        rlim_t useconds;
++        int r;
++
++        assert(filename);
++        assert(lvalue);
++        assert(rvalue);
++        assert(data);
++
++        rl += ltype;
++
++        if (streq(rvalue, "infinity"))
++                useconds = RLIM_INFINITY;
++        else {
++                usec_t t;
++
++                r = parse_time(rvalue, &t, 1);
++                if (r < 0) {
++                        log_syntax(unit, LOG_ERR, filename, line, r, "Failed to parse resource value, ignoring: %s", rvalue);
++                        return 0;
++                }
++
++                if (t == USEC_INFINITY)
++                        useconds = RLIM_INFINITY;
++                else
++                        useconds = (rlim_t) t;
++        }
++
++        if (!*rl) {
++                *rl = new(struct rlimit, 1);
++                if (!*rl)
++                        return log_oom();
++        }
++
++        (*rl)->rlim_cur = (*rl)->rlim_max = useconds;
++        return 0;
++}
++
+ #ifdef HAVE_SYSV_COMPAT
+ int config_parse_sysv_priority(const char *unit,
+                                const char *filename,
+diff --git a/src/core/load-fragment.h b/src/core/load-fragment.h
+index 2d509d0cb..359794d0a 100644
+--- a/src/core/load-fragment.h
++++ b/src/core/load-fragment.h
+@@ -57,6 +57,8 @@ int config_parse_exec_secure_bits(const char *unit, const char *filename, unsign
+ int config_parse_bounding_set(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_bytes_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
++int config_parse_sec_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
++int config_parse_usec_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_sysv_priority(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_kill_signal(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_exec_mount_flags(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+diff --git a/src/test/test-unit-file.c b/src/test/test-unit-file.c
+index 550098332..d15173796 100644
+--- a/src/test/test-unit-file.c
++++ b/src/test/test-unit-file.c
+@@ -545,6 +545,66 @@ static void test_install_printf(void) {
+         expect(i4, "%U", "0");
+ }
+ 
++
++static void test_config_parse_rlimit(void) {
++        struct rlimit * rl[_RLIMIT_MAX] = {};
++
++        assert_se(config_parse_limit(NULL, "fake", 1, "section", 1, "LimitNOFILE", RLIMIT_NOFILE, "55", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_NOFILE]);
++        assert_se(rl[RLIMIT_NOFILE]->rlim_cur == 55);
++        assert_se(rl[RLIMIT_NOFILE]->rlim_cur == rl[RLIMIT_NOFILE]->rlim_max);
++
++        assert_se(config_parse_limit(NULL, "fake", 1, "section", 1, "LimitNOFILE", RLIMIT_NOFILE, "infinity", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_NOFILE]);
++        assert_se(rl[RLIMIT_NOFILE]->rlim_cur == RLIM_INFINITY);
++        assert_se(rl[RLIMIT_NOFILE]->rlim_cur == rl[RLIMIT_NOFILE]->rlim_max);
++
++        rl[RLIMIT_NOFILE] = free(rl[RLIMIT_NOFILE]);
++        assert_se(config_parse_sec_limit(NULL, "fake", 1, "section", 1, "LimitCPU", RLIMIT_CPU, "56", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_CPU]);
++        assert_se(rl[RLIMIT_CPU]->rlim_cur == 56);
++        assert_se(rl[RLIMIT_CPU]->rlim_cur == rl[RLIMIT_CPU]->rlim_max);
++
++        assert_se(config_parse_sec_limit(NULL, "fake", 1, "section", 1, "LimitCPU", RLIMIT_CPU, "57s", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_CPU]);
++        assert_se(rl[RLIMIT_CPU]->rlim_cur == 57);
++        assert_se(rl[RLIMIT_CPU]->rlim_cur == rl[RLIMIT_CPU]->rlim_max);
++
++        assert_se(config_parse_sec_limit(NULL, "fake", 1, "section", 1, "LimitCPU", RLIMIT_CPU, "infinity", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_CPU]);
++        assert_se(rl[RLIMIT_CPU]->rlim_cur == RLIM_INFINITY);
++        assert_se(rl[RLIMIT_CPU]->rlim_cur == rl[RLIMIT_CPU]->rlim_max);
++
++        assert_se(config_parse_sec_limit(NULL, "fake", 1, "section", 1, "LimitCPU", RLIMIT_CPU, "1234ms", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_CPU]);
++        assert_se(rl[RLIMIT_CPU]->rlim_cur == 2);
++        assert_se(rl[RLIMIT_CPU]->rlim_cur == rl[RLIMIT_CPU]->rlim_max);
++
++        rl[RLIMIT_CPU] = free(rl[RLIMIT_CPU]);
++
++        assert_se(config_parse_usec_limit(NULL, "fake", 1, "section", 1, "LimitRTTIME", RLIMIT_RTTIME, "58", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_RTTIME]);
++        assert_se(rl[RLIMIT_RTTIME]->rlim_cur == 58);
++        assert_se(rl[RLIMIT_RTTIME]->rlim_cur == rl[RLIMIT_RTTIME]->rlim_max);
++
++        assert_se(config_parse_usec_limit(NULL, "fake", 1, "section", 1, "LimitRTTIME", RLIMIT_RTTIME, "59s", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_RTTIME]);
++        assert_se(rl[RLIMIT_RTTIME]->rlim_cur == 59 * USEC_PER_SEC);
++        assert_se(rl[RLIMIT_RTTIME]->rlim_cur == rl[RLIMIT_RTTIME]->rlim_max);
++
++        assert_se(config_parse_usec_limit(NULL, "fake", 1, "section", 1, "LimitRTTIME", RLIMIT_RTTIME, "infinity", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_RTTIME]);
++        assert_se(rl[RLIMIT_RTTIME]->rlim_cur == RLIM_INFINITY);
++        assert_se(rl[RLIMIT_RTTIME]->rlim_cur == rl[RLIMIT_RTTIME]->rlim_max);
++
++        assert_se(config_parse_usec_limit(NULL, "fake", 1, "section", 1, "LimitRTTIME", RLIMIT_RTTIME, "2345ms", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_RTTIME]);
++        assert_se(rl[RLIMIT_RTTIME]->rlim_cur == 2345 * USEC_PER_MSEC);
++        assert_se(rl[RLIMIT_RTTIME]->rlim_cur == rl[RLIMIT_RTTIME]->rlim_max);
++
++        rl[RLIMIT_RTTIME] = free(rl[RLIMIT_RTTIME]);
++}
++
+ int main(int argc, char *argv[]) {
+         int r;
+ 
+@@ -553,6 +613,7 @@ int main(int argc, char *argv[]) {
+ 
+         r = test_unit_file_get_set();
+         test_config_parse_exec();
++        test_config_parse_rlimit();
+         test_load_env_file_1();
+         test_load_env_file_2();
+         test_load_env_file_3();

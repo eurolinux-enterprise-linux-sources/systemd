@@ -1,0 +1,26 @@
+From 94f823629031f8849c8dc001d56a2c057531f0f2 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 28 Oct 2015 18:22:23 +0100
+Subject: [PATCH] nspawn: fix minor memory leak
+
+When rebooting nspawn containers about 400 times we'd otherwise hit the
+fd limit and refuse further reboots.
+
+Cherry-picked from: 3c747da38ca2f0642b4811812f6e2e2e1449a622
+Related: #1331667
+---
+ src/shared/ptyfwd.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/shared/ptyfwd.c b/src/shared/ptyfwd.c
+index 31274a141..88b3f4e3c 100644
+--- a/src/shared/ptyfwd.c
++++ b/src/shared/ptyfwd.c
+@@ -388,6 +388,7 @@ PTYForward *pty_forward_free(PTYForward *f) {
+                 sd_event_source_unref(f->stdin_event_source);
+                 sd_event_source_unref(f->stdout_event_source);
+                 sd_event_source_unref(f->master_event_source);
++                sd_event_source_unref(f->sigwinch_event_source);
+                 sd_event_unref(f->event);
+ 
+                 if (f->saved_stdout)

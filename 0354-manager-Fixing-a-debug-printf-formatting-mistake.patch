@@ -1,0 +1,28 @@
+From 1a6aae42bb3c4e524ded2da53afa303dd479b877 Mon Sep 17 00:00:00 2001
+From: Kyle Walker <walker.kyle.t@gmail.com>
+Date: Fri, 1 Jul 2016 10:04:40 -0400
+Subject: [PATCH] manager: Fixing a debug printf formatting mistake
+
+A 'llu' formatting statement was used in a debugging printf statement
+instead of a 'PRIu64'. Correcting that mistake here.
+
+Cherry-picked from: 72b0c3f59695239c51b719576f625e789bd00a66
+Related: #1342173
+---
+ src/core/manager.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/core/manager.c b/src/core/manager.c
+index 63693b93a..d168777d2 100644
+--- a/src/core/manager.c
++++ b/src/core/manager.c
+@@ -1764,7 +1764,8 @@ static void invoke_sigchld_event(Manager *m, Unit *u, siginfo_t *si) {
+                         UNIT_VTABLE(u)->sigchld_event(u, si->si_pid, si->si_code, si->si_status);
+                         u->sigchldgen = iteration;
+                 } else
+-                        log_debug("%s already issued a sigchld this iteration %llu, skipping. Pids still being watched %d", u->id, iteration, set_size(u->pids));
++                        log_debug("%s already issued a sigchld this iteration %" PRIu64 ", skipping. Pids still being watched %d", u->id, iteration, set_size(u->pids));
++
+         }
+ }
+ 

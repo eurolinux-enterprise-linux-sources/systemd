@@ -1,0 +1,35 @@
+From d5a96e0d5fccfa2f0c31df4ef5637717acd1fa9d Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Mon, 2 Nov 2015 23:13:01 +0100
+Subject: [PATCH] journalctl: continue operation, even if we run into an
+ invalid file
+
+(cherry picked from commit 4f52b822b05c373f40fea1a41ae3ade5d5ff558e)
+
+Related: #1465759
+---
+ src/journal/journalctl.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
+index c771cff8b..8c8379732 100644
+--- a/src/journal/journalctl.c
++++ b/src/journal/journalctl.c
+@@ -1804,15 +1804,12 @@ static int access_check(sd_journal *j) {
+         SET_FOREACH(code, j->errors, it) {
+                 int err;
+ 
+-                err = -PTR_TO_INT(code);
+-                assert(err > 0);
++                err = abs(PTR_TO_INT(code));
+ 
+                 if (err == EACCES)
+                         continue;
+ 
+-                log_warning_errno(err, "Error was encountered while opening journal files: %m");
+-                if (r == 0)
+-                        r = -err;
++                log_warning_errno(err, "An error was encountered while opening journal files, ignoring: %m");
+         }
+ 
+         return r;

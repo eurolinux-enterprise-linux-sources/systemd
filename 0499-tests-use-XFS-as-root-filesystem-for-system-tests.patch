@@ -1,0 +1,50 @@
+From e82e71d82496b7dd3268db62a89f215b4b38508f Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Mon, 24 Jul 2017 18:47:36 +0200
+Subject: [PATCH] tests: use XFS as root filesystem for system tests
+
+On RHEL-7 we don't have mount.ext3 in initramfs.
+
+RHEL-only
+
+Resolves: #1475870
+---
+ test/TEST-02-CRYPTSETUP/test.sh | 4 ++--
+ test/test-functions             | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/test/TEST-02-CRYPTSETUP/test.sh b/test/TEST-02-CRYPTSETUP/test.sh
+index 4be2365e2..6e5c53d8b 100755
+--- a/test/TEST-02-CRYPTSETUP/test.sh
++++ b/test/TEST-02-CRYPTSETUP/test.sh
+@@ -38,7 +38,7 @@ test_setup() {
+     echo -n test >$TESTDIR/keyfile
+     cryptsetup -q luksFormat ${LOOPDEV}p2 $TESTDIR/keyfile
+     cryptsetup luksOpen ${LOOPDEV}p2 varcrypt <$TESTDIR/keyfile
+-    mkfs.ext3 -L var /dev/mapper/varcrypt
++    mkfs.xfs -L var /dev/mapper/varcrypt
+     mkdir -p $TESTDIR/root
+     mount ${LOOPDEV}p1 $TESTDIR/root
+     mkdir -p $TESTDIR/root/var
+@@ -74,7 +74,7 @@ EOF
+         cat $initdir/etc/crypttab | ddebug
+ 
+         cat >>$initdir/etc/fstab <<EOF
+-/dev/mapper/varcrypt    /var    ext3    defaults 0 1
++/dev/mapper/varcrypt    /var    xfs    defaults 0 1
+ EOF
+     )
+     setup_nspawn_root
+diff --git a/test/test-functions b/test/test-functions
+index 901ff4860..f8950e31e 100644
+--- a/test/test-functions
++++ b/test/test-functions
+@@ -150,7 +150,7 @@ create_empty_image() {
+ ,
+ EOF
+ 
+-    mkfs.ext3 -L systemd "${LOOPDEV}p1"
++    mkfs.xfs -L systemd "${LOOPDEV}p1"
+ }
+ 
+ check_result_nspawn() {

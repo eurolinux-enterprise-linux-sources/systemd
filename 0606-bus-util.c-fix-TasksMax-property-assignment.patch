@@ -1,0 +1,44 @@
+From fc0a9c4e9701370822014298849116da2d3e41f3 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Tue, 30 Jan 2018 12:58:42 +0100
+Subject: [PATCH] bus-util.c: fix TasksMax= property assignment
+
+Also, with the current code structure, it's not possible to also set
+the TasksMaxScale= in the same if branch, simply because how the
+sd_bus_message_append() is used. In src/systemctl/systemctl.c, the
+message container is already open in set_property().
+
+Resolves: #1537147
+---
+ src/libsystemd/sd-bus/bus-util.c | 15 ++++-----------
+ 1 file changed, 4 insertions(+), 11 deletions(-)
+
+diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
+index cbf1eccf7..b1bdbad2d 100644
+--- a/src/libsystemd/sd-bus/bus-util.c
++++ b/src/libsystemd/sd-bus/bus-util.c
+@@ -1418,20 +1418,13 @@ int bus_append_unit_property_assignment(sd_bus_message *m, const char *assignmen
+                 if (isempty(eq) || streq(eq, "infinity"))
+                         t = (uint64_t) -1;
+                 else {
+-                        r = parse_percent(eq);
+-                        if (r >= 0) {
+-                                r = sd_bus_message_append(m, "sv", "TasksMaxScale", "u", (uint32_t) (((uint64_t) UINT32_MAX * r) / 100U));
+-                                if (r < 0)
+-                                        return bus_log_create_error(r);
+-                        } else {
+-                                r = safe_atou64(eq, &t);
+-                                if (r < 0)
+-                                        return log_error_errno(r, "Failed to parse maximum tasks specification %s", assignment);
+-                        }
++                        r = safe_atou64(eq, &t);
++                        if (r < 0)
++                                return log_error_errno(r, "Failed to parse maximum tasks specification %s", assignment);
+ 
+                 }
+ 
+-                r = sd_bus_message_append(m, "sv", "TasksMax", "t", t);
++                r = sd_bus_message_append(m, "v", "t", t);
+ 
+         } else if (STR_IN_SET(field, "CPUShares", "StartupCPUShares")) {
+                 uint64_t u;

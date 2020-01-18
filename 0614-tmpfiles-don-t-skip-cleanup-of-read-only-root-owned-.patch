@@ -1,0 +1,41 @@
+From 38c68c3b13e278a77a4bd02d97f6b3f81db46288 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Tue, 27 Mar 2018 10:34:06 +0200
+Subject: [PATCH] tmpfiles: don't skip cleanup of read-only root owned files if
+ TMPFILES_AGE_ALL is set
+
+Resolves: #1533638
+---
+ src/tmpfiles/tmpfiles.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
+index ddb274fce..5212d72f5 100644
+--- a/src/tmpfiles/tmpfiles.c
++++ b/src/tmpfiles/tmpfiles.c
+@@ -367,6 +367,7 @@ static int dir_cleanup(
+                 struct stat s;
+                 usec_t age;
+                 _cleanup_free_ char *sub_path = NULL;
++                const char *e;
+ 
+                 if (STR_IN_SET(dent->d_name, ".", ".."))
+                         continue;
+@@ -399,10 +400,13 @@ static int dir_cleanup(
+                         continue;
+                 }
+ 
+-                /* Do not delete read-only files owned by root */
+-                if (s.st_uid == 0 && !(s.st_mode & S_IWUSR)) {
+-                        log_debug("Ignoring \"%s/%s\": read-only and owner by root.", p, dent->d_name);
+-                        continue;
++                e = getenv("TMPFILES_AGE_ALL");
++                if (!e) {
++                        /* Do not delete read-only files owned by root */
++                        if (s.st_uid == 0 && !(s.st_mode & S_IWUSR)) {
++                                log_debug("Ignoring \"%s/%s\": read-only and owner by root.", p, dent->d_name);
++                                continue;
++                        }
+                 }
+ 
+                 sub_path = strjoin(p, "/", dent->d_name, NULL);

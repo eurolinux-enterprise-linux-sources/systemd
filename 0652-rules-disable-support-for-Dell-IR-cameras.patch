@@ -1,0 +1,32 @@
+From e2a2326a283fe38463e637e34205c50ec3066424 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Wed, 18 Jul 2018 14:36:17 +0200
+Subject: [PATCH] rules: disable support for Dell IR cameras
+
+Resolves: #1591316
+---
+ Makefile.am                                  | 1 +
+ rules/40-redhat-disable-dell-ir-camera.rules | 2 ++
+ 2 files changed, 3 insertions(+)
+ create mode 100644 rules/40-redhat-disable-dell-ir-camera.rules
+
+diff --git a/Makefile.am b/Makefile.am
+index cbc120dad..40ebbe98e 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -3523,6 +3523,7 @@ dist_udevrules_DATA += \
+ 	rules/95-udev-late.rules \
+ 	rules/40-redhat.rules \
+ 	rules/40-redhat-disable-lenovo-ir-camera.rules \
++	rules/40-redhat-disable-dell-ir-camera.rules \
+ 	rules/73-idrac.rules \
+         rules/80-net-name-slot.rules
+ 
+diff --git a/rules/40-redhat-disable-dell-ir-camera.rules b/rules/40-redhat-disable-dell-ir-camera.rules
+new file mode 100644
+index 000000000..2806482a5
+--- /dev/null
++++ b/rules/40-redhat-disable-dell-ir-camera.rules
+@@ -0,0 +1,2 @@
++# Disable known IR cameras in Dell Notebooks
++SUBSYSTEM=="usb", ATTRS{idVendor}=="0BDA", ATTRS{idProduct}=="58F6", ATTR{authorized}="0"

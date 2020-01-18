@@ -1,0 +1,227 @@
+From 338b8f9bca1cd7bd65123808fc7f7b2773e637db Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 18 Nov 2015 13:37:30 +0100
+Subject: [PATCH] core: add new RandomSec= setting for time units
+
+This allows configuration of a random time on top of the elapse events,
+in order to spread time events in a network evenly across a range.
+
+Cherry-picked from: 744c7693751830149ae78fdaf95c6c6f99d59f07
+Resolves: #1305279
+---
+ man/systemd.timer.xml                 | 43 +++++++++++++++++++++++----
+ src/core/dbus-timer.c                 | 17 +++++++++++
+ src/core/load-fragment-gperf.gperf.m4 |  1 +
+ src/core/timer.c                      | 28 +++++++++++++++++
+ src/core/timer.h                      |  1 +
+ src/libsystemd/sd-bus/bus-util.c      | 16 ++++++++++
+ 6 files changed, 100 insertions(+), 6 deletions(-)
+
+diff --git a/man/systemd.timer.xml b/man/systemd.timer.xml
+index 20890f227..bdd14d888 100644
+--- a/man/systemd.timer.xml
++++ b/man/systemd.timer.xml
+@@ -180,13 +180,12 @@
+         <varname>OnUnitInactiveSec=</varname> and ending the time
+         configured with <varname>AccuracySec=</varname> later. Within
+         this time window, the expiry time will be placed at a
+-        host-specific, randomized but stable position that is
++        host-specific, randomized, but stable position that is
+         synchronized between all local timer units. This is done in
+-        order to distribute the wake-up time in networked
+-        installations, as well as optimizing power consumption to
+-        suppress unnecessary CPU wake-ups. To get best accuracy, set
+-        this option to 1us. Note that the timer is still subject to
+-        the timer slack configured via
++        order to optimize power consumption to suppress unnecessary
++        CPU wake-ups. To get best accuracy, set this option to
++        1us. Note that the timer is still subject to the timer slack
++        configured via
+         <citerefentry><refentrytitle>systemd-system.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>'s
+         <varname>TimerSlackNSec=</varname> setting. See
+         <citerefentry><refentrytitle>prctl</refentrytitle><manvolnum>2</manvolnum></citerefentry>
+@@ -194,6 +193,38 @@
+         this value as high as possible and as low as
+         necessary.</para></listitem>
+       </varlistentry>
++
++      <varlistentry>
++        <term><varname>RandomSec=</varname></term>
++
++        <listitem><para>Delay the timer by a randomly selected, evenly
++        distributed amount of time between 0 and the specified time
++        value. Defaults to 0, indicating that no randomized delay
++        shall be applied. Each timer unit will determine this delay
++        randomly each time it is started, and the delay will simply be
++        added on top of the next determined elapsing time. This is
++        useful to stretch dispatching of similarly configured timer
++        events over a certain amount time, to avoid that they all fire
++        at the same time, possibly resulting in resource
++        congestion. Note the relation to
++        <varname>AccuracySec=</varname> above: the latter allows the
++        service manager to coalesce timer events within a specified
++        time range in order to minimize wakeups, the former does the
++        opposite: it stretches timer events over a time range, to make
++        it unlikely that they fire simultaneously. If
++        <varname>RandomSec=</varname> and
++        <varname>AccuracySec=</varname> are used in conjunction, first
++        the a randomized time is added, and the result is then
++        possibly shifted further to coalesce it with other timer
++        events possibly happening on the system. As mentioned above
++        <varname>AccuracySec=</varname> defaults to 1min and
++        <varname>RandomSec=</varname> to 0, thus encouraging
++        coalescing of timer events. In order to optimally stretch
++        timer events over a certain range of time, make sure to set
++        <varname>RandomSec=</varname> to a higher value, and
++        <varname>AccuracySec=1us</varname>.</para></listitem>
++      </varlistentry>
++
+       <varlistentry>
+         <term><varname>Unit=</varname></term>
+ 
+diff --git a/src/core/dbus-timer.c b/src/core/dbus-timer.c
+index 43e785246..cd7bf44ba 100644
+--- a/src/core/dbus-timer.c
++++ b/src/core/dbus-timer.c
+@@ -181,6 +181,7 @@ const sd_bus_vtable bus_timer_vtable[] = {
+         BUS_PROPERTY_DUAL_TIMESTAMP("LastTriggerUSec", offsetof(Timer, last_trigger), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+         SD_BUS_PROPERTY("Result", "s", property_get_result, offsetof(Timer, result), SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+         SD_BUS_PROPERTY("AccuracyUSec", "t", bus_property_get_usec, offsetof(Timer, accuracy_usec), SD_BUS_VTABLE_PROPERTY_CONST),
++        SD_BUS_PROPERTY("RandomUSec", "t", bus_property_get_usec, offsetof(Timer, random_usec), SD_BUS_VTABLE_PROPERTY_CONST),
+         SD_BUS_PROPERTY("Persistent", "b", bus_property_get_bool, offsetof(Timer, persistent), SD_BUS_VTABLE_PROPERTY_CONST),
+         SD_BUS_PROPERTY("WakeSystem", "b", bus_property_get_bool, offsetof(Timer, wake_system), SD_BUS_VTABLE_PROPERTY_CONST),
+         SD_BUS_VTABLE_END
+@@ -284,6 +285,22 @@ static int bus_timer_set_transient_property(
+ 
+                 return 1;
+ 
++        } else if (streq(name, "RandomUSec")) {
++                usec_t u = 0;
++
++                r = sd_bus_message_read(message, "t", &u);
++                if (r < 0)
++                        return r;
++
++                if (mode != UNIT_CHECK) {
++                        char time[FORMAT_TIMESPAN_MAX];
++
++                        t->random_usec = u;
++                        unit_write_drop_in_private_format(UNIT(t), mode, name, "RandomSec=%s\n", format_timespan(time, sizeof(time), u, USEC_PER_MSEC));
++                }
++
++                return 1;
++
+         } else if (streq(name, "WakeSystem")) {
+ 
+                 int b;
+diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
+index 53059845e..5106a98ee 100644
+--- a/src/core/load-fragment-gperf.gperf.m4
++++ b/src/core/load-fragment-gperf.gperf.m4
+@@ -336,6 +336,7 @@ Timer.OnUnitInactiveSec,         config_parse_timer,                 0,
+ Timer.Persistent,                config_parse_bool,                  0,                             offsetof(Timer, persistent)
+ Timer.WakeSystem,                config_parse_bool,                  0,                             offsetof(Timer, wake_system)
+ Timer.AccuracySec,               config_parse_sec,                   0,                             offsetof(Timer, accuracy_usec)
++Timer.RandomSec,                 config_parse_sec,                   0,                             offsetof(Timer, random_usec)
+ Timer.Unit,                      config_parse_trigger_unit,          0,                             0
+ m4_dnl
+ Path.PathExists,                 config_parse_path_spec,             0,                             0
+diff --git a/src/core/timer.c b/src/core/timer.c
+index 48cf9c16a..972dd73df 100644
+--- a/src/core/timer.c
++++ b/src/core/timer.c
+@@ -29,6 +29,7 @@
+ #include "bus-util.h"
+ #include "bus-error.h"
+ #include "mkdir.h"
++#include "util.h"
+ 
+ static const UnitActiveState state_translation_table[_TIMER_STATE_MAX] = {
+         [TIMER_DEAD] = UNIT_INACTIVE,
+@@ -315,6 +316,28 @@ static usec_t monotonic_to_boottime(usec_t t) {
+                 return 0;
+ }
+ 
++static void add_random(Timer *t, usec_t *v) {
++        char s[FORMAT_TIMESPAN_MAX];
++        usec_t add;
++
++        assert(t);
++        assert(*v);
++
++        if (t->random_usec == 0)
++                return;
++        if (*v == USEC_INFINITY)
++                return;
++
++        add = random_u64() % t->random_usec;
++
++        if (*v + add < *v) /* overflow */
++                *v = (usec_t) -2; /* Highest possible value, that is not USEC_INFINITY */
++        else
++                *v += add;
++
++        log_unit_info(UNIT(t)->id, "Adding %s random time.", format_timespan(s, sizeof(s), add, 0));
++}
++
+ static void timer_enter_waiting(Timer *t, bool initial) {
+         bool found_monotonic = false, found_realtime = false;
+         usec_t ts_realtime, ts_monotonic;
+@@ -431,6 +454,8 @@ static void timer_enter_waiting(Timer *t, bool initial) {
+         if (found_monotonic) {
+                 char buf[FORMAT_TIMESPAN_MAX];
+ 
++                add_random(t, &t->next_elapse_monotonic_or_boottime);
++
+                 log_unit_debug(UNIT(t)->id, "%s: Monotonic timer elapses in %s.",
+                                UNIT(t)->id,
+                                format_timespan(buf, sizeof(buf), t->next_elapse_monotonic_or_boottime > ts_monotonic ? t->next_elapse_monotonic_or_boottime - ts_monotonic : 0, 0));
+@@ -460,6 +485,9 @@ static void timer_enter_waiting(Timer *t, bool initial) {
+ 
+         if (found_realtime) {
+                 char buf[FORMAT_TIMESTAMP_MAX];
++
++                add_random(t, &t->next_elapse_realtime);
++
+                 log_unit_debug(UNIT(t)->id, "%s: Realtime timer elapses at %s.", UNIT(t)->id, format_timestamp(buf, sizeof(buf), t->next_elapse_realtime));
+ 
+                 if (t->realtime_event_source) {
+diff --git a/src/core/timer.h b/src/core/timer.h
+index de412a043..b97724525 100644
+--- a/src/core/timer.h
++++ b/src/core/timer.h
+@@ -69,6 +69,7 @@ struct Timer {
+         Unit meta;
+ 
+         usec_t accuracy_usec;
++        usec_t random_usec;
+ 
+         LIST_HEAD(TimerValue, values);
+         usec_t next_elapse_realtime;
+diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
+index 6d5615082..5ecb3bea4 100644
+--- a/src/libsystemd/sd-bus/bus-util.c
++++ b/src/libsystemd/sd-bus/bus-util.c
+@@ -1360,6 +1360,22 @@ int bus_append_unit_property_assignment(sd_bus_message *m, const char *assignmen
+                         return -EINVAL;
+                 }
+ 
++                if (r < 0)
++                        return bus_log_create_error(r);
++
++                return 0;
++        } else if (streq(field, "RandomSec")) {
++                usec_t t;
++
++                r = parse_sec(eq, &t);
++                if (r < 0)
++                        return log_error_errno(r, "Failed to parse RandomSec= parameter: %s", eq);
++
++                r = sd_bus_message_append_basic(m, SD_BUS_TYPE_STRING, "RandomUSec");
++                if (r < 0)
++                        return bus_log_create_error(r);
++
++                r = sd_bus_message_append(m, "v", "t", t);
+                 if (r < 0)
+                         return bus_log_create_error(r);
+ 

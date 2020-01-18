@@ -1,0 +1,43 @@
+From bc54eb811caf738ee54867359f798dc0f4be9e7e Mon Sep 17 00:00:00 2001
+From: Michal Schmidt <mschmidt@redhat.com>
+Date: Thu, 16 Jul 2015 21:39:56 +0200
+Subject: [PATCH] core: correct return value from reload methods
+
+Return 1 from *_reload() methods to signify "we did something", just
+like in *_start(). This causes "Reloading foo..." messages to be logged.
+"Reloaded foo." messages are already logged.
+
+(cherry picked from commit 2d018ae23b838f050516d06859f50ecb9733d44b)
+
+Related: #1506256
+---
+ src/core/mount.c   | 2 +-
+ src/core/service.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/core/mount.c b/src/core/mount.c
+index a6d93b869..f726d9659 100644
+--- a/src/core/mount.c
++++ b/src/core/mount.c
+@@ -1081,7 +1081,7 @@ static int mount_reload(Unit *u) {
+         assert(m->state == MOUNT_MOUNTED);
+ 
+         mount_enter_remounting(m);
+-        return 0;
++        return 1;
+ }
+ 
+ static int mount_serialize(Unit *u, FILE *f, FDSet *fds) {
+diff --git a/src/core/service.c b/src/core/service.c
+index 71ec5e37c..9622ce11f 100644
+--- a/src/core/service.c
++++ b/src/core/service.c
+@@ -1939,7 +1939,7 @@ static int service_reload(Unit *u) {
+         assert(s->state == SERVICE_RUNNING || s->state == SERVICE_EXITED);
+ 
+         service_enter_reload(s);
+-        return 0;
++        return 1;
+ }
+ 
+ _pure_ static bool service_can_reload(Unit *u) {

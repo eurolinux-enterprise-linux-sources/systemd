@@ -1,0 +1,28 @@
+From 468004bfb6efeef42b9191ee218304f0ab492654 Mon Sep 17 00:00:00 2001
+From: Tejun Heo <htejun@fb.com>
+Date: Mon, 23 May 2016 16:48:46 -0400
+Subject: [PATCH] core: fix the reversed sanity check when setting
+ StartupBlockIOWeight over dbus
+
+bus_cgroup_set_property() was rejecting if the input value was in range.
+Reverse it.
+
+Cherry-picked from: 6fb09269769634df1096663ce90fac47585eb63a
+Resolves: #1302305
+---
+ src/core/dbus-cgroup.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/core/dbus-cgroup.c b/src/core/dbus-cgroup.c
+index ffeeb5aa9..66b1324fe 100644
+--- a/src/core/dbus-cgroup.c
++++ b/src/core/dbus-cgroup.c
+@@ -324,7 +324,7 @@ int bus_cgroup_set_property(
+                 if (r < 0)
+                         return r;
+ 
+-                if (CGROUP_BLKIO_WEIGHT_IS_OK(weight))
++                if (!CGROUP_BLKIO_WEIGHT_IS_OK(weight))
+                         return sd_bus_error_set_errnof(error, EINVAL, "StartupBlockIOWeight value out of range");
+ 
+                 if (mode != UNIT_CHECK) {

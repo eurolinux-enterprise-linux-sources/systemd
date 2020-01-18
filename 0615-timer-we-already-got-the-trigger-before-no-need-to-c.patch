@@ -1,0 +1,28 @@
+From cfa30c21a4e5324a43695fcf43fe984aed2a8a8e Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Mon, 26 Feb 2018 13:56:52 +0100
+Subject: [PATCH] timer: we already got the trigger before, no need to call
+ UNIT_TRIGGER again
+
+In d7b2f6ef we forgot to replace this occurence.
+
+rhel-only
+
+Resolves: #1549119
+---
+ src/core/timer.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/core/timer.c b/src/core/timer.c
+index 91d8db67e..0a264f60d 100644
+--- a/src/core/timer.c
++++ b/src/core/timer.c
+@@ -421,7 +421,7 @@ static void timer_enter_waiting(Timer *t, bool initial) {
+ 
+                         case TIMER_UNIT_INACTIVE:
+ 
+-                                base = UNIT_TRIGGER(UNIT(t))->inactive_enter_timestamp.monotonic;
++                                base = trigger->inactive_enter_timestamp.monotonic;
+ 
+                                 if (base <= 0)
+                                         base = t->last_trigger.monotonic;

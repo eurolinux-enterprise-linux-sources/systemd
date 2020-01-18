@@ -1,0 +1,295 @@
+From 2b4894764e9e92ae9004524ed466b4bdf94b2a34 Mon Sep 17 00:00:00 2001
+From: Alban Crequy <alban@endocode.com>
+Date: Mon, 18 May 2015 12:20:28 +0200
+Subject: [PATCH] core: Private*/Protect* options with RootDirectory
+
+When a service is chrooted with the option RootDirectory=/opt/..., then
+the options PrivateDevices, PrivateTmp, ProtectHome, ProtectSystem must
+mount the directories under $RootDirectory/{dev,tmp,home,usr,boot}.
+
+The test-ns tool can test setup_namespace() with and without chroot:
+ $ sudo TEST_NS_PROJECTS=/home/lennart/projects ./test-ns
+ $ sudo TEST_NS_CHROOT=/home/alban/debian-tree TEST_NS_PROJECTS=/home/alban/debian-tree/home/alban/Documents ./test-ns
+
+Cherry-picked from: ee818b89f4890b3a00e93772249fce810f60811e
+Resolves: #1421181
+---
+ src/core/execute.c   |  8 +++--
+ src/core/namespace.c | 80 ++++++++++++++++++++++++++++++++++++++------
+ src/core/namespace.h |  3 +-
+ src/test/test-ns.c   | 24 +++++++++++--
+ 4 files changed, 100 insertions(+), 15 deletions(-)
+
+diff --git a/src/core/execute.c b/src/core/execute.c
+index 59340ec05..863babd76 100644
+--- a/src/core/execute.c
++++ b/src/core/execute.c
+@@ -1305,6 +1305,7 @@ static int exec_child(
+         uid_t uid = UID_INVALID;
+         gid_t gid = GID_INVALID;
+         int i, r;
++        bool needs_mount_namespace;
+ 
+         assert(command);
+         assert(context);
+@@ -1593,7 +1594,9 @@ static int exec_child(
+                 }
+         }
+ 
+-        if (exec_needs_mount_namespace(context, params, runtime)) {
++        needs_mount_namespace = exec_needs_mount_namespace(context, params, runtime);
++
++        if (needs_mount_namespace) {
+                 char *tmp = NULL, *var = NULL;
+ 
+                 /* The runtime struct only contains the parent
+@@ -1610,6 +1613,7 @@ static int exec_child(
+                 }
+ 
+                 r = setup_namespace(
++                                params->apply_chroot ? context->root_directory : NULL,
+                                 context->read_write_dirs,
+                                 context->read_only_dirs,
+                                 context->inaccessible_dirs,
+@@ -1635,7 +1639,7 @@ static int exec_child(
+         }
+ 
+         if (params->apply_chroot) {
+-                if (context->root_directory)
++                if (!needs_mount_namespace && context->root_directory)
+                         if (chroot(context->root_directory) < 0) {
+                                 *exit_status = EXIT_CHROOT;
+                                 return -errno;
+diff --git a/src/core/namespace.c b/src/core/namespace.c
+index 00495c144..574746273 100644
+--- a/src/core/namespace.c
++++ b/src/core/namespace.c
+@@ -44,6 +44,7 @@
+ #include "label.h"
+ #include "selinux-util.h"
+ #include "namespace.h"
++#include "mkdir.h"
+ 
+ typedef enum MountMode {
+         /* This is ordered by priority! */
+@@ -132,6 +133,22 @@ static void drop_duplicates(BindMount *m, unsigned *n) {
+         *n = t - m;
+ }
+ 
++static int mount_move_root(const char *path) {
++        if (chdir(path) < 0)
++                return -errno;
++
++        if (mount(path, "/", NULL, MS_MOVE, NULL) < 0)
++                return -errno;
++
++        if (chroot(".") < 0)
++                return -errno;
++
++        if (chdir("/") < 0)
++                return -errno;
++
++        return 0;
++}
++
+ static int mount_dev(BindMount *m) {
+         static const char devnodes[] =
+                 "/dev/null\0"
+@@ -231,7 +248,13 @@ static int mount_dev(BindMount *m) {
+ 
+         dev_setup(temporary_mount);
+ 
+-        if (mount(dev, "/dev/", NULL, MS_MOVE, NULL) < 0) {
++        /* Create the /dev directory if missing. It is more likely to be
++         * missing when the service is started with RootDirectory. This is
++         * consistent with mount units creating the mount points when missing.
++         */
++        (void) mkdir_p_label(m->path, 0755);
++
++        if (mount(dev, m->path, NULL, MS_MOVE, NULL) < 0) {
+                 r = -errno;
+                 goto fail;
+         }
+@@ -410,6 +433,7 @@ static int make_read_only(BindMount *m) {
+ }
+ 
+ int setup_namespace(
++                const char* root_directory,
+                 char** read_write_dirs,
+                 char** read_only_dirs,
+                 char** inaccessible_dirs,
+@@ -455,37 +479,56 @@ int setup_namespace(
+                         return r;
+ 
+                 if (tmp_dir) {
+-                        m->path = "/tmp";
++                        m->path = prefix_roota(root_directory, "/tmp");
+                         m->mode = PRIVATE_TMP;
+                         m++;
+                 }
+ 
+                 if (var_tmp_dir) {
+-                        m->path = "/var/tmp";
++                        m->path = prefix_roota(root_directory, "/var/tmp");
+                         m->mode = PRIVATE_VAR_TMP;
+                         m++;
+                 }
+ 
+                 if (private_dev) {
+-                        m->path = "/dev";
++                        m->path = prefix_roota(root_directory, "/dev");
+                         m->mode = PRIVATE_DEV;
+                         m++;
+                 }
+ 
+                 if (bus_endpoint_path) {
+-                        m->path = bus_endpoint_path;
++                        m->path = prefix_roota(root_directory, bus_endpoint_path);
+                         m->mode = PRIVATE_BUS_ENDPOINT;
+                         m++;
+                 }
+ 
+                 if (protect_home != PROTECT_HOME_NO) {
+-                        r = append_mounts(&m, STRV_MAKE("-/home", "-/run/user", "-/root"), protect_home == PROTECT_HOME_READ_ONLY ? READONLY : INACCESSIBLE);
++                        const char *home_dir, *run_user_dir, *root_dir;
++
++                        home_dir = prefix_roota(root_directory, "/home");
++                        home_dir = strjoina("-", home_dir);
++                        run_user_dir = prefix_roota(root_directory, "/run/user");
++                        run_user_dir = strjoina("-", run_user_dir);
++                        root_dir = prefix_roota(root_directory, "/root");
++                        root_dir = strjoina("-", root_dir);
++
++                        r = append_mounts(&m, STRV_MAKE(home_dir, run_user_dir, root_dir),
++                                protect_home == PROTECT_HOME_READ_ONLY ? READONLY : INACCESSIBLE);
+                         if (r < 0)
+                                 return r;
+                 }
+ 
+                 if (protect_system != PROTECT_SYSTEM_NO) {
+-                        r = append_mounts(&m, protect_system == PROTECT_SYSTEM_FULL ? STRV_MAKE("/usr", "-/boot", "/etc") : STRV_MAKE("/usr", "-/boot"), READONLY);
++                        const char *usr_dir, *boot_dir, *etc_dir;
++
++                        usr_dir = prefix_roota(root_directory, "/home");
++                        boot_dir = prefix_roota(root_directory, "/boot");
++                        boot_dir = strjoina("-", boot_dir);
++                        etc_dir = prefix_roota(root_directory, "/etc");
++
++                        r = append_mounts(&m, protect_system == PROTECT_SYSTEM_FULL
++                                ? STRV_MAKE(usr_dir, boot_dir, etc_dir)
++                                : STRV_MAKE(usr_dir, boot_dir), READONLY);
+                         if (r < 0)
+                                 return r;
+                 }
+@@ -496,12 +539,20 @@ int setup_namespace(
+                 drop_duplicates(mounts, &n);
+         }
+ 
+-        if (n > 0) {
++        if (n > 0 || root_directory) {
+                 /* Remount / as SLAVE so that nothing now mounted in the namespace
+                    shows up in the parent */
+                 if (mount(NULL, "/", NULL, MS_SLAVE|MS_REC, NULL) < 0)
+                         return -errno;
++        }
++
++        if (root_directory) {
++                /* Turn directory into bind mount */
++                if (mount(root_directory, root_directory, NULL, MS_BIND|MS_REC, NULL) < 0)
++                        return -errno;
++        }
+ 
++        if (n > 0) {
+                 for (m = mounts; m < mounts + n; ++m) {
+                         r = apply_mount(m, tmp_dir, var_tmp_dir);
+                         if (r < 0)
+@@ -515,12 +566,21 @@ int setup_namespace(
+                 }
+         }
+ 
++        if (root_directory) {
++                /* MS_MOVE does not work on MS_SHARED so the remount MS_SHARED will be done later */
++                r = mount_move_root(root_directory);
++
++                /* at this point, we cannot rollback */
++                if (r < 0)
++                        return r;
++        }
++
+         /* Remount / as the desired mode. Not that this will not
+          * reestablish propagation from our side to the host, since
+          * what's disconnected is disconnected. */
+         if (mount(NULL, "/", NULL, mount_flags | MS_REC, NULL) < 0) {
+-                r = -errno;
+-                goto fail;
++                /* at this point, we cannot rollback */
++                return -errno;
+         }
+ 
+         return 0;
+diff --git a/src/core/namespace.h b/src/core/namespace.h
+index 42b92e780..00ab22bf2 100644
+--- a/src/core/namespace.h
++++ b/src/core/namespace.h
+@@ -41,7 +41,8 @@ typedef enum ProtectSystem {
+         _PROTECT_SYSTEM_INVALID = -1
+ } ProtectSystem;
+ 
+-int setup_namespace(char **read_write_dirs,
++int setup_namespace(const char *chroot,
++                    char **read_write_dirs,
+                     char **read_only_dirs,
+                     char **inaccessible_dirs,
+                     const char *tmp_dir,
+diff --git a/src/test/test-ns.c b/src/test/test-ns.c
+index 7cd7b7715..72a0004e3 100644
+--- a/src/test/test-ns.c
++++ b/src/test/test-ns.c
+@@ -42,10 +42,12 @@ int main(int argc, char *argv[]) {
+                 NULL
+         };
+ 
+-        const char * const inaccessible[] = {
++        const char *inaccessible[] = {
+                 "/home/lennart/projects",
+                 NULL
+         };
++        char *root_directory;
++        char *projects_directory;
+ 
+         int r;
+         char tmp_dir[] = "/tmp/systemd-private-XXXXXX",
+@@ -54,7 +56,20 @@ int main(int argc, char *argv[]) {
+         assert_se(mkdtemp(tmp_dir));
+         assert_se(mkdtemp(var_tmp_dir));
+ 
+-        r = setup_namespace((char **) writable,
++        root_directory = getenv("TEST_NS_CHROOT");
++        projects_directory = getenv("TEST_NS_PROJECTS");
++
++        if (projects_directory)
++                inaccessible[0] = projects_directory;
++
++        log_info("Inaccessible directory: '%s'", inaccessible[0]);
++        if (root_directory)
++                log_info("Chroot: '%s'", root_directory);
++        else
++                log_info("Not chrooted");
++
++        r = setup_namespace(root_directory,
++                            (char **) writable,
+                             (char **) readonly,
+                             (char **) inaccessible,
+                             tmp_dir,
+@@ -66,6 +81,11 @@ int main(int argc, char *argv[]) {
+                             0);
+         if (r < 0) {
+                 log_error_errno(r, "Failed to setup namespace: %m");
++
++                log_info("Usage:\n"
++                         "  sudo TEST_NS_PROJECTS=/home/lennart/projects ./test-ns\n"
++                         "  sudo TEST_NS_CHROOT=/home/alban/debian-tree TEST_NS_PROJECTS=/home/alban/debian-tree/home/alban/Documents ./test-ns");
++
+                 return 1;
+         }
+ 

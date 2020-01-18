@@ -1,0 +1,36 @@
+From 285085cc7df8dd01fd372ce484ac9b3fb2d23de3 Mon Sep 17 00:00:00 2001
+From: Evgeny Vereshchagin <evvers@ya.ru>
+Date: Thu, 8 Oct 2015 07:35:36 +0300
+Subject: [PATCH] core: manager: add some missing dbus properties
+
+(cherry picked from commit 670a3efe31e729f9396fbf615aede47f10b4462e)
+
+Conflicts:
+	src/core/dbus-manager.c
+
+Resolves: #1427927
+---
+ src/core/dbus-manager.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
+index c92f8c6bf..9d4f63377 100644
+--- a/src/core/dbus-manager.c
++++ b/src/core/dbus-manager.c
+@@ -2039,6 +2039,16 @@ const sd_bus_vtable bus_manager_vtable[] = {
+         SD_BUS_WRITABLE_PROPERTY("ShutdownWatchdogUSec", "t", bus_property_get_usec, bus_property_set_usec, offsetof(Manager, shutdown_watchdog), 0),
+         SD_BUS_PROPERTY("ControlGroup", "s", NULL, offsetof(Manager, cgroup_root), 0),
+         SD_BUS_PROPERTY("SystemState", "s", property_get_system_state, 0, 0),
++        SD_BUS_PROPERTY("DefaultTimerAccuracyUSec", "t", bus_property_get_usec, offsetof(Manager, default_timer_accuracy_usec), SD_BUS_VTABLE_PROPERTY_CONST),
++        SD_BUS_PROPERTY("DefaultTimeoutStartUSec", "t", bus_property_get_usec, offsetof(Manager, default_timeout_start_usec), SD_BUS_VTABLE_PROPERTY_CONST),
++        SD_BUS_PROPERTY("DefaultTimeoutStopUSec", "t", bus_property_get_usec, offsetof(Manager, default_timeout_stop_usec), SD_BUS_VTABLE_PROPERTY_CONST),
++        SD_BUS_PROPERTY("DefaultRestartUSec", "t", bus_property_get_usec, offsetof(Manager, default_restart_usec), SD_BUS_VTABLE_PROPERTY_CONST),
++        SD_BUS_PROPERTY("DefaultStartLimitInterval", "t", bus_property_get_usec, offsetof(Manager, default_start_limit_interval), SD_BUS_VTABLE_PROPERTY_CONST),
++        SD_BUS_PROPERTY("DefaultStartLimitBurst", "u", bus_property_get_unsigned, offsetof(Manager, default_start_limit_burst), SD_BUS_VTABLE_PROPERTY_CONST),
++        SD_BUS_PROPERTY("DefaultCPUAccounting", "b", bus_property_get_bool, offsetof(Manager, default_cpu_accounting), SD_BUS_VTABLE_PROPERTY_CONST),
++        SD_BUS_PROPERTY("DefaultBlockIOAccounting", "b", bus_property_get_bool, offsetof(Manager, default_blockio_accounting), SD_BUS_VTABLE_PROPERTY_CONST),
++        SD_BUS_PROPERTY("DefaultMemoryAccounting", "b", bus_property_get_bool, offsetof(Manager, default_memory_accounting), SD_BUS_VTABLE_PROPERTY_CONST),
++        SD_BUS_PROPERTY("DefaultTasksAccounting", "b", bus_property_get_bool, offsetof(Manager, default_tasks_accounting), SD_BUS_VTABLE_PROPERTY_CONST),
+         SD_BUS_PROPERTY("DefaultTasksMax", "t", NULL, offsetof(Manager, default_tasks_max), SD_BUS_VTABLE_PROPERTY_CONST),
+ 
+         SD_BUS_METHOD("GetUnit", "s", "o", method_get_unit, SD_BUS_VTABLE_UNPRIVILEGED),

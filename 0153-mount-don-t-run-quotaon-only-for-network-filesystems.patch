@@ -1,0 +1,32 @@
+From 1ab30e0ea4b78ea20e64dccf729668d18a0fac51 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Mon, 30 Mar 2015 14:42:02 +0200
+Subject: [PATCH] mount: don't run quotaon only for network filesystems
+
+If you have for example ext4 on iscsi devices it is possible to setup
+qoutas there. Unfortunately, because such fstab entry contains _netdev,
+systemd will not add dependency to quotaon.service.
+
+(cherry picked from commit 11041c8488e956924870379a9203d7f1cac3b038)
+
+Cherry-picked from: f66964d
+Resolves: #1222517
+---
+ src/core/mount.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/core/mount.c b/src/core/mount.c
+index 3ae0eb462..335922025 100644
+--- a/src/core/mount.c
++++ b/src/core/mount.c
+@@ -107,7 +107,9 @@ static bool mount_is_auto(const MountParameters *p) {
+ static bool needs_quota(const MountParameters *p) {
+         assert(p);
+ 
+-        if (mount_is_network(p))
++        /* Quotas are not enabled on network filesystems,
++         * but we them, for example, on storages connected via iscsi */
++        if (p->fstype && fstype_is_network(p->fstype))
+                 return false;
+ 
+         if (mount_is_bind(p))

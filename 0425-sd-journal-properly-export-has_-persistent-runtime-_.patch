@@ -1,0 +1,28 @@
+From 0bf93125d4833bcdb7d187543581e4a6c14de159 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Wed, 21 Dec 2016 18:04:57 +0100
+Subject: [PATCH] sd-journal: properly export has_{persistent|runtime}_files()
+
+Cherry-picked from: 9a07f779bbeacc3358d405f6cf583506aaf655ae
+Resolves: #1409527
+---
+ src/libsystemd/libsystemd.sym.m4 | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/libsystemd/libsystemd.sym.m4 b/src/libsystemd/libsystemd.sym.m4
+index 76a8c921c..b1c2b43dd 100644
+--- a/src/libsystemd/libsystemd.sym.m4
++++ b/src/libsystemd/libsystemd.sym.m4
+@@ -163,6 +163,12 @@ global:
+         sd_pid_notify_with_fds;
+ } LIBSYSTEMD_217;
+ 
++LIBSYSTEMD_229 {
++global:
++        sd_journal_has_runtime_files;
++        sd_journal_has_persistent_files;
++} LIBSYSTEMD_219;
++
+ m4_ifdef(`ENABLE_KDBUS',
+ LIBSYSTEMD_FUTURE {
+ global:

@@ -1,0 +1,38 @@
+From 0adc312bbf5ea8ea654a5a4740f78f37eda2e9d3 Mon Sep 17 00:00:00 2001
+From: Vito Caputo <vcaputo@gnugeneration.com>
+Date: Thu, 17 Aug 2017 09:45:38 +0200
+Subject: [PATCH] journal: add/use flushed_flag_is_set() helper (#4041)
+
+Minor cleanup suggested by Lennart.
+
+(cherry-picked from commit 6431c7e216ceb9f3cfe073c94a47ac413b892e55)
+
+Related: #1364092
+---
+ src/journal/journald-server.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
+index 3e9412d57..96ffda4ec 100644
+--- a/src/journal/journald-server.c
++++ b/src/journal/journald-server.c
+@@ -917,6 +917,9 @@ finish:
+         dispatch_message_real(s, iovec, n, m, ucred, tv, label, label_len, unit_id, priority, object_pid);
+ }
+ 
++static bool flushed_flag_is_set(void) {
++        return (access("/run/systemd/journal/flushed", F_OK) >= 0);
++}
+ 
+ static int system_journal_open(Server *s, bool flush_requested) {
+         int r;
+@@ -933,8 +936,7 @@ static int system_journal_open(Server *s, bool flush_requested) {
+ 
+         if (!s->system_journal &&
+             (s->storage == STORAGE_PERSISTENT || s->storage == STORAGE_AUTO) &&
+-            (flush_requested
+-             || (flushed = (access("/run/systemd/journal/flushed", F_OK) >= 0)))) {
++            (flush_requested || (flushed = flushed_flag_is_set()))) {
+ 
+                 /* If in auto mode: first try to create the machine
+                  * path, but not the prefix.

@@ -1,0 +1,25 @@
+From 1d23db320710dc4391f6e77ddb32122f83ab8c66 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Fri, 29 May 2015 14:12:36 +0200
+Subject: [PATCH] notify: fix badly backported help message
+
+rhel-only
+
+Related: #1199644
+---
+ src/notify/notify.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/notify/notify.c b/src/notify/notify.c
+index e4a128b0b..c89a6cc06 100644
+--- a/src/notify/notify.c
++++ b/src/notify/notify.c
+@@ -49,7 +49,7 @@ static void help(void) {
+                "     --ready           Inform the init system about service start-up completion\n"
+                "     --pid[=PID]       Set main pid of daemon\n"
+                "     --status=TEXT     Set status text\n"
+-               "     --booted          Check if the system was booted up with systemd\n",
++               "     --booted          Check if the system was booted up with systemd\n"
+                "     --readahead=ACTION Controls read-ahead operations\n",
+                program_invocation_short_name);
+ }

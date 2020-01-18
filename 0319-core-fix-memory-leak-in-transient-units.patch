@@ -1,0 +1,55 @@
+From c7d030b3f2b5969751872673e9082d0c10c031b5 Mon Sep 17 00:00:00 2001
+From: Evgeny Vereshchagin <evvers@ya.ru>
+Date: Fri, 15 Jan 2016 02:41:27 +0000
+Subject: [PATCH] core: fix memory leak in transient units
+
+Fixes:
+==1== HEAP SUMMARY:
+==1==     in use at exit: 67,182 bytes in 91 blocks
+==1==   total heap usage: 70,485 allocs, 70,394 frees, 42,184,635 bytes
+allocated
+==1==
+==1== 5,742 (696 direct, 5,046 indirect) bytes in 29 blocks are
+definitely lost in loss record 4 of 7
+==1==    at 0x4C2DD9F: realloc (in
+/usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==1==    by 0x21ADDD: realloc_multiply (alloc-util.h:67)
+==1==    by 0x21BFB0: strv_push (strv.c:448)
+==1==    by 0x21C245: strv_consume (strv.c:520)
+==1==    by 0x21C33C: strv_extend (strv.c:559)
+==1==    by 0x278AD7: unit_write_drop_in (unit.c:3352)
+==1==    by 0x278EEB: unit_write_drop_in_private (unit.c:3403)
+==1==    by 0x190C21: bus_service_set_transient_property
+(dbus-service.c:254)
+==1==    by 0x190DBC: bus_service_set_property (dbus-service.c:284)
+==1==    by 0x18F00E: bus_unit_set_properties (dbus-unit.c:1226)
+==1==    by 0x186F6A: transient_unit_from_message (dbus-manager.c:683)
+==1==    by 0x1872B7: method_start_transient_unit (dbus-manager.c:763)
+==1==
+==1== LEAK SUMMARY:
+==1==    definitely lost: 696 bytes in 29 blocks
+==1==    indirectly lost: 5,046 bytes in 58 blocks
+==1==      possibly lost: 0 bytes in 0 blocks
+==1==    still reachable: 61,440 bytes in 4 blocks
+==1==         suppressed: 0 bytes in 0 blocks
+
+Cherry-picked from: af4fbf3c1fdd4196f7a325602daaa846fe5f3012
+Related: #1331667
+---
+ src/core/load-dropin.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/core/load-dropin.c b/src/core/load-dropin.c
+index 8be190040..42cf00572 100644
+--- a/src/core/load-dropin.c
++++ b/src/core/load-dropin.c
+@@ -68,6 +68,9 @@ int unit_load_dropin(Unit *u) {
+                 }
+         }
+ 
++        strv_free(u->dropin_paths);
++        u->dropin_paths = NULL;
++
+         r = unit_find_dropin_paths(u, &u->dropin_paths);
+         if (r <= 0)
+                 return 0;

@@ -1,0 +1,40 @@
+From 575f559bcd992d7fd2d7d46b695b7f42923b4463 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Wed, 6 Apr 2016 15:39:09 +0200
+Subject: [PATCH] import: use the old curl api
+
+libcurl in rhel does not have CURLOPT_XFERINFO* symbols, so lets use the
+old interface.
+
+RHEL-only
+Resolves: #1284974
+---
+ src/import/import-job.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/import/import-job.c b/src/import/import-job.c
+index 809486500..5f9cfd366 100644
+--- a/src/import/import-job.c
++++ b/src/import/import-job.c
+@@ -587,7 +587,7 @@ fail:
+         return 0;
+ }
+ 
+-static int import_job_progress_callback(void *userdata, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) {
++static int import_job_progress_callback(void *userdata, double dltotal, double dlnow, double ultotal, double ulnow) {
+         ImportJob *j = userdata;
+         unsigned percent;
+         usec_t n;
+@@ -714,10 +714,10 @@ int import_job_begin(ImportJob *j) {
+         if (curl_easy_setopt(j->curl, CURLOPT_HEADERDATA, j) != CURLE_OK)
+                 return -EIO;
+ 
+-        if (curl_easy_setopt(j->curl, CURLOPT_XFERINFOFUNCTION, import_job_progress_callback) != CURLE_OK)
++        if (curl_easy_setopt(j->curl, CURLOPT_PROGRESSFUNCTION, import_job_progress_callback) != CURLE_OK)
+                 return -EIO;
+ 
+-        if (curl_easy_setopt(j->curl, CURLOPT_XFERINFODATA, j) != CURLE_OK)
++        if (curl_easy_setopt(j->curl, CURLOPT_PROGRESSDATA, j) != CURLE_OK)
+                 return -EIO;
+ 
+         if (curl_easy_setopt(j->curl, CURLOPT_NOPROGRESS, 0) != CURLE_OK)

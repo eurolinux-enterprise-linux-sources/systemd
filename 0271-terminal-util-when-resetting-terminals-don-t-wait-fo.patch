@@ -1,0 +1,75 @@
+From 067fbebee46a376c639c9369dcaf80004047414d Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Mon, 3 Aug 2015 19:04:08 +0200
+Subject: [PATCH] terminal-util: when resetting terminals, don't wait for
+ carrier
+
+In case of non-CLOCAL lines (i.e. those with carrier detect configured)
+we shouldnt wait for a carrier if all we try to do is reset the TTY.
+Hence, whenever we open such a TTY pass O_NONBLOCK.
+
+Note that we continue to open ttys we intend to write to without
+O_ONBLOCK, we only add it in cases we invoke ioctl()s or other terminal
+operations without reading or writing to the device.
+
+Fixes #835.
+
+Cherry-picked from: 0a8b555ceb07ce916b9bd48782d1eb69a12f0f2e
+Resolves: #1266745
+---
+ src/shared/util.c | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/src/shared/util.c b/src/shared/util.c
+index 778c2b0e0..50925888d 100644
+--- a/src/shared/util.c
++++ b/src/shared/util.c
+@@ -1713,7 +1713,7 @@ bool fstype_is_network(const char *fstype) {
+ int chvt(int vt) {
+         _cleanup_close_ int fd;
+ 
+-        fd = open_terminal("/dev/tty0", O_RDWR|O_NOCTTY|O_CLOEXEC);
++        fd = open_terminal("/dev/tty0", O_RDWR|O_NOCTTY|O_CLOEXEC|O_NONBLOCK);
+         if (fd < 0)
+                 return -errno;
+ 
+@@ -1953,7 +1953,11 @@ finish:
+ int reset_terminal(const char *name) {
+         _cleanup_close_ int fd = -1;
+ 
+-        fd = open_terminal(name, O_RDWR|O_NOCTTY|O_CLOEXEC);
++        /* We open the terminal with O_NONBLOCK here, to ensure we
++         * don't block on carrier if this is a terminal with carrier
++         * configured. */
++
++        fd = open_terminal(name, O_RDWR|O_NOCTTY|O_CLOEXEC|O_NONBLOCK);
+         if (fd < 0)
+                 return fd;
+ 
+@@ -2204,7 +2208,7 @@ int release_terminal(void) {
+         struct sigaction sa_old;
+         int r = 0;
+ 
+-        fd = open("/dev/tty", O_RDWR|O_NOCTTY|O_NDELAY|O_CLOEXEC);
++        fd = open("/dev/tty", O_RDWR|O_NOCTTY|O_CLOEXEC|O_NONBLOCK);
+         if (fd < 0)
+                 return -errno;
+ 
+@@ -4405,7 +4409,7 @@ int terminal_vhangup_fd(int fd) {
+ int terminal_vhangup(const char *name) {
+         _cleanup_close_ int fd;
+ 
+-        fd = open_terminal(name, O_RDWR|O_NOCTTY|O_CLOEXEC);
++        fd = open_terminal(name, O_RDWR|O_NOCTTY|O_CLOEXEC|O_NONBLOCK);
+         if (fd < 0)
+                 return fd;
+ 
+@@ -4452,7 +4456,7 @@ int vt_disallocate(const char *name) {
+                 return -EINVAL;
+ 
+         /* Try to deallocate */
+-        fd = open_terminal("/dev/tty0", O_RDWR|O_NOCTTY|O_CLOEXEC);
++        fd = open_terminal("/dev/tty0", O_RDWR|O_NOCTTY|O_CLOEXEC|O_NONBLOCK);
+         if (fd < 0)
+                 return fd;
+ 

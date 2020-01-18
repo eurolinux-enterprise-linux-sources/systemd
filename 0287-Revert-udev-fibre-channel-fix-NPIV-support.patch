@@ -1,0 +1,57 @@
+From 4c895cb7bbb307f3c865d9a37f448605797d2b42 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Mon, 29 Feb 2016 16:33:38 +0100
+Subject: [PATCH] Revert "udev: fibre channel: fix NPIV support"
+
+This reverts commit 569d98e9caae425120bf28f6b440e6cc117abc0d.
+
+Related: #1266934
+---
+ src/udev/udev-builtin-path_id.c | 27 +++------------------------
+ 1 file changed, 3 insertions(+), 24 deletions(-)
+
+diff --git a/src/udev/udev-builtin-path_id.c b/src/udev/udev-builtin-path_id.c
+index 695ac7fc1..9ca608468 100644
+--- a/src/udev/udev-builtin-path_id.c
++++ b/src/udev/udev-builtin-path_id.c
+@@ -92,9 +92,6 @@ static struct udev_device *skip_subsystem(struct udev_device *dev, const char *s
+ static struct udev_device *handle_scsi_fibre_channel(struct udev_device *parent, char **path) {
+         struct udev *udev  = udev_device_get_udev(parent);
+         struct udev_device *targetdev;
+-        struct udev_device *rportdev;
+-        struct udev_device *hostdev;
+-        struct udev_device *vportdev;
+         struct udev_device *fcdev = NULL;
+         const char *port;
+         char *lun = NULL;
+@@ -103,27 +100,9 @@ static struct udev_device *handle_scsi_fibre_channel(struct udev_device *parent,
+         if (targetdev == NULL)
+                 return NULL;
+ 
+-        rportdev = udev_device_get_parent(targetdev);
+-        if (rportdev == NULL)
+-                goto skip_npiv_check;
+-
+-        hostdev = udev_device_get_parent(rportdev);
+-        if (hostdev == NULL)
+-                goto skip_npiv_check;
+-
+-        vportdev = udev_device_get_parent(hostdev);
+-        if (vportdev == NULL)
+-                goto skip_npiv_check;
+-
+-        fcdev = udev_device_new_from_subsystem_sysname(udev, "fc_vports", udev_device_get_sysname(vportdev));
+-
+-skip_npiv_check:
+-        if (fcdev == NULL) {
+-                fcdev = udev_device_new_from_subsystem_sysname(udev, "fc_transport", udev_device_get_sysname(targetdev));
+-                if (fcdev == NULL)
+-                        return NULL;
+-        }
+-
++        fcdev = udev_device_new_from_subsystem_sysname(udev, "fc_transport", udev_device_get_sysname(targetdev));
++        if (fcdev == NULL)
++                return NULL;
+         port = udev_device_get_sysattr_value(fcdev, "port_name");
+         if (port == NULL) {
+                 parent = NULL;

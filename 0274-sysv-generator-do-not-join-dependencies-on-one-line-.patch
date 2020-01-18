@@ -1,0 +1,135 @@
+From 72b3ff75e786efa2c9b2fdfb50e46597434c5420 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Wed, 20 Jan 2016 15:16:32 +0100
+Subject: [PATCH] sysv-generator: do not join dependencies on one line, split
+ them
+
+If there is a lot of initscripts and dependencies between them we might
+end generating After= (and similar) lines which are longer then LINE_MAX
+and thus rejected by parser in systemd.
+
+Fixes #2099
+
+Cherry-picked from: c584ffc0b75d4b9e9229bf1d8edb7d89562be3c1
+Resolves: #1288600
+---
+ src/sysv-generator/sysv-generator.c | 44 ++++++++---------------------
+ test/sysv-generator-test.py         | 18 ++++++++++--
+ 2 files changed, 28 insertions(+), 34 deletions(-)
+
+diff --git a/src/sysv-generator/sysv-generator.c b/src/sysv-generator/sysv-generator.c
+index 0a8a528bd..d60e75a06 100644
+--- a/src/sysv-generator/sysv-generator.c
++++ b/src/sysv-generator/sysv-generator.c
+@@ -134,34 +134,14 @@ static int add_alias(const char *service, const char *alias) {
+ }
+ 
+ static int generate_unit_file(SysvStub *s) {
+-        char **p;
+         _cleanup_fclose_ FILE *f = NULL;
+-        _cleanup_free_ char *unit = NULL;
+-        _cleanup_free_ char *before = NULL;
+-        _cleanup_free_ char *after = NULL;
+-        _cleanup_free_ char *wants = NULL;
+-        _cleanup_free_ char *conflicts = NULL;
++        const char *unit;
++        char **p;
+         int r;
+ 
+-        before = strv_join(s->before, " ");
+-        if (!before)
+-                return log_oom();
+-
+-        after = strv_join(s->after, " ");
+-        if (!after)
+-                return log_oom();
+-
+-        wants = strv_join(s->wants, " ");
+-        if (!wants)
+-                return log_oom();
+-
+-        conflicts = strv_join(s->conflicts, " ");
+-        if (!conflicts)
+-                return log_oom();
++        assert(s);
+ 
+-        unit = strjoin(arg_dest, "/", s->name, NULL);
+-        if (!unit)
+-                return log_oom();
++        unit = strjoina(arg_dest, "/", s->name);
+ 
+         /* We might already have a symlink with the same name from a Provides:,
+          * or from backup files like /etc/init.d/foo.bak. Real scripts always win,
+@@ -183,14 +163,14 @@ static int generate_unit_file(SysvStub *s) {
+                 "Description=%s\n",
+                 s->path, s->description);
+ 
+-        if (!isempty(before))
+-                fprintf(f, "Before=%s\n", before);
+-        if (!isempty(after))
+-                fprintf(f, "After=%s\n", after);
+-        if (!isempty(wants))
+-                fprintf(f, "Wants=%s\n", wants);
+-        if (!isempty(conflicts))
+-                fprintf(f, "Conflicts=%s\n", conflicts);
++        STRV_FOREACH(p, s->before)
++                fprintf(f, "Before=%s\n", *p);
++        STRV_FOREACH(p, s->after)
++                fprintf(f, "After=%s\n", *p);
++        STRV_FOREACH(p, s->wants)
++                fprintf(f, "Wants=%s\n", *p);
++        STRV_FOREACH(p, s->conflicts)
++                fprintf(f, "Conflicts=%s\n", *p);
+ 
+         fprintf(f,
+                 "\n[Service]\n"
+diff --git a/test/sysv-generator-test.py b/test/sysv-generator-test.py
+index 2060ad754..25a35da47 100644
+--- a/test/sysv-generator-test.py
++++ b/test/sysv-generator-test.py
+@@ -23,6 +23,7 @@ import subprocess
+ import tempfile
+ import shutil
+ from glob import glob
++import collections
+ 
+ try:
+     from configparser import RawConfigParser
+@@ -32,6 +33,12 @@ except ImportError:
+ 
+ sysv_generator = os.path.join(os.environ.get('builddir', '.'), 'systemd-sysv-generator')
+ 
++class MultiDict(collections.OrderedDict):
++    def __setitem__(self, key, value):
++        if isinstance(value, list) and key in self:
++            self[key].extend(value)
++        else:
++            super(MultiDict, self).__setitem__(key, value)
+ 
+ class SysvGeneratorTest(unittest.TestCase):
+     def setUp(self):
+@@ -77,7 +84,14 @@ class SysvGeneratorTest(unittest.TestCase):
+         for service in glob(self.out_dir + '/*.service'):
+             if os.path.islink(service):
+                 continue
+-            cp = RawConfigParser()
++            try:
++                # for python3 we need here strict=False to parse multiple
++                # lines with the same key
++                cp = RawConfigParser(dict_type=MultiDict, strict=False)
++            except TypeError:
++                # RawConfigParser in python2 does not have the strict option
++                # but it allows multiple lines with the same key by default
++                cp = RawConfigParser(dict_type=MultiDict)
+             cp.optionxform = lambda o: o  # don't lower-case option names
+             with open(service) as f:
+                 cp.readfp(f)
+@@ -215,7 +229,7 @@ class SysvGeneratorTest(unittest.TestCase):
+         s = self.run_generator()[1]['foo.service']
+         self.assertEqual(set(s.options('Unit')),
+                          set(['Documentation', 'SourcePath', 'Description', 'After']))
+-        self.assertEqual(s.get('Unit', 'After'), 'nss-lookup.target rpcbind.target')
++        self.assertEqual(s.get('Unit', 'After').split(), ['nss-lookup.target', 'rpcbind.target'])
+ 
+     def test_lsb_deps(self):
+         '''LSB header dependencies to other services'''

@@ -1,0 +1,113 @@
+From 2047b2d0db643a168144b708cf58091ca47acb21 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Wed, 4 May 2016 10:10:57 -0400
+Subject: [PATCH] shared/install: handle dangling aliases as an explicit case,
+ report nicely
+
+This fixes 'preset-all' with a unit that is a dangling symlink.
+
+$ systemctl --root=/ preset-all
+Unit syslog.service is an alias to a unit that is not present, ignoring.
+Unit auditd.service is masked, ignoring.
+Unit NetworkManager.service is masked, ignoring.
+
+Cherry-picked from: 893275df36c8c358d3c0b851ca255a6169dac138
+Resolves: #1375097
+---
+ src/libsystemd/sd-bus/bus-util.c |  2 ++
+ src/shared/install.c             | 17 +++++++++++++----
+ src/shared/install.h             |  1 +
+ src/systemctl/systemctl.c        |  3 +++
+ 4 files changed, 19 insertions(+), 4 deletions(-)
+
+diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
+index 75d03708e..d35776087 100644
+--- a/src/libsystemd/sd-bus/bus-util.c
++++ b/src/libsystemd/sd-bus/bus-util.c
+@@ -1897,6 +1897,8 @@ int bus_deserialize_and_dump_unit_file_changes(sd_bus_message *m, bool quiet, Un
+                                 log_info("Removed symlink %s.", path);
+                         else if (streq(type, "masked"))
+                                 log_info("Unit %s is masked, ignoring.", path);
++                        else if (streq(type, "dangling"))
++                                log_info("Unit %s is an alias to a unit that is not present, ignoring.", path);
+                         else
+                                 log_notice("Manager reported unknown change type \"%s\" for %s.", type, path);
+                 }
+diff --git a/src/shared/install.c b/src/shared/install.c
+index 62da52d3b..b0a29ddd7 100644
+--- a/src/shared/install.c
++++ b/src/shared/install.c
+@@ -1253,12 +1253,15 @@ static int install_info_traverse(
+                         if (r < 0)
+                                 return r;
+ 
++                        /* Try again, with the new target we found. */
+                         r = unit_file_search(c, i, paths, root_dir, flags);
+-                        if (r < 0)
+-                                return r;
++                        if (r == -ENOENT)
++                                /* Translate error code to highlight this specific case */
++                                return -ENOLINK;
+                 }
+ 
+-                /* Try again, with the new target we found. */
++                if (r < 0)
++                        return r;
+         }
+ 
+         if (ret)
+@@ -1528,7 +1531,9 @@ static int install_context_mark_for_removal(
+                         return r;
+ 
+                 r = install_info_traverse(scope, c, root_dir, paths, i, SEARCH_LOAD|SEARCH_FOLLOW_CONFIG_SYMLINKS, NULL);
+-                if (r < 0)
++                if (r == -ENOLINK)
++                        return 0;
++                else if (r < 0)
+                         return r;
+ 
+                 if (i->type != UNIT_FILE_TYPE_REGULAR)
+@@ -2405,6 +2410,9 @@ int unit_file_preset_all(
+                         if (r == -ESHUTDOWN)
+                                 r = unit_file_changes_add(changes, n_changes,
+                                                           UNIT_FILE_IS_MASKED, de->d_name, NULL);
++                        else if (r == -ENOLINK)
++                                r = unit_file_changes_add(changes, n_changes,
++                                                          UNIT_FILE_IS_DANGLING, de->d_name, NULL);
+                         if (r < 0)
+                                 return r;
+                 }
+@@ -2539,6 +2547,7 @@ static const char* const unit_file_change_type_table[_UNIT_FILE_CHANGE_TYPE_MAX]
+         [UNIT_FILE_SYMLINK] = "symlink",
+         [UNIT_FILE_UNLINK] = "unlink",
+         [UNIT_FILE_IS_MASKED] = "masked",
++        [UNIT_FILE_IS_DANGLING] = "dangling",
+ };
+ 
+ DEFINE_STRING_TABLE_LOOKUP(unit_file_change_type, UnitFileChangeType);
+diff --git a/src/shared/install.h b/src/shared/install.h
+index f0e36661b..7e40445d3 100644
+--- a/src/shared/install.h
++++ b/src/shared/install.h
+@@ -61,6 +61,7 @@ typedef enum UnitFileChangeType {
+         UNIT_FILE_SYMLINK,
+         UNIT_FILE_UNLINK,
+         UNIT_FILE_IS_MASKED,
++        UNIT_FILE_IS_DANGLING,
+         _UNIT_FILE_CHANGE_TYPE_MAX,
+         _UNIT_FILE_CHANGE_TYPE_INVALID = -1
+ } UnitFileChangeType;
+diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
+index a688d6905..39f0150e5 100644
+--- a/src/systemctl/systemctl.c
++++ b/src/systemctl/systemctl.c
+@@ -1955,6 +1955,9 @@ static void dump_unit_file_changes(const UnitFileChange *changes, unsigned n_cha
+                 case UNIT_FILE_IS_MASKED:
+                         log_info("Unit %s is masked, ignoring.", changes[i].path);
+                         break;
++                case UNIT_FILE_IS_DANGLING:
++                        log_info("Unit %s is an alias to a unit that is not present, ignoring.", changes[i].path);
++                        break;
+                 default:
+                         assert_not_reached("bad change type");
+                 }

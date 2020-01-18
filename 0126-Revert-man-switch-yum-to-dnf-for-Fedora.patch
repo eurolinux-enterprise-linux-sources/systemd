@@ -1,0 +1,66 @@
+From 597856130181473bff35f225d87b05c5825b1670 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Wed, 15 Apr 2015 14:04:52 +0200
+Subject: [PATCH] Revert "man: switch yum to dnf for Fedora"
+
+This reverts commit 74a6d87d0cd1f2213869e168b6ca55eded6f4ae8.
+
+Conflicts:
+	man/systemd-nspawn.xml
+---
+ man/custom-html.xsl    | 12 ------------
+ man/systemd-nspawn.xml |  4 +---
+ 2 files changed, 1 insertion(+), 15 deletions(-)
+
+diff --git a/man/custom-html.xsl b/man/custom-html.xsl
+index 706b95a1c..1df824cbb 100644
+--- a/man/custom-html.xsl
++++ b/man/custom-html.xsl
+@@ -60,18 +60,6 @@
+   </a>
+ </xsl:template>
+ 
+-<xsl:template match="citerefentry[@project='mankier']">
+-  <a>
+-    <xsl:attribute name="href">
+-      <xsl:text>https://www.mankier.com/</xsl:text>
+-      <xsl:value-of select="manvolnum"/>
+-      <xsl:text>/</xsl:text>
+-      <xsl:value-of select="refentrytitle"/>
+-    </xsl:attribute>
+-    <xsl:call-template name="inline.charseq"/>
+-  </a>
+-</xsl:template>
+-
+ <xsl:template match="citerefentry[@project='archlinux']">
+   <a>
+     <xsl:attribute name="href">
+diff --git a/man/systemd-nspawn.xml b/man/systemd-nspawn.xml
+index 65b4c2f29..cbd44d4ab 100644
+--- a/man/systemd-nspawn.xml
++++ b/man/systemd-nspawn.xml
+@@ -98,7 +98,6 @@
+     container.</para>
+ 
+     <para>Use a tool like
+-    <citerefentry project='mankier'><refentrytitle>dnf</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+     <citerefentry project='die-net'><refentrytitle>yum</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+     <citerefentry project='die-net'><refentrytitle>debootstrap</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+     or
+@@ -668,7 +667,7 @@
+     <example>
+       <title>Build and boot a minimal Fedora distribution in a container</title>
+ 
+-      <programlisting># dnf -y --releasever=21 --nogpg --installroot=/srv/mycontainer --disablerepo='*' --enablerepo=fedora install systemd passwd dnf fedora-release vim-minimal
++      <programlisting># yum -y --releasever=21 --nogpg --installroot=/srv/mycontainer --disablerepo='*' --enablerepo=fedora install systemd passwd yum fedora-release vim-minimal
+ # systemd-nspawn -bD /srv/mycontainer</programlisting>
+ 
+       <para>This installs a minimal Fedora distribution into the
+@@ -729,7 +728,6 @@
+     <para>
+       <citerefentry><refentrytitle>systemd</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+       <citerefentry project='man-pages'><refentrytitle>chroot</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+-      <citerefentry project='mankier'><refentrytitle>dnf</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+       <citerefentry project='die-net'><refentrytitle>yum</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+       <citerefentry project='die-net'><refentrytitle>debootstrap</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+       <citerefentry project='archlinux'><refentrytitle>pacman</refentrytitle><manvolnum>8</manvolnum></citerefentry>,

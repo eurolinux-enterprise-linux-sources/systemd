@@ -1,0 +1,31 @@
+From 7374770f790080b677f504075ba9659230e11226 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Fri, 11 Sep 2015 16:23:07 +0200
+Subject: [PATCH] sysv-generator: follow symlinks in /etc/rc.d/init.d
+
+Some java packages puts a symlink to init.d and its content is pointing
+to latest java installation (because you can have multiple javas on you
+machine).
+
+On rhel-based distributions you can use alternatives --initscript
+instread of symlink, but this is not usable for other distributions.
+
+Cherry-picked from: 7b729f8686a83b24f3d9a891cde1c
+Resolves: #1285492
+---
+ src/sysv-generator/sysv-generator.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/sysv-generator/sysv-generator.c b/src/sysv-generator/sysv-generator.c
+index 3c6cb8f10..0a8a528bd 100644
+--- a/src/sysv-generator/sysv-generator.c
++++ b/src/sysv-generator/sysv-generator.c
+@@ -753,7 +753,7 @@ static int enumerate_sysv(const LookupPaths *lp, Hashmap *all_services) {
+                         if (hidden_file(de->d_name))
+                                 continue;
+ 
+-                        if (fstatat(dirfd(d), de->d_name, &st, AT_SYMLINK_NOFOLLOW) < 0) {
++                        if (fstatat(dirfd(d), de->d_name, &st, 0) < 0) {
+                                 log_warning_errno(errno, "stat() failed on %s/%s: %m", *path, de->d_name);
+                                 continue;
+                         }

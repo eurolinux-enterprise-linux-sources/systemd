@@ -1,0 +1,34 @@
+From e1d77a906fef76c1c8db2132e1d3a407f913444c Mon Sep 17 00:00:00 2001
+From: Klearchos Chaloulos <klearchos.chaloulos@nokia.com>
+Date: Tue, 9 Feb 2016 12:14:54 +0200
+Subject: [PATCH] journal: Drop monotonicity check when appending to journal
+ file
+
+Remove the check that triggers rotation of the journal file when the
+arriving log entry had a monotonic timestamp smaller that the previous
+log entry. This check causes unnecessary rotations when journal-remote
+was receiving from multiple senders, therefore monotonicity can not be
+guaranteed. Also, it does not offer any useful functionality for
+systemd-journald.
+
+Cherry-picked from: ecb6105a1bd8445a123343827d46bb527bcca92f
+Related: #1318994
+---
+ src/journal/journal-file.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
+index 2a93460d4..8034b771d 100644
+--- a/src/journal/journal-file.c
++++ b/src/journal/journal-file.c
+@@ -1419,10 +1419,6 @@ int journal_file_append_entry(JournalFile *f, const dual_timestamp *ts, const st
+                 ts = &_ts;
+         }
+ 
+-        if (f->tail_entry_monotonic_valid &&
+-            ts->monotonic < le64toh(f->header->tail_entry_monotonic))
+-                return -EINVAL;
+-
+ #ifdef HAVE_GCRYPT
+         r = journal_file_maybe_append_tag(f, ts->realtime);
+         if (r < 0)

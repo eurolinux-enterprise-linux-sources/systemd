@@ -1,0 +1,24 @@
+From a0adbe08c612f1330221c1a8bcad3cb5aedcb71b Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Mon, 5 Sep 2016 12:47:09 +0200
+Subject: [PATCH] unit: don't add Requires for tmp.mount
+
+rhel-only
+Resolves: #1372249
+---
+ src/core/unit.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/core/unit.c b/src/core/unit.c
+index 0e90d130a..a7d6d2f45 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -1155,7 +1155,7 @@ static int unit_add_mount_dependencies(Unit *u) {
+                         if (r < 0)
+                                 return r;
+ 
+-                        if (m->fragment_path) {
++                        if (m->fragment_path && !streq(m->id, "tmp.mount")) {
+                                 r = unit_add_dependency(u, UNIT_REQUIRES, m, true);
+                                 if (r < 0)
+                                         return r;

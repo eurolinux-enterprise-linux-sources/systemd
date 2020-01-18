@@ -1,0 +1,27 @@
+From f44296a5324dc84ff1b2a82bd1dd2d47160762b5 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Mon, 23 May 2016 14:51:12 +0200
+Subject: [PATCH] Teach bus_append_unit_property_assignment() about 'Delegate'
+ property
+
+"Cherry-picked" from ea1a971646d31b990190f473c5c7e3562f36d3c9.
+
+Resolves: #1337922
+---
+ src/libsystemd/sd-bus/bus-util.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
+index 3a918361b..9d70798cd 100644
+--- a/src/libsystemd/sd-bus/bus-util.c
++++ b/src/libsystemd/sd-bus/bus-util.c
+@@ -1388,7 +1388,8 @@ int bus_append_unit_property_assignment(sd_bus_message *m, const char *assignmen
+ 
+         if (STR_IN_SET(field,
+                        "CPUAccounting", "MemoryAccounting", "BlockIOAccounting",
+-                       "SendSIGHUP", "SendSIGKILL", "WakeSystem", "DefaultDependencies")) {
++                       "SendSIGHUP", "SendSIGKILL", "WakeSystem", "DefaultDependencies",
++                       "Delegate")) {
+ 
+                 r = parse_boolean(eq);
+                 if (r < 0) {

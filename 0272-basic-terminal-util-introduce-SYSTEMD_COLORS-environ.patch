@@ -1,0 +1,154 @@
+From 9d67a3a2d4fd378ca04726c5eb5f31ee222c50e4 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Tue, 19 Jan 2016 10:17:19 +0100
+Subject: [PATCH] basic/terminal-util: introduce SYSTEMD_COLORS environment
+ variable
+
+... to determine if color output should be enabled. If the variable is not set,
+fall back to using on_tty(). Also, rewrite existing code to use
+colors_enabled() where appropriate.
+
+Cherry-picked from: 40c9fe4c0862114dab390c8ed16f78cf056b9140
+Resolves: #1247963
+---
+ man/systemd.xml           |  7 +++++++
+ src/journal/journalctl.c  |  2 +-
+ src/login/loginctl.c      |  2 +-
+ src/machine/machinectl.c  |  2 +-
+ src/shared/util.c         | 13 +++++++++++++
+ src/shared/util.h         | 13 +++++++------
+ src/systemctl/systemctl.c |  2 +-
+ 7 files changed, 31 insertions(+), 10 deletions(-)
+
+diff --git a/man/systemd.xml b/man/systemd.xml
+index eb289f03b..30005b1ef 100644
+--- a/man/systemd.xml
++++ b/man/systemd.xml
+@@ -754,6 +754,13 @@
+         script runlevel link farms.</para></listitem>
+       </varlistentry>
+ 
++      <varlistentry>
++        <term><varname>$SYSTEMD_COLORS</varname></term>
++
++        <listitem><para>Controls whether colorized output should be generated.
++        </para></listitem>
++      </varlistentry>
++
+       <varlistentry>
+         <term><varname>$LISTEN_PID</varname></term>
+         <term><varname>$LISTEN_FDS</varname></term>
+diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
+index 8236d0810..7058788ef 100644
+--- a/src/journal/journalctl.c
++++ b/src/journal/journalctl.c
+@@ -2140,7 +2140,7 @@ int main(int argc, char *argv[]) {
+                         flags =
+                                 arg_all * OUTPUT_SHOW_ALL |
+                                 arg_full * OUTPUT_FULL_WIDTH |
+-                                on_tty() * OUTPUT_COLOR |
++                                colors_enabled() * OUTPUT_COLOR |
+                                 arg_catalog * OUTPUT_CATALOG |
+                                 arg_utc * OUTPUT_UTC;
+ 
+diff --git a/src/login/loginctl.c b/src/login/loginctl.c
+index 6c8a59e7c..8e3bfbea8 100644
+--- a/src/login/loginctl.c
++++ b/src/login/loginctl.c
+@@ -83,7 +83,7 @@ static OutputFlags get_output_flags(void) {
+                 arg_all * OUTPUT_SHOW_ALL |
+                 arg_full * OUTPUT_FULL_WIDTH |
+                 (!on_tty() || pager_have()) * OUTPUT_FULL_WIDTH |
+-                on_tty() * OUTPUT_COLOR;
++                colors_enabled() * OUTPUT_COLOR;
+ }
+ 
+ static int list_sessions(int argc, char *argv[], void *userdata) {
+diff --git a/src/machine/machinectl.c b/src/machine/machinectl.c
+index f1910709d..ef1214a66 100644
+--- a/src/machine/machinectl.c
++++ b/src/machine/machinectl.c
+@@ -105,7 +105,7 @@ static OutputFlags get_output_flags(void) {
+                 arg_all * OUTPUT_SHOW_ALL |
+                 arg_full * OUTPUT_FULL_WIDTH |
+                 (!on_tty() || pager_have()) * OUTPUT_FULL_WIDTH |
+-                on_tty() * OUTPUT_COLOR |
++                colors_enabled() * OUTPUT_COLOR |
+                 !arg_quiet * OUTPUT_WARN_CUTOFF;
+ }
+ 
+diff --git a/src/shared/util.c b/src/shared/util.c
+index 50925888d..dc5185269 100644
+--- a/src/shared/util.c
++++ b/src/shared/util.c
+@@ -8146,3 +8146,16 @@ char *shell_maybe_quote(const char *s) {
+ 
+         return r;
+ }
++
++bool colors_enabled(void) {
++        const char *colors;
++
++        colors = getenv("SYSTEMD_COLORS");
++        if (!colors) {
++                if (streq_ptr(getenv("TERM"), "dumb"))
++                        return false;
++                return on_tty();
++        }
++
++        return parse_boolean(colors) != 0;
++}
+diff --git a/src/shared/util.h b/src/shared/util.h
+index 7ecfd8571..b4a4a491f 100644
+--- a/src/shared/util.h
++++ b/src/shared/util.h
+@@ -485,29 +485,30 @@ unsigned lines(void);
+ void columns_lines_cache_reset(int _unused_ signum);
+ 
+ bool on_tty(void);
++bool colors_enabled(void);
+ 
+ static inline const char *ansi_highlight(void) {
+-        return on_tty() ? ANSI_HIGHLIGHT_ON : "";
++        return colors_enabled() ? ANSI_HIGHLIGHT_ON : "";
+ }
+ 
+ static inline const char *ansi_highlight_red(void) {
+-        return on_tty() ? ANSI_HIGHLIGHT_RED_ON : "";
++        return colors_enabled() ? ANSI_HIGHLIGHT_RED_ON : "";
+ }
+ 
+ static inline const char *ansi_highlight_green(void) {
+-        return on_tty() ? ANSI_HIGHLIGHT_GREEN_ON : "";
++        return colors_enabled() ? ANSI_HIGHLIGHT_GREEN_ON : "";
+ }
+ 
+ static inline const char *ansi_highlight_yellow(void) {
+-        return on_tty() ? ANSI_HIGHLIGHT_YELLOW_ON : "";
++        return colors_enabled() ? ANSI_HIGHLIGHT_YELLOW_ON : "";
+ }
+ 
+ static inline const char *ansi_highlight_blue(void) {
+-        return on_tty() ? ANSI_HIGHLIGHT_BLUE_ON : "";
++        return colors_enabled() ? ANSI_HIGHLIGHT_BLUE_ON : "";
+ }
+ 
+ static inline const char *ansi_highlight_off(void) {
+-        return on_tty() ? ANSI_HIGHLIGHT_OFF : "";
++        return colors_enabled() ? ANSI_HIGHLIGHT_OFF : "";
+ }
+ 
+ int files_same(const char *filea, const char *fileb);
+diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
+index 89d0b3b39..5d3a85fd9 100644
+--- a/src/systemctl/systemctl.c
++++ b/src/systemctl/systemctl.c
+@@ -197,7 +197,7 @@ static OutputFlags get_output_flags(void) {
+                 arg_all * OUTPUT_SHOW_ALL |
+                 arg_full * OUTPUT_FULL_WIDTH |
+                 (!on_tty() || pager_have()) * OUTPUT_FULL_WIDTH |
+-                on_tty() * OUTPUT_COLOR |
++                colors_enabled() * OUTPUT_COLOR |
+                 !arg_quiet * OUTPUT_WARN_CUTOFF;
+ }
+ 

@@ -1,0 +1,34 @@
+From b2aa96a5e92762adaff127227338fe5034175fcd Mon Sep 17 00:00:00 2001
+From: Jan Engelhardt <jengelh@inai.de>
+Date: Wed, 24 Jun 2015 01:48:18 +0200
+Subject: [PATCH] ata_id: unbotch format specifier
+
+Commit v218-247-g11c6f69 broke the output of the utility. "%1$" PRIu64
+"x" expands to "%1$lux", essentially "%lux", which shows the problem.
+u and x cannot be combined, u wins as the type character, and x gets
+emitted verbatim to stdout.
+
+References: https://bugzilla.redhat.com/show_bug.cgi?id=1227503
+(cherry picked from commit ec62e858734a66130f68d036c55c2050bde1e52e)
+
+Cherry-picked from: ec62e85
+Resolves: #1222517
+---
+ src/udev/ata_id/ata_id.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/udev/ata_id/ata_id.c b/src/udev/ata_id/ata_id.c
+index 9e4f674a9..b6f28c6f5 100644
+--- a/src/udev/ata_id/ata_id.c
++++ b/src/udev/ata_id/ata_id.c
+@@ -639,8 +639,8 @@ int main(int argc, char *argv[])
+                  */
+                 word = identify.wyde[108];
+                 if ((word & 0xf000) == 0x5000)
+-                        printf("ID_WWN=0x%1$"PRIu64"x\n"
+-                               "ID_WWN_WITH_EXTENSION=0x%1$"PRIu64"x\n",
++                        printf("ID_WWN=0x%1$" PRIx64 "\n"
++                               "ID_WWN_WITH_EXTENSION=0x%1$" PRIx64 "\n",
+                                identify.octa[108/4]);
+ 
+                 /* from Linux's include/linux/ata.h */

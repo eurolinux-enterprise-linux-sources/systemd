@@ -1,0 +1,26 @@
+From 44eb30c33deb46f92d2c67e78a5fb7aa6b21d145 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Thu, 28 Apr 2016 16:04:52 +0200
+Subject: [PATCH] tests: fix make check failure
+
+Don't call abort() on success. Actually rm_rf_dangerous() returns 0 if
+all went well.
+
+Related: #1159308
+---
+ src/test/test-install-root.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/test/test-install-root.c b/src/test/test-install-root.c
+index 89d91d3d6..667c3748c 100644
+--- a/src/test/test-install-root.c
++++ b/src/test/test-install-root.c
+@@ -657,7 +657,7 @@ int main(int argc, char *argv[]) {
+         test_indirect(root);
+         test_preset_and_list(root);
+ 
+-        assert_se(rm_rf_dangerous(root, false, true, false));
++        assert_se(rm_rf_dangerous(root, false, true, false) == 0);
+ 
+         return 0;
+ }

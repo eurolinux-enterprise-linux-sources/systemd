@@ -1,0 +1,33 @@
+From f77d58374ccd2e3d9c886e59020f1b32e97f2bdc Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekletar@users.noreply.github.com>
+Date: Mon, 29 Aug 2016 14:49:20 +0200
+Subject: [PATCH] units: remove udev control socket when systemd stops the
+ socket unit (#49)
+
+Mere presence of the socket in the filesystem makes
+udev_queue_get_udev_is_active() return that udev is running. Note that,
+udev on exit doesn't unlink control socket nor does systemd. Thus socket
+stays around even when both daemon and socket are stopped. This causes
+problems for cryptsetup because when it detects running udev it launches
+synchronous operations that *really* require udev. This in turn may
+cause blocking and subsequent timeout in systemd-cryptsetup on reboot
+while machine is in a state that udev and its control socket units are
+stopped, e.g. emergency mode.
+
+Fixes #2477
+
+Cherry-picked from: a2de10775194edec51b1e88d20a380724a3dc716
+Resolves: #1370133
+---
+ units/systemd-udevd-control.socket | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/units/systemd-udevd-control.socket b/units/systemd-udevd-control.socket
+index 8330a1c03..46f704ed7 100644
+--- a/units/systemd-udevd-control.socket
++++ b/units/systemd-udevd-control.socket
+@@ -17,3 +17,4 @@ Service=systemd-udevd.service
+ ListenSequentialPacket=/run/udev/control
+ SocketMode=0600
+ PassCredentials=yes
++RemoveOnStop=yes

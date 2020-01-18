@@ -1,0 +1,81 @@
+From 3bcdd03212c6f0a849a4fbdf3cc7cb99fb7327cb Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekletar@users.noreply.github.com>
+Date: Fri, 25 Aug 2017 15:36:10 +0200
+Subject: [PATCH] service: attempt to execute next main command only for
+ oneshot services (#6619)
+
+This commit fixes crash described in
+https://github.com/systemd/systemd/issues/6533
+
+Multiple ExecStart lines are allowed only for oneshot services
+anyway so it doesn't make sense to call service_run_next_main() with
+services of type other than SERVICE_ONESHOT.
+
+Referring back to reproducer from the issue, previously we didn't observe
+this problem because s->main_command was reset after daemon-reload hence
+we never reached the assert statement in service_run_next_main().
+
+Fixes #6533
+
+(cherry picked from commit b58aeb70dbd1cab5908b003ef5187da1fc241839)
+
+Related: #1404657, #1471230
+---
+ src/core/service.c                |  1 +
+ test/test-exec-deserialization.py | 31 +++++++++++++++++++++++++++++++
+ 2 files changed, 32 insertions(+)
+
+diff --git a/src/core/service.c b/src/core/service.c
+index 9ad3a0eb0..ceed1cc2e 100644
+--- a/src/core/service.c
++++ b/src/core/service.c
+@@ -2612,6 +2612,7 @@ static void service_sigchld_event(Unit *u, pid_t pid, int code, int status) {
+ 
+                 if (s->main_command &&
+                     s->main_command->command_next &&
++                    s->type == SERVICE_ONESHOT &&
+                     f == SERVICE_SUCCESS) {
+ 
+                         /* There is another command to *
+diff --git a/test/test-exec-deserialization.py b/test/test-exec-deserialization.py
+index 859778a7a..61623da99 100755
+--- a/test/test-exec-deserialization.py
++++ b/test/test-exec-deserialization.py
+@@ -178,6 +178,37 @@ class ExecutionResumeTest(unittest.TestCase):
+ 
+         self.assertTrue(not os.path.exists(self.output_file))
+ 
++    def test_issue_6533(self):
++        unit = "test-issue-6533.service"
++        unitfile_path = "/run/systemd/system/{}".format(unit)
++
++        content = '''
++        [Service]
++        ExecStart=/bin/sleep 5
++        '''
++
++        with open(unitfile_path, 'w') as f:
++            f.write(content)
++
++        self.reload()
++
++        subprocess.check_call(['systemctl', '--job-mode=replace', '--no-block', 'start', unit])
++        time.sleep(2)
++
++        content = '''
++        [Service]
++        ExecStart=/bin/sleep 5
++        ExecStart=/bin/true
++        '''
++
++        with open(unitfile_path, 'w') as f:
++            f.write(content)
++
++        self.reload()
++        time.sleep(5)
++
++        self.assertTrue(subprocess.call("journalctl -b _PID=1  | grep -q 'Freezing execution'", shell=True) != 0)
++
+     def tearDown(self):
+         for f in [self.output_file, self.unitfile_path]:
+             try:

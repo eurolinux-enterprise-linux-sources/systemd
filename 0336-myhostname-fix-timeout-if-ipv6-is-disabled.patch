@@ -1,0 +1,61 @@
+From 6e5117b83af5998359916f276a9b32f755c0e6f4 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Fri, 20 May 2016 12:33:48 +0200
+Subject: [PATCH] myhostname: fix timeout if ipv6 is disabled
+
+rhel-only
+Resolves: #1330973
+---
+ src/nss-myhostname/nss-myhostname.c |  9 +++++++--
+ src/shared/socket-util.c            | 10 ++++++++++
+ 2 files changed, 17 insertions(+), 2 deletions(-)
+
+diff --git a/src/nss-myhostname/nss-myhostname.c b/src/nss-myhostname/nss-myhostname.c
+index a939bb267..e197cc752 100644
+--- a/src/nss-myhostname/nss-myhostname.c
++++ b/src/nss-myhostname/nss-myhostname.c
+@@ -33,6 +33,7 @@
+ #include "local-addresses.h"
+ #include "macro.h"
+ #include "nss-util.h"
++#include "socket-util.h"
+ #include "util.h"
+ 
+ /* We use 127.0.0.2 as IPv4 address. This has the advantage over
+@@ -380,9 +381,13 @@ enum nss_status _nss_myhostname_gethostbyname3_r(
+                         return NSS_STATUS_NOTFOUND;
+                 }
+ 
+-                n_addresses = local_addresses(NULL, 0, af, &addresses);
+-                if (n_addresses < 0)
++                if (af == AF_INET6 && !socket_ipv6_is_supported()) {
+                         n_addresses = 0;
++                } else {
++                        n_addresses = local_addresses(NULL, 0, af, &addresses);
++                        if (n_addresses < 0)
++                                n_addresses = 0;
++                }
+ 
+                 canonical = hn;
+                 additional = n_addresses <= 0 && af == AF_INET6 ? "localhost" : NULL;
+diff --git a/src/shared/socket-util.c b/src/shared/socket-util.c
+index a21251014..79d1582d4 100644
+--- a/src/shared/socket-util.c
++++ b/src/shared/socket-util.c
+@@ -435,6 +435,16 @@ bool socket_ipv6_is_supported(void) {
+                 return true;
+ 
+         /* If module was loaded with disable=1 no IPv6 available */
++        if (l[0] == '1')
++                return false;
++
++        free(l);
++        l = NULL;
++
++        if (read_one_line_file("/proc/sys/net/ipv6/conf/all/disable_ipv6", &l) < 0)
++                return true;
++
++        /* If IPv6 was disabled via sysctl during runtime */
+         return l[0] == '0';
+ }
+ 

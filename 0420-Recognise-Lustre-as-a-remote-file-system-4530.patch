@@ -1,0 +1,30 @@
+From f1cb9320c6aca21b17c9a120eb70a788df8ac6d5 Mon Sep 17 00:00:00 2001
+From: "Brian J. Murrell" <brian@interlinx.bc.ca>
+Date: Mon, 31 Oct 2016 23:48:00 -0400
+Subject: [PATCH] Recognise Lustre as a remote file system (#4530)
+
+Lustre is also a remote file system that wants the network to be up before it is mounted.
+
+Cherry-picked from: 67ae43665e7e03becba197e98df5b3ce40269567
+Resolves: #1390542
+---
+ src/shared/util.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/shared/util.c b/src/shared/util.c
+index eab5ab816..66729f70e 100644
+--- a/src/shared/util.c
++++ b/src/shared/util.c
+@@ -1924,7 +1924,11 @@ bool fstype_is_network(const char *fstype) {
+                 "nfs4\0"
+                 "gfs\0"
+                 "gfs2\0"
+-                "glusterfs\0";
++                "glusterfs\0"
++                "pvfs2\0" /* OrangeFS */
++                "ocfs2\0"
++                "lustre\0"
++                ;
+ 
+         const char *x;
+ 

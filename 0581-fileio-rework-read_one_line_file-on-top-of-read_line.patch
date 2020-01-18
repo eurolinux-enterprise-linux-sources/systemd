@@ -1,0 +1,55 @@
+From aab6aeb2529a1e9b51eeadf91decd06e03af5da1 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Thu, 23 Nov 2017 09:23:34 +0100
+Subject: [PATCH] fileio: rework read_one_line_file() on top of read_line()
+
+(cherry picked from commit f4b51a2d092685c9a080e84130fec2d74c834f5c)
+
+Resolves: #1503106
+---
+ src/shared/fileio.c | 18 ++----------------
+ 1 file changed, 2 insertions(+), 16 deletions(-)
+
+diff --git a/src/shared/fileio.c b/src/shared/fileio.c
+index 107737573..be775f982 100644
+--- a/src/shared/fileio.c
++++ b/src/shared/fileio.c
+@@ -25,6 +25,7 @@
+ #include "strv.h"
+ #include "utf8.h"
+ #include "ctype.h"
++#include "def.h"
+ #include "fileio.h"
+ 
+ int write_string_stream(FILE *f, const char *line) {
+@@ -108,7 +109,6 @@ int write_string_file_atomic(const char *fn, const char *line) {
+ 
+ int read_one_line_file(const char *fn, char **line) {
+         _cleanup_fclose_ FILE *f = NULL;
+-        char t[LINE_MAX], *c;
+ 
+         assert(fn);
+         assert(line);
+@@ -117,21 +117,7 @@ int read_one_line_file(const char *fn, char **line) {
+         if (!f)
+                 return -errno;
+ 
+-        if (!fgets(t, sizeof(t), f)) {
+-
+-                if (ferror(f))
+-                        return errno ? -errno : -EIO;
+-
+-                t[0] = 0;
+-        }
+-
+-        c = strdup(t);
+-        if (!c)
+-                return -ENOMEM;
+-        truncate_nl(c);
+-
+-        *line = c;
+-        return 0;
++        return read_line(f, LONG_LINE_MAX, line);
+ }
+ 
+ int read_full_stream(FILE *f, char **contents, size_t *size) {

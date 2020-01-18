@@ -1,0 +1,27 @@
+From fb7acf90df3d675261b18f8e7c2de315dadee756 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Wed, 3 Feb 2016 11:22:52 +0100
+Subject: [PATCH] journalctl: add match for the current boot when called with
+ devpath
+
+Cherry-picked from: 485fd9a7b9d59b9f2302a873f7ee5ccac256dd93
+Related: #947636
+---
+ src/journal/journalctl.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
+index 3db1cd24e..6948ed689 100644
+--- a/src/journal/journalctl.c
++++ b/src/journal/journalctl.c
+@@ -207,6 +207,10 @@ static int add_matches_for_device(sd_journal *j, const char *devpath) {
+                 d = udev_device_get_parent(d);
+         }
+ 
++        r = add_match_this_boot(j, arg_machine);
++        if (r < 0)
++                return log_error_errno(r, "Failed to add match for the current boot: %m");
++
+         return 0;
+ }
+ 

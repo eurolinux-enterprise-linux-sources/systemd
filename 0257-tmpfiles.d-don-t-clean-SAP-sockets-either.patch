@@ -1,0 +1,29 @@
+From 9f9161e827ad6d90f2578eb0483ecafbe5ac59c7 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Mon, 12 Oct 2015 14:18:04 +0200
+Subject: [PATCH] tmpfiles.d: don't clean SAP sockets either
+
+rhel-only
+
+Resolves: #1186044
+---
+ tmpfiles.d/sap.conf | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/tmpfiles.d/sap.conf b/tmpfiles.d/sap.conf
+index 01ace42c4..1cdca5263 100644
+--- a/tmpfiles.d/sap.conf
++++ b/tmpfiles.d/sap.conf
+@@ -1,3 +1,9 @@
+-# Let's not touch SAP files
+-x /tmp/.hdb_*_lock
+-x /tmp/.sapstartsrv*.log
++# systemd tmpfiles exclude file for SAP
++# SAP software unfortunately stores some important files
++# in /tmp which should not be deleted
++
++# Exclude SAP socket and lock files
++x /tmp/.sap*
++
++# Exclude HANA lock file
++x /tmp/.hdb*lock

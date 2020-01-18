@@ -1,0 +1,29 @@
+From c11c73fc4541bf0ea5a418ebea53e58668100f82 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Tue, 3 Mar 2015 10:36:47 -0500
+Subject: [PATCH] Do not run sysv-generator-test when sysv compat is disabled
+
+(cherry picked from commit dcf1369057231fbf09e37b5a48483763b4ae6e19)
+---
+ Makefile.am | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/Makefile.am b/Makefile.am
+index 2e6455f6e..4933f76bd 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -3789,9 +3789,14 @@ TESTS += \
+ if HAVE_PYTHON
+ TESTS += \
+ 	test/rule-syntax-check.py \
++	$(NULL)
++
++if HAVE_SYSV_COMPAT
++TESTS += \
+ 	test/sysv-generator-test.py \
+ 	$(NULL)
+ endif
++endif
+ 
+ manual_tests += \
+ 	test-libudev \

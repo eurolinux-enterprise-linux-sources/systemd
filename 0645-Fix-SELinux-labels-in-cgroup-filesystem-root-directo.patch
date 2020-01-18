@@ -1,0 +1,52 @@
+From c043ae5b2ef2e1e437bf738bbf522799c6213230 Mon Sep 17 00:00:00 2001
+From: Krzysztof Nowicki <krzysztof.a.nowicki+github@gmail.com>
+Date: Thu, 30 Nov 2017 11:59:29 +0100
+Subject: [PATCH] Fix SELinux labels in cgroup filesystem root directory
+ (#7496)
+
+When using SELinux with legacy cgroups the tmpfs on /sys/fs/cgroup is by
+default labelled as tmpfs_t. This label is also inherited by the "cpu"
+and "cpuacct" symbolic links. Unfortunately the policy expects them to
+be labelled as cgroup_t, which is used for all the actual cgroup
+filesystems. Failure to do so results in a stream of denials.
+
+This state cannot be fixed reliably when the cgroup filesystem structure
+is set-up as the SELinux policy is not yet loaded at this
+moment. It also cannot be fixed later as the root of the cgroup
+filesystem is remounted read-only. In order to fix it the root of the
+cgroup filesystem needs to be temporary remounted read-write, relabelled
+and remounted back read-only.
+
+(cherry picked from commit 8739f23e3c26bbf8b0296421578e56daa63cbf4b)
+---
+ src/core/mount-setup.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/src/core/mount-setup.c b/src/core/mount-setup.c
+index 521545e5c..7a2cae4a3 100644
+--- a/src/core/mount-setup.c
++++ b/src/core/mount-setup.c
+@@ -363,14 +363,22 @@ int mount_setup(bool loaded_policy) {
+                 usec_t before_relabel, after_relabel;
+                 char timespan[FORMAT_TIMESPAN_MAX];
+ 
++                mkdir_label("/run/systemd/policy-relabelling", 0755);
+                 before_relabel = now(CLOCK_MONOTONIC);
+ 
+                 nftw("/dev", nftw_cb, 64, FTW_MOUNT|FTW_PHYS|FTW_ACTIONRETVAL);
+                 nftw("/run", nftw_cb, 64, FTW_MOUNT|FTW_PHYS|FTW_ACTIONRETVAL);
+ 
++                /* Temporarily remount the root cgroup filesystem to give it a proper label. */
++                (void) mount(NULL, "/sys/fs/cgroup", NULL, MS_REMOUNT, NULL);
++                label_fix("/sys/fs/cgroup", false, false);
++                nftw("/sys/fs/cgroup", nftw_cb, 64, FTW_MOUNT|FTW_PHYS|FTW_ACTIONRETVAL);
++                (void) mount(NULL, "/sys/fs/cgroup", NULL, MS_REMOUNT|MS_RDONLY, NULL);
++
+                 after_relabel = now(CLOCK_MONOTONIC);
+ 
+-                log_info("Relabelled /dev and /run in %s.",
++                mkdir_label("/run/systemd/policy-relabelled", 0755);
++                log_info("Relabelled /dev, /run and /sys/fs/cgroup in %s.",
+                          format_timespan(timespan, sizeof(timespan), after_relabel - before_relabel, 0));
+         }
+ #endif

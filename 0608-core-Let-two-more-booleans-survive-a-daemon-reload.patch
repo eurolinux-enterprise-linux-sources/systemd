@@ -1,0 +1,76 @@
+From ab0cdf76c184cbe7f8376e0a2c8d7a60d10ca9b3 Mon Sep 17 00:00:00 2001
+From: Werner Fink <werner@suse.de>
+Date: Wed, 10 Jun 2015 14:36:50 +0200
+Subject: [PATCH] core: Let two more booleans survive a daemon-reload
+
+Without the boolean bus_name_good services as well as cgroup_realized
+for units a unit of Type=dbus and ExecReload sending SIGHUP to $MAINPID
+will be terminated if systemd will be daemon reloaded.
+
+https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=746151
+https://bugs.freedesktop.org/show_bug.cgi?id=78311
+https://bugzilla.opensuse.org/show_bug.cgi?id=934077
+
+Cherry-picked from: de1d4f9b5c6345f63edd46f643485eca909995bf
+Resolves: #1542391
+---
+ src/core/service.c |  9 +++++++++
+ src/core/unit.c    | 11 +++++++++++
+ 2 files changed, 20 insertions(+)
+
+diff --git a/src/core/service.c b/src/core/service.c
+index ceed1cc2e..71ec5e37c 100644
+--- a/src/core/service.c
++++ b/src/core/service.c
+@@ -2044,6 +2044,7 @@ static int service_serialize(Unit *u, FILE *f, FDSet *fds) {
+                 unit_serialize_item_format(u, f, "main-pid", PID_FMT, s->main_pid);
+ 
+         unit_serialize_item(u, f, "main-pid-known", yes_no(s->main_pid_known));
++        unit_serialize_item(u, f, "bus-name-good", yes_no(s->bus_name_good));
+ 
+         if (s->status_text)
+                 unit_serialize_item(u, f, "status-text", s->status_text);
+@@ -2264,6 +2265,14 @@ static int service_deserialize_item(Unit *u, const char *key, const char *value,
+                         log_unit_debug(u->id, "Failed to parse main-pid-known value %s", value);
+                 else
+                         s->main_pid_known = b;
++        } else if (streq(key, "bus-name-good")) {
++                int b;
++
++                b = parse_boolean(value);
++                if (b < 0)
++                        log_unit_debug(u->id, "Failed to parse bus-name-good value: %s", value);
++                else
++                        s->bus_name_good = b;
+         } else if (streq(key, "status-text")) {
+                 char *t;
+ 
+diff --git a/src/core/unit.c b/src/core/unit.c
+index 8c0fde878..41d7b63d7 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -2619,6 +2619,7 @@ int unit_serialize(Unit *u, FILE *f, FDSet *fds, bool serialize_jobs) {
+ 
+         if (u->cgroup_path)
+                 unit_serialize_item(u, f, "cgroup", u->cgroup_path);
++        unit_serialize_item(u, f, "cgroup-realized", yes_no(u->cgroup_realized));
+ 
+         if (serialize_jobs) {
+                 if (u->job) {
+@@ -2809,6 +2810,16 @@ int unit_deserialize(Unit *u, FILE *f, FDSet *fds) {
+                         u->cgroup_path = s;
+                         assert(hashmap_put(u->manager->cgroup_unit, s, u) == 1);
+ 
++                        continue;
++                } else if (streq(l, "cgroup-realized")) {
++                        int b;
++
++                        b = parse_boolean(v);
++                        if (b < 0)
++                                log_unit_debug(u->id, "Failed to parse cgroup-realized bool %s, ignoring.", v);
++                        else
++                                u->cgroup_realized = b;
++
+                         continue;
+                 }
+ 

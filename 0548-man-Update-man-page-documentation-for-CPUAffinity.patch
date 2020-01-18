@@ -1,0 +1,51 @@
+From 99afbf6e7fac9f33f0f96c0397c413ba360607a2 Mon Sep 17 00:00:00 2001
+From: Filipe Brandenburger <filbranden@google.com>
+Date: Tue, 13 Oct 2015 00:12:39 -0700
+Subject: [PATCH] man: Update man page documentation for CPUAffinity
+
+Document support for commas as a separator and possibility of specifying
+ranges of CPU indices.
+
+Tested by regenerating the manpages locally and reading them on man.
+
+(cherry picked from commit 71b1c27a406271b71f64487ae70b58f44a4a37f0)
+Resolves: #1493976
+---
+ man/systemd-system.conf.xml | 6 ++++--
+ man/systemd.exec.xml        | 6 ++++--
+ 2 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/man/systemd-system.conf.xml b/man/systemd-system.conf.xml
+index 53e8ff665..1861bb03f 100644
+--- a/man/systemd-system.conf.xml
++++ b/man/systemd-system.conf.xml
+@@ -117,8 +117,10 @@
+         <term><varname>CPUAffinity=</varname></term>
+ 
+         <listitem><para>Configures the initial CPU affinity for the
+-        init process. Takes a space-separated list of CPU
+-        indices.</para></listitem>
++        init process. Takes a list of CPU indices or ranges separated
++        by either whitespace or commas. CPU ranges are specified by
++        the lower and upper CPU indices separated by a
++        dash.</para></listitem>
+       </varlistentry>
+ 
+       <varlistentry>
+diff --git a/man/systemd.exec.xml b/man/systemd.exec.xml
+index 508146f06..d7503b8e8 100644
+--- a/man/systemd.exec.xml
++++ b/man/systemd.exec.xml
+@@ -211,8 +211,10 @@
+         <term><varname>CPUAffinity=</varname></term>
+ 
+         <listitem><para>Controls the CPU affinity of the executed
+-        processes. Takes a space-separated list of CPU indices. This
+-        option may be specified more than once in which case the
++        processes. Takes a list of CPU indices or ranges separated by
++        either whitespace or commas. CPU ranges are specified by the
++        lower and upper CPU indices separated by a dash.
++        This option may be specified more than once in which case the
+         specified CPU affinity masks are merged. If the empty string
+         is assigned, the mask is reset, all assignments prior to this
+         will have no effect. See

@@ -1,0 +1,45 @@
+From c6b00287b8847c550ab75947f52e37282632a2f3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Sat, 2 May 2015 12:01:28 -0500
+Subject: [PATCH] fstab-generator: fix memleak
+
+filtered was used to store an allocated string twice. The first allocation was
+thus lost. The string is not needed for anything, so simply skip the allocation.
+
+Fixup for deb0a77cf0b409141c4.
+
+(cherry picked from commit 336b5c615e9c101476784b32df1b86aaeac96431)
+Related: #1354410
+---
+ src/fstab-generator/fstab-generator.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/fstab-generator/fstab-generator.c b/src/fstab-generator/fstab-generator.c
+index a943393b0..32aca2244 100644
+--- a/src/fstab-generator/fstab-generator.c
++++ b/src/fstab-generator/fstab-generator.c
+@@ -214,13 +214,13 @@ static int write_requires_mounts_for(FILE *f, const char *opts) {
+         return 0;
+ }
+ 
+-static int write_idle_timeout(FILE *f, const char *where, const char *opts, char **filtered) {
++static int write_idle_timeout(FILE *f, const char *where, const char *opts) {
+         _cleanup_free_ char *timeout = NULL;
+         char timespan[FORMAT_TIMESPAN_MAX];
+         usec_t u;
+         int r;
+ 
+-        r = fstab_filter_options(opts, "x-systemd.idle-timeout\0", NULL, &timeout, filtered);
++        r = fstab_filter_options(opts, "x-systemd.idle-timeout\0", NULL, &timeout, NULL);
+         if (r < 0)
+                 return log_warning_errno(r, "Failed to parse options: %m");
+         if (r == 0)
+@@ -398,7 +398,7 @@ static int add_mount(
+                         "Where=%s\n",
+                         where);
+ 
+-                r = write_idle_timeout(f, where, opts, &filtered);
++                r = write_idle_timeout(f, where, opts);
+                 if (r < 0)
+                         return r;
+ 

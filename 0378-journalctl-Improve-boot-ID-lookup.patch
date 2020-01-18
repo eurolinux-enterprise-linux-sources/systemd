@@ -1,0 +1,55 @@
+From a6db5931947acb807b37cac9c832d68cd66fbc2a Mon Sep 17 00:00:00 2001
+From: Jan Janssen <medhefgo@web.de>
+Date: Fri, 1 May 2015 15:15:16 +0200
+Subject: [PATCH] journalctl: Improve boot ID lookup
+
+This method should greatly improve offset based lookup, by simply jumping
+from one boot to the next boot. It starts at the journal head to get the
+a boot ID, makes a _BOOT_ID match and then comes from the opposite
+journal direction (tail) to get to the end that boot. After flushing the matches
+and advancing the journal from that exact position, we arrive at the start
+of next boot. Rinse and repeat.
+
+This is faster than the old method of aggregating the full boot listing just
+so we can jump to a specific boot, which can be a real pain on big journals
+just for a mere "-b -1" case.
+
+As an additional benefit --list-boots should improve slightly too, because
+it does less seeking.
+
+Note that there can be a change in boot order with this lookup method
+because it will use the order of boots in the journal, not the realtime stamp
+stored in them. That's arguably better, though.
+Another deficiency is that it will get confused with boots interleaving in the
+journal, therefore, it will refuse operation in --merge, --file and --directory mode.
+
+https://bugs.freedesktop.org/show_bug.cgi?id=72601
+
+Conflicts:
+	src/journal/journalctl.c
+
+Cherry-picked from: 596a23293d28f93843aef86721b90043e74d3081
+Related: #1318994
+---
+ src/journal/journalctl.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
+index f60e6415f..c7a19f236 100644
+--- a/src/journal/journalctl.c
++++ b/src/journal/journalctl.c
+@@ -1166,11 +1166,10 @@ static int add_boot(sd_journal *j) {
+                 const char *reason = (r == 0) ? "No such boot ID in journal" : strerror(-r);
+ 
+                 if (sd_id128_is_null(arg_boot_id))
+-                        log_error("Data from the specified boot (%+i) is not available: %s",
+-                                  arg_boot_offset, reason);
++                        log_error("Failed to look up boot %+i: %s", arg_boot_offset, reason);
+                 else
+-                        log_error("Data from the specified boot ("SD_ID128_FORMAT_STR") is not available: %s",
+-                                  SD_ID128_FORMAT_VAL(arg_boot_id), reason);
++                        log_error("Failed to look up boot ID "SD_ID128_FORMAT_STR"%+i: %s",
++                                  SD_ID128_FORMAT_VAL(arg_boot_id), arg_boot_offset, reason);
+ 
+                 return r == 0 ? -ENODATA : r;
+         }

@@ -1,0 +1,26 @@
+From 3eb63550d4222d9edd6ed2d257b8b03eff65fd24 Mon Sep 17 00:00:00 2001
+From: Michael Marineau <michael.marineau@coreos.com>
+Date: Wed, 1 Jul 2015 23:46:42 -0700
+Subject: [PATCH] escape: fix exit code
+
+r == 0 indicates success, not failure
+
+(cherry picked from commit ff9c82cc399c37dd3d3fad4ec116b33c9efe70ea)
+
+Cherry-picked from: ff9c82c
+Resolves: #1222517
+---
+ src/escape/escape.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/escape/escape.c b/src/escape/escape.c
+index f2a072186..766a2c2c6 100644
+--- a/src/escape/escape.c
++++ b/src/escape/escape.c
+@@ -232,5 +232,5 @@ int main(int argc, char *argv[]) {
+         fputc('\n', stdout);
+ 
+ finish:
+-        return r <= 0 ? EXIT_FAILURE : EXIT_SUCCESS;
++        return r < 0 ? EXIT_FAILURE : EXIT_SUCCESS;
+ }

@@ -1,0 +1,30 @@
+From 1649dac4656e8056e5fe5fa99e5753257efe1a42 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Luk=C3=A1=C5=A1=20Nykr=C3=BDn?= <lnykryn@redhat.com>
+Date: Thu, 30 Mar 2017 11:12:50 +0200
+Subject: [PATCH] sysv-generator: Provides: $network should also pull
+ network.target to transaction (#5652)
+
+network.target should be pulled in to the transaction
+by the unit that provides network services, but currently
+for initscripts it only pulls in network-online.target.
+
+Cherry-picked from: bd9ad4ff5bf2252f46ccf0cb91b3ed16def1c1a4
+Resolves: #1438749
+---
+ src/sysv-generator/sysv-generator.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/sysv-generator/sysv-generator.c b/src/sysv-generator/sysv-generator.c
+index 7e0e7fc28..fe6fae151 100644
+--- a/src/sysv-generator/sysv-generator.c
++++ b/src/sysv-generator/sysv-generator.c
+@@ -500,6 +500,9 @@ static int load_sysv(SysvStub *s) {
+                                                         r = strv_extend(&s->before, SPECIAL_NETWORK_TARGET);
+                                                         if (r < 0)
+                                                                 return log_oom();
++                                                        r = strv_extend(&s->wants, SPECIAL_NETWORK_TARGET);
++                                                        if (r < 0)
++                                                                return log_oom();
+                                                 }
+                                         }
+ 

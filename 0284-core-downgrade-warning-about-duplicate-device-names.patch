@@ -1,0 +1,26 @@
+From ad2cedec3cf3e6ddefd70d9f3dece3ca837676cf Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Thu, 23 Apr 2015 13:50:01 +0200
+Subject: [PATCH] core: downgrade warning about duplicate device names
+
+http://lists.freedesktop.org/archives/systemd-devel/2015-April/031094.html
+
+Cherry-picked from: 5259bcf6a638d8d489db1ddefd55327aa15f3e51
+Resolves: #1296249
+---
+ src/core/device.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/core/device.c b/src/core/device.c
+index 8a6855dfc..1995e3c0b 100644
+--- a/src/core/device.c
++++ b/src/core/device.c
+@@ -317,7 +317,7 @@ static int device_setup_unit(Manager *m, struct udev_device *dev, const char *pa
+         if (u &&
+             DEVICE(u)->sysfs &&
+             !path_equal(DEVICE(u)->sysfs, sysfs)) {
+-                log_unit_error(u->id, "Device %s appeared twice with different sysfs paths %s and %s", e, DEVICE(u)->sysfs, sysfs);
++                log_unit_debug(u->id, "Device %s appeared twice with different sysfs paths %s and %s", e, DEVICE(u)->sysfs, sysfs);
+                 return -EEXIST;
+         }
+ 

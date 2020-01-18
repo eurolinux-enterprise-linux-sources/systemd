@@ -1,0 +1,177 @@
+From d7b56e186521ce2e48e27edda121d780a3d62d27 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Thu, 23 Nov 2017 08:53:50 +0100
+Subject: [PATCH] fileio: add new helper call read_line() as bounded getline()
+ replacement
+
+read_line() is much like getline(), and returns a line read from a
+FILE*, of arbitrary sizes. In contrast to gets() it will grow the buffer
+dynamically, and in contrast to getline() it will place a user-specified
+boundary on the line.
+
+(cherry-picked from commit 4f9a66a32dda1d9a28f9bb3fa31c2148524bc46a)
+
+Resolves: #1503106
+---
+ src/shared/fileio.c    | 77 ++++++++++++++++++++++++++++++++++++++++++
+ src/shared/fileio.h    |  2 ++
+ src/test/test-fileio.c | 44 ++++++++++++++++++++++++
+ 3 files changed, 123 insertions(+)
+
+diff --git a/src/shared/fileio.c b/src/shared/fileio.c
+index ff6b1a7ed..107737573 100644
+--- a/src/shared/fileio.c
++++ b/src/shared/fileio.c
+@@ -815,3 +815,80 @@ int get_status_field(const char *filename, const char *pattern, char **field) {
+ 
+         return 0;
+ }
++
++int read_line(FILE *f, size_t limit, char **ret) {
++        _cleanup_free_ char *buffer = NULL;
++        size_t n = 0, allocated = 0, count = 0;
++        int r;
++
++        assert(f);
++
++        /* Something like a bounded version of getline().
++         *
++         * Considers EOF, \n and \0 end of line delimiters, and does not include these delimiters in the string
++         * returned.
++         *
++         * Returns the number of bytes read from the files (i.e. including delimiters — this hence usually differs from
++         * the number of characters in the returned string). When EOF is hit, 0 is returned.
++         *
++         * The input parameter limit is the maximum numbers of characters in the returned string, i.e. excluding
++         * delimiters. If the limit is hit we fail and return -ENOBUFS.
++         *
++         * If a line shall be skipped ret may be initialized as NULL. */
++
++        if (ret) {
++                if (!GREEDY_REALLOC(buffer, allocated, 1))
++                        return -ENOMEM;
++        }
++
++        flockfile(f);
++
++        for (;;) {
++                int c;
++
++                if (n >= limit) {
++                        funlockfile(f);
++                        return -ENOBUFS;
++                }
++
++                errno = 0;
++                c = fgetc_unlocked(f);
++                if (c == EOF) {
++                        /* if we read an error, and have no data to return, then propagate the error */
++                        if (ferror_unlocked(f) && n == 0) {
++                                r = errno > 0 ? -errno : -EIO;
++                                funlockfile(f);
++                                return r;
++                        }
++
++                        break;
++                }
++
++                count++;
++
++                if (IN_SET(c, '\n', 0)) /* Reached a delimiter */
++                        break;
++
++                if (ret) {
++                        if (!GREEDY_REALLOC(buffer, allocated, n + 2)) {
++                                funlockfile(f);
++                                return -ENOMEM;
++                        }
++
++                        buffer[n] = (char) c;
++                }
++
++                n++;
++        }
++
++        funlockfile(f);
++
++        if (ret) {
++                buffer[n] = 0;
++
++                *ret = buffer;
++                buffer = NULL;
++        }
++
++        return (int) count;
++}
+diff --git a/src/shared/fileio.h b/src/shared/fileio.h
+index 5ae51c1e2..f33464dce 100644
+--- a/src/shared/fileio.h
++++ b/src/shared/fileio.h
+@@ -43,3 +43,5 @@ int write_env_file(const char *fname, char **l);
+ int executable_is_script(const char *path, char **interpreter);
+ 
+ int get_status_field(const char *filename, const char *pattern, char **field);
++
++int read_line(FILE *f, size_t limit, char **ret);
+diff --git a/src/test/test-fileio.c b/src/test/test-fileio.c
+index 63e4a19b7..fc5969322 100644
+--- a/src/test/test-fileio.c
++++ b/src/test/test-fileio.c
+@@ -392,6 +392,49 @@ static void test_load_env_file_pairs(void) {
+         unlink(fn);
+ }
+ 
++static void test_read_line(void) {
++        _cleanup_fclose_ FILE *f = NULL;
++        _cleanup_free_ char *line = NULL;
++
++        char buffer[] =
++                "Some test data\n"
++                "With newlines, and a NUL byte\0"
++                "\n"
++                "an empty line\n"
++                "an ignored line\n"
++                "and a very long line that is supposed to be truncated, because it is so long\n";
++
++        f = fmemopen(buffer, sizeof(buffer), "re");
++        assert_se(f);
++
++        assert_se(read_line(f, (size_t) -1, &line) == 15 && streq(line, "Some test data"));
++        line = mfree(line);
++
++        assert_se(read_line(f, 1024, &line) == 30 && streq(line, "With newlines, and a NUL byte"));
++        line = mfree(line);
++
++        assert_se(read_line(f, 1024, &line) == 1 && streq(line, ""));
++        line = mfree(line);
++
++        assert_se(read_line(f, 1024, &line) == 14 && streq(line, "an empty line"));
++        line = mfree(line);
++
++        assert_se(read_line(f, (size_t) -1, NULL) == 16);
++
++        assert_se(read_line(f, 16, &line) == -ENOBUFS);
++        line = mfree(line);
++
++        /* read_line() stopped when it hit the limit, that means when we continue reading we'll read at the first
++         * character after the previous limit. Let's make use of tha to continue our test. */
++        assert_se(read_line(f, 1024, &line) == 61 && streq(line, "line that is supposed to be truncated, because it is so long"));
++        line = mfree(line);
++
++        assert_se(read_line(f, 1024, &line) == 1 && streq(line, ""));
++        line = mfree(line);
++
++        assert_se(read_line(f, 1024, &line) == 0 && streq(line, ""));
++}
++
+ int main(int argc, char *argv[]) {
+         log_parse_environment();
+         log_open();
+@@ -405,6 +448,7 @@ int main(int argc, char *argv[]) {
+         test_write_string_file();
+         test_write_string_file_no_create();
+         test_load_env_file_pairs();
++        test_read_line();
+ 
+         return 0;
+ }

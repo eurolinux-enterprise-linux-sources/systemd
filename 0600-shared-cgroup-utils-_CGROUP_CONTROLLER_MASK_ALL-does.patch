@@ -1,0 +1,28 @@
+From 864cf889ecf371df9e67f27682a8f9bc0f68e153 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Tue, 9 Jan 2018 12:59:19 +0100
+Subject: [PATCH] shared/cgroup-utils: _CGROUP_CONTROLLER_MASK_ALL does not
+ cover CGROUP_PIDS
+
+7d44d0d43465892d4753ff50592588f49d56cf95 added a CGROUP_PIDS but
+did not bump _CGROUP_CONTROLLER_MASK_ALL.
+
+RHEL-only
+Resolves: #1532586
+---
+ src/shared/cgroup-util.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/shared/cgroup-util.h b/src/shared/cgroup-util.h
+index 615c1f03e..b6f28c5c2 100644
+--- a/src/shared/cgroup-util.h
++++ b/src/shared/cgroup-util.h
+@@ -36,7 +36,7 @@ typedef enum CGroupControllerMask {
+         CGROUP_MEMORY = 8,
+         CGROUP_DEVICE = 16,
+         CGROUP_PIDS = 32,
+-        _CGROUP_CONTROLLER_MASK_ALL = 31
++        _CGROUP_CONTROLLER_MASK_ALL = 63
+ } CGroupControllerMask;
+ 
+ /* Special values for the cpu.shares attribute */

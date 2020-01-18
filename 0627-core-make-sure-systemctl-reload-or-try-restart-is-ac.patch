@@ -1,0 +1,92 @@
+From f7507f4bb5385ed0303451d812d220f14f341629 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Thu, 28 Jan 2016 18:48:42 +0100
+Subject: [PATCH] core: make sure "systemctl reload-or-try-restart is actually
+ a noop if a unit is not running
+
+This makes sure we follow the same basic logic for try-restart if we have a try-reload.
+
+Fixes #688
+
+(cherry picked from commit 3282591dc30b2934a895c7403d2f0b0690260947)
+Resolves: #1191920
+---
+ src/core/dbus-unit.c | 2 +-
+ src/core/job.c       | 8 ++++++++
+ src/core/job.h       | 3 +++
+ src/core/unit.c      | 2 ++
+ 4 files changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/src/core/dbus-unit.c b/src/core/dbus-unit.c
+index 1d0d6f67c..f0f75e01b 100644
+--- a/src/core/dbus-unit.c
++++ b/src/core/dbus-unit.c
+@@ -850,7 +850,7 @@ int bus_unit_queue_job(
+                 if (type == JOB_RESTART)
+                         type = JOB_RELOAD_OR_START;
+                 else if (type == JOB_TRY_RESTART)
+-                        type = JOB_RELOAD;
++                        type = JOB_TRY_RELOAD;
+         }
+ 
+         r = mac_selinux_unit_access_check(
+diff --git a/src/core/job.c b/src/core/job.c
+index 1617e24c0..c9a43a4cb 100644
+--- a/src/core/job.c
++++ b/src/core/job.c
+@@ -404,6 +404,13 @@ JobType job_type_collapse(JobType t, Unit *u) {
+ 
+                 return JOB_RESTART;
+ 
++        case JOB_TRY_RELOAD:
++                s = unit_active_state(u);
++                if (UNIT_IS_INACTIVE_OR_DEACTIVATING(s))
++                        return JOB_NOP;
++
++                return JOB_RELOAD;
++
+         case JOB_RELOAD_OR_START:
+                 s = unit_active_state(u);
+                 if (UNIT_IS_INACTIVE_OR_DEACTIVATING(s))
+@@ -1212,6 +1219,7 @@ static const char* const job_type_table[_JOB_TYPE_MAX] = {
+         [JOB_RELOAD_OR_START] = "reload-or-start",
+         [JOB_RESTART] = "restart",
+         [JOB_TRY_RESTART] = "try-restart",
++        [JOB_TRY_RELOAD] = "try-reload",
+         [JOB_NOP] = "nop",
+ };
+ 
+diff --git a/src/core/job.h b/src/core/job.h
+index ce81607de..535052b48 100644
+--- a/src/core/job.h
++++ b/src/core/job.h
+@@ -63,6 +63,9 @@ enum JobType {
+          * Thus we never need to merge it with anything. */
+         JOB_TRY_RESTART = _JOB_TYPE_MAX_IN_TRANSACTION, /* if running, stop and then start */
+ 
++        /* Similar to JOB_TRY_RESTART but collapses to JOB_RELOAD or JOB_NOP */
++        JOB_TRY_RELOAD,
++
+         /* JOB_RELOAD_OR_START won't enter into a transaction and cannot result
+          * from transaction merging (there's no way for JOB_RELOAD and
+          * JOB_START to meet in one transaction). It can result from a merge
+diff --git a/src/core/unit.c b/src/core/unit.c
+index 41d7b63d7..6d535ae12 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -1868,6 +1868,7 @@ void unit_notify(Unit *u, UnitActiveState os, UnitActiveState ns, bool reload_su
+ 
+                 case JOB_RELOAD:
+                 case JOB_RELOAD_OR_START:
++                case JOB_TRY_RELOAD:
+ 
+                         if (u->job->state == JOB_RUNNING) {
+                                 if (ns == UNIT_ACTIVE)
+@@ -2144,6 +2145,7 @@ bool unit_job_is_applicable(Unit *u, JobType j) {
+                 return unit_can_start(u);
+ 
+         case JOB_RELOAD:
++        case JOB_TRY_RELOAD:
+                 return unit_can_reload(u);
+ 
+         case JOB_RELOAD_OR_START:

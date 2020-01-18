@@ -1,0 +1,36 @@
+From c9c9111ad96ab8827a8866f80adbacf4f58e055e Mon Sep 17 00:00:00 2001
+From: Dimitri John Ledkov <dimitri.j.ledkov@intel.com>
+Date: Fri, 3 Jul 2015 11:34:12 +0100
+Subject: [PATCH] journal: in persistent mode create /var/log/journal, with all
+ parents.
+
+systemd-journald races with systemd-tmpfiles-setup, and hence both are
+started at about the same time. On a bare-bones system (e.g. with
+empty /var, or even non-existent /var), systemd-tmpfiles will create
+/var/log. But it can happen too late, that is systemd-journald already
+attempted to mkdir /var/log/journal, ignoring the error. Thus failing
+to create /var/log/journal. One option, without modifiying the
+dependency graph is to create /var/log/journal directory with parents,
+when persistent storage has been requested.
+
+(cherry picked from commit ac892057c2ddd8f06323c73ebd80423cc3ec7190)
+
+Cherry-picked from: ac89205
+Resolves: #1222517
+---
+ src/journal/journald-server.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
+index 04839c950..d692c06ef 100644
+--- a/src/journal/journald-server.c
++++ b/src/journal/journald-server.c
+@@ -942,7 +942,7 @@ static int system_journal_open(Server *s, bool flush_requested) {
+                  * the machine path */
+ 
+                 if (s->storage == STORAGE_PERSISTENT)
+-                        (void) mkdir("/var/log/journal/", 0755);
++                        (void) mkdir_p("/var/log/journal/", 0755);
+ 
+                 fn = strjoina("/var/log/journal/", ids);
+                 (void) mkdir(fn, 0755);

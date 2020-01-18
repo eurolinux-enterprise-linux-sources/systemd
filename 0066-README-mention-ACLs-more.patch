@@ -1,0 +1,26 @@
+From b1e53a9d3cc7c6fbe4447e201c8f6348ffcd7b6a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Tue, 3 Mar 2015 09:00:39 -0500
+Subject: [PATCH] README: mention ACLs more
+
+They are now useful for any fs used for journal storage.
+
+(cherry picked from commit a6cccd8f580fc1e062dba3895e232007acd38781)
+---
+ README | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/README b/README
+index ac2a81c0c..ffc2cf9f2 100644
+--- a/README
++++ b/README
+@@ -78,8 +78,8 @@ REQUIREMENTS:
+         Optional but strongly recommended:
+           CONFIG_IPV6
+           CONFIG_AUTOFS4_FS
+-          CONFIG_TMPFS_POSIX_ACL
+           CONFIG_TMPFS_XATTR
++          CONFIG_{TMPFS,EXT4,XFS,BTRFS_FS,...}_POSIX_ACL
+           CONFIG_SECCOMP
+ 
+         Required for CPUShares in resource control unit settings

@@ -1,0 +1,37 @@
+From 3ce9a9b286825793548ed7a7673dd9674a4e4137 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Luk=C3=A1=C5=A1=20Nykr=C3=BDn?= <lnykryn@redhat.com>
+Date: Fri, 1 Dec 2017 20:34:49 +0100
+Subject: [PATCH] shared/dropin: ignore ENAMETOOLONG when checking drop-in
+ directories (#7525)
+
+This usually happens for device units with long
+path in /sys. But users can't even create such drop-ins,
+so lets just ignore the error here.
+
+Fixes #6867
+
+Cherry-picked from: dfeec916b57b593ce07d3751aebdb0cce1d05201
+Resolves: #1489095
+---
+ src/shared/dropin.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/src/shared/dropin.c b/src/shared/dropin.c
+index d1baad619..b674d307a 100644
+--- a/src/shared/dropin.c
++++ b/src/shared/dropin.c
+@@ -129,8 +129,12 @@ static int iterate_dir(
+ 
+         d = opendir(path);
+         if (!d) {
+-                if (errno == ENOENT)
+-                        return 0;
++                /* Ignore ENOENT, after all most units won't have a drop-in dir.
++                 * Also ignore ENAMETOOLONG, users are not even able to create
++                 * the drop-in dir in such case. This mostly happens for device units with long /sys path.
++                 * */
++                if (IN_SET(errno, ENOENT, ENAMETOOLONG))
++                            return 0;
+ 
+                 log_error_errno(errno, "Failed to open directory %s: %m", path);
+                 return -errno;

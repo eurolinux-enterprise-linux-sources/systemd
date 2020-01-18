@@ -1,0 +1,92 @@
+From 6b8fedd82c23f1d8c334c3081a1befebedc40f1f Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Tue, 19 May 2015 13:50:36 +0200
+Subject: [PATCH] mount: don't claim a device is gone from /proc/self/mountinfo
+ before it is gone from *all* lines
+
+Devices might be referenced by multiple mount points in
+/proc/self/mountinfo, hence we should consider them unmounted only after
+they disappeared from all lines, not just from one.
+
+http://lists.freedesktop.org/archives/systemd-devel/2015-May/032026.html
+(cherry picked from commit fcd8b266edf0df2b85079fcf7b099cd4028740e6)
+
+Cherry-picked from:
+Resolves: #1222517
+---
+ src/core/mount.c | 30 +++++++++++++++++++++++++++---
+ 1 file changed, 27 insertions(+), 3 deletions(-)
+
+diff --git a/src/core/mount.c b/src/core/mount.c
+index fd4fb6f1b..fa63f2426 100644
+--- a/src/core/mount.c
++++ b/src/core/mount.c
+@@ -1698,7 +1698,10 @@ fail:
+ }
+ 
+ static int mount_dispatch_io(sd_event_source *source, int fd, uint32_t revents, void *userdata) {
++        _cleanup_set_free_ Set *around = NULL, *gone = NULL;
+         Manager *m = userdata;
++        const char *what;
++        Iterator i;
+         Unit *u;
+         int r;
+ 
+@@ -1765,6 +1768,8 @@ static int mount_dispatch_io(sd_event_source *source, int fd, uint32_t revents,
+ 
+                 if (!mount->is_mounted) {
+ 
++                        /* A mount point is gone */
++
+                         mount->from_proc_self_mountinfo = false;
+ 
+                         switch (mount->state) {
+@@ -1780,13 +1785,17 @@ static int mount_dispatch_io(sd_event_source *source, int fd, uint32_t revents,
+                                 break;
+                         }
+ 
+-                        if (mount->parameters_proc_self_mountinfo.what)
+-                                (void) device_found_node(m, mount->parameters_proc_self_mountinfo.what, false, DEVICE_FOUND_MOUNT, true);
++                        /* Remember that this device might just have disappeared */
++                        if (mount->parameters_proc_self_mountinfo.what) {
+ 
++                                if (set_ensure_allocated(&gone, &string_hash_ops) < 0 ||
++                                    set_put(gone, mount->parameters_proc_self_mountinfo.what) < 0)
++                                        log_oom(); /* we don't care too much about OOM here... */
++                        }
+ 
+                 } else if (mount->just_mounted || mount->just_changed) {
+ 
+-                        /* New or changed mount entry */
++                        /* A mount point was added or changed */
+ 
+                         switch (mount->state) {
+ 
+@@ -1811,12 +1820,27 @@ static int mount_dispatch_io(sd_event_source *source, int fd, uint32_t revents,
+                                 mount_set_state(mount, mount->state);
+                                 break;
+                         }
++
++                        if (mount->parameters_proc_self_mountinfo.what) {
++
++                                if (set_ensure_allocated(&around, &string_hash_ops) < 0 ||
++                                    set_put(around, mount->parameters_proc_self_mountinfo.what) < 0)
++                                        log_oom();
++                        }
+                 }
+ 
+                 /* Reset the flags for later calls */
+                 mount->is_mounted = mount->just_mounted = mount->just_changed = false;
+         }
+ 
++        SET_FOREACH(what, gone, i) {
++                if (set_contains(around, what))
++                        continue;
++
++                /* Let the device units know that the device is no longer mounted */
++                (void) device_found_node(m, what, false, DEVICE_FOUND_MOUNT, true);
++        }
++
+         return 0;
+ }
+ 

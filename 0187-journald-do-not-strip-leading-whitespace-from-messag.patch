@@ -1,0 +1,34 @@
+From fa74ba131041161f1ae9fbc0a3b11f9a005b9d8f Mon Sep 17 00:00:00 2001
+From: Filipe Brandenburger <filbranden@google.com>
+Date: Wed, 10 Jun 2015 22:33:44 -0700
+Subject: [PATCH] journald: do not strip leading whitespace from messages
+
+Keep leading whitespace for compatibility with older syslog
+implementations.  Also useful when piping formatted output to the
+`logger` command.  Keep removing trailing whitespace.
+
+Tested with `pstree | logger` and checking that the output of
+`journalctl | tail` included aligned and formatted output.
+
+Confirmed that all test cases still pass as expected.
+
+Cherry-picked from: ec5ff444
+Resolves: #1227396
+---
+ src/journal/journald-syslog.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/journal/journald-syslog.c b/src/journal/journald-syslog.c
+index 7d545ca31..ba80941d7 100644
+--- a/src/journal/journald-syslog.c
++++ b/src/journal/journald-syslog.c
+@@ -232,7 +232,8 @@ size_t syslog_parse_identifier(const char **buf, char **identifier, char **pid)
+         if (t)
+                 *identifier = t;
+ 
+-        e += strspn(p + e, WHITESPACE);
++        if (strchr(WHITESPACE, p[e]))
++                e++;
+         *buf = p + e;
+         return e;
+ }

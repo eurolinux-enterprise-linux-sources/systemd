@@ -1,0 +1,28 @@
+From 605a35e6e8dcb2518a1fa8f92fb5fb00a0419345 Mon Sep 17 00:00:00 2001
+From: David Herrmann <dh.herrmann@gmail.com>
+Date: Fri, 29 Apr 2016 12:13:06 +0200
+Subject: [PATCH] basic: fix error/memleak in socket-util
+
+Probably a typo, checking 'ret' instead of the return value 'p'. This
+might cause the function to return failure, even though it succeeded.
+Furthermore, it might leak resources.
+
+Cherry-picked from: 0810bc568ace619b16e440805e93256730d45541
+Related: #1331667
+---
+ src/shared/socket-util.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/shared/socket-util.c b/src/shared/socket-util.c
+index a4e26b1d8..407d0afee 100644
+--- a/src/shared/socket-util.c
++++ b/src/shared/socket-util.c
+@@ -544,7 +544,7 @@ int sockaddr_pretty(const struct sockaddr *_sa, socklen_t salen, bool translate_
+ 
+                 } else {
+                         p = strndup(sa->un.sun_path, sizeof(sa->un.sun_path));
+-                        if (!ret)
++                        if (!p)
+                                 return -ENOMEM;
+                 }
+ 

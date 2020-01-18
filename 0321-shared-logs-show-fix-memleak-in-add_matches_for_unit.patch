@@ -1,0 +1,24 @@
+From c95edddeb70a48202a0baf7b71450be87d2d921c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Tue, 12 Apr 2016 23:36:37 -0400
+Subject: [PATCH] shared/logs-show: fix memleak in add_matches_for_unit
+
+Cherry-picked from: 42fbdf45864b46f3eb62a3738b81e687685eb9bd
+Related: #1331667
+---
+ src/shared/logs-show.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/shared/logs-show.c b/src/shared/logs-show.c
+index c2495056d..8c374116a 100644
+--- a/src/shared/logs-show.c
++++ b/src/shared/logs-show.c
+@@ -1060,7 +1060,7 @@ int add_matches_for_unit(sd_journal *j, const char *unit) {
+         );
+ 
+         if (r == 0 && endswith(unit, ".slice")) {
+-                char *m5 = strappend("_SYSTEMD_SLICE=", unit);
++                const char *m5 = strjoina("_SYSTEMD_SLICE=", unit);
+ 
+                 /* Show all messages belonging to a slice */
+                 (void)(

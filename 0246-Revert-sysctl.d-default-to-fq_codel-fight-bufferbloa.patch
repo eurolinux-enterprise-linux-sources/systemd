@@ -1,0 +1,51 @@
+From 7b7707f0892a1d64c310aa86009b42da84d03bf8 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Tue, 15 Sep 2015 12:50:08 +0200
+Subject: [PATCH] Revert "sysctl.d: default to fq_codel, fight bufferbloat"
+
+This reverts commit e6c253e363dee77ef7e5c5f44c4ca55cded3fd47.
+
+rhel-only
+Resolves: #1263158
+---
+ NEWS                     | 12 ------------
+ sysctl.d/50-default.conf |  3 ---
+ 2 files changed, 15 deletions(-)
+
+diff --git a/NEWS b/NEWS
+index d78874924..ee976d44b 100644
+--- a/NEWS
++++ b/NEWS
+@@ -619,18 +619,6 @@ CHANGES WITH 217:
+           systemd-ask-password gained a new --echo option to turn that
+           on.
+ 
+-        * The default sysctl.d/ snippets will now set:
+-
+-                net.core.default_qdisc = fq_codel
+-
+-          This selects Fair Queuing Controlled Delay as the default
+-          queuing discipline for network interfaces. fq_codel helps
+-          fight the network bufferbloat problem. It is believed to be
+-          a good default with no tuning required for most workloads.
+-          Downstream distributions may override this choice. On 10Gbit
+-          servers that do not do forwarding, "fq" may perform better.
+-          Systems without a good clocksource should use "pfifo_fast".
+-
+         * If kdbus is enabled during build a new option BusPolicy= is
+           available for service units, that allows locking all service
+           processes into a stricter bus policy, in order to limit
+diff --git a/sysctl.d/50-default.conf b/sysctl.d/50-default.conf
+index def151bb8..44c48236c 100644
+--- a/sysctl.d/50-default.conf
++++ b/sysctl.d/50-default.conf
+@@ -32,9 +32,6 @@ net.ipv4.conf.all.accept_source_route = 0
+ net.ipv4.conf.default.promote_secondaries = 1
+ net.ipv4.conf.all.promote_secondaries = 1
+ 
+-# Fair Queue CoDel packet scheduler to fight bufferbloat
+-net.core.default_qdisc = fq_codel
+-
+ # Enable hard and soft link protection
+ fs.protected_hardlinks = 1
+ fs.protected_symlinks = 1

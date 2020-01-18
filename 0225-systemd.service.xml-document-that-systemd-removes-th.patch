@@ -1,0 +1,30 @@
+From 7dbfc725ccbdcdf33aa46f97a68275fbd5f936c5 Mon Sep 17 00:00:00 2001
+From: Felipe Sateler <fsateler@debian.org>
+Date: Sat, 27 Jun 2015 17:25:06 -0300
+Subject: [PATCH] systemd.service.xml: document that systemd removes the
+ PIDFile
+
+(cherry picked from commit 341db20b7e98199003b4ce6aa52b339757828204)
+
+Cherry-picked from: 341db20
+Resolves: #1222517
+---
+ man/systemd.service.xml | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/man/systemd.service.xml b/man/systemd.service.xml
+index f59870563..a274db480 100644
+--- a/man/systemd.service.xml
++++ b/man/systemd.service.xml
+@@ -226,7 +226,10 @@
+         services where <varname>Type=</varname> is set to
+         <option>forking</option>. systemd will read the PID of the
+         main process of the daemon after start-up of the service.
+-        systemd will not write to the file configured here.</para>
++        systemd will not write to the file configured here, although
++        it will remove the file after the service has shut down if it
++        still exists.
++        </para>
+         </listitem>
+       </varlistentry>
+ 

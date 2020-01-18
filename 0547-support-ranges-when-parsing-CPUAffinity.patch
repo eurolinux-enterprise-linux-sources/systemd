@@ -1,0 +1,621 @@
+From 6e00430563108b98230abd7407ac54fde61ae93c Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Tue, 26 Sep 2017 12:34:19 +0200
+Subject: [PATCH] support ranges when parsing CPUAffinity
+
+The functionality was implemented in https://github.com/systemd/systemd/pull/1699/.
+However, it is not backportable without considerable code changes.
+
+Implement parse_range() and parse_cpu_set_and_warn() from the upstream master
+branch and use them in appropriate places. Also introduce relevant tests.
+
+Resolves: #1493976
+---
+ src/core/load-fragment.c |  49 ++-----
+ src/core/main.c          |  48 +------
+ src/shared/util.c        |  91 ++++++++++++
+ src/shared/util.h        |   9 ++
+ src/test/test-util.c     | 296 +++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 417 insertions(+), 76 deletions(-)
+
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index 0c0fa0f50..a10e1903a 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -884,50 +884,29 @@ int config_parse_exec_cpu_affinity(const char *unit,
+                                    void *userdata) {
+ 
+         ExecContext *c = data;
+-        const char *word, *state;
+-        size_t l;
++        _cleanup_cpu_free_ cpu_set_t *cpuset = NULL;
++        int ncpus;
+ 
+         assert(filename);
+         assert(lvalue);
+         assert(rvalue);
+         assert(data);
+ 
+-        if (isempty(rvalue)) {
+-                /* An empty assignment resets the CPU list */
+-                if (c->cpuset)
+-                        CPU_FREE(c->cpuset);
+-                c->cpuset = NULL;
+-                return 0;
+-        }
+-
+-        FOREACH_WORD_QUOTED(word, l, rvalue, state) {
+-                _cleanup_free_ char *t = NULL;
+-                int r;
+-                unsigned cpu;
+-
+-                t = strndup(word, l);
+-                if (!t)
+-                        return log_oom();
+-
+-                r = safe_atou(t, &cpu);
++        ncpus = parse_cpu_set_and_warn(rvalue, &cpuset, unit, filename, line, lvalue);
++        if (ncpus < 0)
++                return ncpus;
+ 
+-                if (!c->cpuset) {
+-                        c->cpuset = cpu_set_malloc(&c->cpuset_ncpus);
+-                        if (!c->cpuset)
+-                                return log_oom();
+-                }
++        if (c->cpuset)
++                CPU_FREE(c->cpuset);
+ 
+-                if (r < 0 || cpu >= c->cpuset_ncpus) {
+-                        log_syntax(unit, LOG_ERR, filename, line, ERANGE,
+-                                   "Failed to parse CPU affinity '%s', ignoring: %s", t, rvalue);
+-                        return 0;
+-                }
+-
+-                CPU_SET_S(cpu, CPU_ALLOC_SIZE(c->cpuset_ncpus), c->cpuset);
++        if (ncpus == 0)
++                /* An empty assignment resets the CPU list */
++                c->cpuset = NULL;
++        else {
++                c->cpuset = cpuset;
++                cpuset = NULL;
+         }
+-        if (!isempty(state))
+-                log_syntax(unit, LOG_WARNING, filename, line, EINVAL,
+-                           "Trailing garbage, ignoring.");
++        c->cpuset_ncpus = ncpus;
+ 
+         return 0;
+ }
+diff --git a/src/core/main.c b/src/core/main.c
+index 66393ed6a..5554ef468 100644
+--- a/src/core/main.c
++++ b/src/core/main.c
+@@ -438,49 +438,15 @@ static int config_parse_cpu_affinity2(
+                 void *data,
+                 void *userdata) {
+ 
+-        const char *word, *state;
+-        size_t l;
+-        cpu_set_t *c = NULL;
+-        unsigned ncpus = 0;
+-
+-        assert(filename);
+-        assert(lvalue);
+-        assert(rvalue);
++        _cleanup_cpu_free_ cpu_set_t *c = NULL;
++        int ncpus;
+ 
+-        FOREACH_WORD_QUOTED(word, l, rvalue, state) {
+-                char *t;
+-                int r;
+-                unsigned cpu;
+-
+-                if (!(t = strndup(word, l)))
+-                        return log_oom();
+-
+-                r = safe_atou(t, &cpu);
+-                free(t);
+-
+-                if (!c)
+-                        if (!(c = cpu_set_malloc(&ncpus)))
+-                                return log_oom();
++        ncpus = parse_cpu_set_and_warn(rvalue, &c, unit, filename, line, lvalue);
++        if (ncpus < 0)
++                return ncpus;
+ 
+-                if (r < 0 || cpu >= ncpus) {
+-                        log_syntax(unit, LOG_ERR, filename, line, -r,
+-                                   "Failed to parse CPU affinity '%s'", rvalue);
+-                        CPU_FREE(c);
+-                        return -EBADMSG;
+-                }
+-
+-                CPU_SET_S(cpu, CPU_ALLOC_SIZE(ncpus), c);
+-        }
+-        if (!isempty(state))
+-                log_syntax(unit, LOG_ERR, filename, line, EINVAL,
+-                           "Trailing garbage, ignoring.");
+-
+-        if (c) {
+-                if (sched_setaffinity(0, CPU_ALLOC_SIZE(ncpus), c) < 0)
+-                        log_unit_warning(unit, "Failed to set CPU affinity: %m");
+-
+-                CPU_FREE(c);
+-        }
++        if (sched_setaffinity(0, CPU_ALLOC_SIZE(ncpus), c) < 0)
++                log_warning_errno(errno, "Failed to set CPU affinity: %m");
+ 
+         return 0;
+ }
+diff --git a/src/shared/util.c b/src/shared/util.c
+index bbb457759..39359fcc8 100644
+--- a/src/shared/util.c
++++ b/src/shared/util.c
+@@ -2727,6 +2727,43 @@ int parse_size(const char *t, off_t base, off_t *size) {
+         return 0;
+ }
+ 
++int parse_range(const char *t, unsigned *lower, unsigned *upper) {
++        _cleanup_free_ char *word = NULL;
++        unsigned l, u;
++        int r;
++
++        assert(lower);
++        assert(upper);
++
++        /* Extract the lower bound. */
++        r = extract_first_word(&t, &word, "-", EXTRACT_DONT_COALESCE_SEPARATORS);
++        if (r < 0)
++                return r;
++        if (r == 0)
++                return -EINVAL;
++
++        r = safe_atou(word, &l);
++        if (r < 0)
++                return r;
++
++        /* Check for the upper bound and extract it if needed */
++        if (!t)
++                /* Single number with no dashes. */
++                u = l;
++        else if (!*t)
++                /* Trailing dash is an error. */
++                return -EINVAL;
++        else {
++                r = safe_atou(t, &u);
++                if (r < 0)
++                        return r;
++        }
++
++        *lower = l;
++        *upper = u;
++        return 0;
++}
++
+ int make_stdio(int fd) {
+         int r, s, t;
+ 
+@@ -3460,6 +3497,60 @@ cpu_set_t* cpu_set_malloc(unsigned *ncpus) {
+         }
+ }
+ 
++int parse_cpu_set_and_warn(
++                const char *rvalue,
++                cpu_set_t **cpu_set,
++                const char *unit,
++                const char *filename,
++                unsigned line,
++                const char *lvalue) {
++
++        const char *whole_rvalue = rvalue;
++        _cleanup_cpu_free_ cpu_set_t *c = NULL;
++        unsigned ncpus = 0;
++
++        assert(lvalue);
++        assert(rvalue);
++
++        for (;;) {
++                _cleanup_free_ char *word = NULL;
++                unsigned cpu, cpu_lower, cpu_upper;
++                int r;
++
++                r = extract_first_word(&rvalue, &word, WHITESPACE ",", EXTRACT_QUOTES);
++                if (r < 0)
++                        return log_syntax(unit, LOG_ERR, filename, line, r, "Invalid value for %s: %s", lvalue, whole_rvalue);
++                if (r == 0)
++                        break;
++
++                if (!c) {
++                        c = cpu_set_malloc(&ncpus);
++                        if (!c)
++                                return log_oom();
++                }
++
++                r = parse_range(word, &cpu_lower, &cpu_upper);
++                if (r < 0)
++                        return log_syntax(unit, LOG_ERR, filename, line, r, "Failed to parse CPU affinity '%s'", word);
++                if (cpu_lower >= ncpus || cpu_upper >= ncpus)
++                        return log_syntax(unit, LOG_ERR, filename, line, EINVAL, "CPU out of range '%s' ncpus is %u", word, ncpus);
++
++                if (cpu_lower > cpu_upper)
++                        log_syntax(unit, LOG_WARNING, filename, line, 0, "Range '%s' is invalid, %u > %u", word, cpu_lower, cpu_upper);
++                else
++                        for (cpu = cpu_lower; cpu <= cpu_upper; cpu++)
++                                CPU_SET_S(cpu, CPU_ALLOC_SIZE(ncpus), c);
++        }
++
++        /* On success, sets *cpu_set and returns ncpus for the system. */
++        if (c) {
++                *cpu_set = c;
++                c = NULL;
++        }
++
++        return (int) ncpus;
++}
++
+ int status_vprintf(const char *status, bool ellipse, bool ephemeral, const char *format, va_list ap) {
+         static const char status_indent[] = "         "; /* "[" STATUS "] " */
+         _cleanup_free_ char *s = NULL;
+diff --git a/src/shared/util.h b/src/shared/util.h
+index 80ad18c0a..526a6fe84 100644
+--- a/src/shared/util.h
++++ b/src/shared/util.h
+@@ -136,6 +136,11 @@ bool streq_ptr(const char *a, const char *b) _pure_;
+ 
+ #define malloc0(n) (calloc((n), 1))
+ 
++static inline void *mfree(void *memory) {
++        free(memory);
++        return NULL;
++}
++
+ static inline const char* yes_no(bool b) {
+         return b ? "yes" : "no";
+ }
+@@ -195,6 +200,7 @@ void safe_close_pair(int p[]);
+ void close_many(const int fds[], unsigned n_fd);
+ 
+ int parse_size(const char *t, off_t base, off_t *size);
++int parse_range(const char *t, unsigned *lower, unsigned *upper);
+ 
+ int parse_boolean(const char *v) _pure_;
+ int parse_pid(const char *s, pid_t* ret_pid);
+@@ -474,6 +480,7 @@ int rm_rf_dangerous(const char *path, bool only_dirs, bool delete_root, bool hon
+ int pipe_eof(int fd);
+ 
+ cpu_set_t* cpu_set_malloc(unsigned *ncpus);
++int parse_cpu_set_and_warn(const char *rvalue, cpu_set_t **cpu_set, const char *unit, const char *filename, unsigned line, const char *lvalue);
+ 
+ int status_vprintf(const char *status, bool ellipse, bool ephemeral, const char *format, va_list ap) _printf_(4,0);
+ int status_printf(const char *status, bool ellipse, bool ephemeral, const char *format, ...) _printf_(4,5);
+@@ -692,6 +699,7 @@ DEFINE_TRIVIAL_CLEANUP_FUNC(FILE*, fclose);
+ DEFINE_TRIVIAL_CLEANUP_FUNC(FILE*, pclose);
+ DEFINE_TRIVIAL_CLEANUP_FUNC(DIR*, closedir);
+ DEFINE_TRIVIAL_CLEANUP_FUNC(FILE*, endmntent);
++DEFINE_TRIVIAL_CLEANUP_FUNC(cpu_set_t*, CPU_FREE);
+ 
+ #define _cleanup_free_ _cleanup_(freep)
+ #define _cleanup_close_ _cleanup_(closep)
+@@ -702,6 +710,7 @@ DEFINE_TRIVIAL_CLEANUP_FUNC(FILE*, endmntent);
+ #define _cleanup_closedir_ _cleanup_(closedirp)
+ #define _cleanup_endmntent_ _cleanup_(endmntentp)
+ #define _cleanup_close_pair_ _cleanup_(close_pairp)
++#define _cleanup_cpu_free_ _cleanup_(CPU_FREEp)
+ 
+ _malloc_  _alloc_(1, 2) static inline void *malloc_multiply(size_t a, size_t b) {
+         if (_unlikely_(b != 0 && a > ((size_t) -1) / b))
+diff --git a/src/test/test-util.c b/src/test/test-util.c
+index 971f97d7c..fcf5416c0 100644
+--- a/src/test/test-util.c
++++ b/src/test/test-util.c
+@@ -689,6 +689,300 @@ static void test_parse_size(void) {
+         assert_se(parse_size("-10B 20K", 1024, &bytes) == -ERANGE);
+ }
+ 
++static void test_parse_range(void) {
++        unsigned lower, upper;
++
++        /* Successful cases */
++        assert_se(parse_range("111", &lower, &upper) == 0);
++        assert_se(lower == 111);
++        assert_se(upper == 111);
++
++        assert_se(parse_range("111-123", &lower, &upper) == 0);
++        assert_se(lower == 111);
++        assert_se(upper == 123);
++
++        assert_se(parse_range("123-111", &lower, &upper) == 0);
++        assert_se(lower == 123);
++        assert_se(upper == 111);
++
++        assert_se(parse_range("123-123", &lower, &upper) == 0);
++        assert_se(lower == 123);
++        assert_se(upper == 123);
++
++        assert_se(parse_range("0", &lower, &upper) == 0);
++        assert_se(lower == 0);
++        assert_se(upper == 0);
++
++        assert_se(parse_range("0-15", &lower, &upper) == 0);
++        assert_se(lower == 0);
++        assert_se(upper == 15);
++
++        assert_se(parse_range("15-0", &lower, &upper) == 0);
++        assert_se(lower == 15);
++        assert_se(upper == 0);
++
++        assert_se(parse_range("128-65535", &lower, &upper) == 0);
++        assert_se(lower == 128);
++        assert_se(upper == 65535);
++
++        assert_se(parse_range("1024-4294967295", &lower, &upper) == 0);
++        assert_se(lower == 1024);
++        assert_se(upper == 4294967295);
++
++        /* Leading whitespace is acceptable */
++        assert_se(parse_range(" 111", &lower, &upper) == 0);
++        assert_se(lower == 111);
++        assert_se(upper == 111);
++
++        assert_se(parse_range(" 111-123", &lower, &upper) == 0);
++        assert_se(lower == 111);
++        assert_se(upper == 123);
++
++        assert_se(parse_range("111- 123", &lower, &upper) == 0);
++        assert_se(lower == 111);
++        assert_se(upper == 123);
++
++        assert_se(parse_range("\t111-\t123", &lower, &upper) == 0);
++        assert_se(lower == 111);
++        assert_se(upper == 123);
++
++        assert_se(parse_range(" \t 111- \t 123", &lower, &upper) == 0);
++        assert_se(lower == 111);
++        assert_se(upper == 123);
++
++        /* Error cases, make sure they fail as expected */
++        lower = upper = 9999;
++        assert_se(parse_range("111garbage", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("garbage111", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("garbage", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111-123garbage", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111garbage-123", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        /* Empty string */
++        lower = upper = 9999;
++        assert_se(parse_range("", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        /* 111--123 will pass -123 to safe_atou which returns -ERANGE for negative */
++        assert_se(parse_range("111--123", &lower, &upper) == -ERANGE);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("-111-123", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111-123-", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111.4-123", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111-123.4", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111,4-123", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111-123,4", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        /* Error on trailing dash */
++        assert_se(parse_range("111-", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111-123-", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111--", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111- ", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        /* Whitespace is not a separator */
++        assert_se(parse_range("111 123", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111\t123", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111 \t 123", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        /* Trailing whitespace is invalid (from safe_atou) */
++        assert_se(parse_range("111 ", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111-123 ", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111 -123", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111 -123 ", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111\t-123\t", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        assert_se(parse_range("111 \t -123 \t ", &lower, &upper) == -EINVAL);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++
++        /* Out of the "unsigned" range, this is 1<<64 */
++        assert_se(parse_range("0-18446744073709551616", &lower, &upper) == -ERANGE);
++        assert_se(lower == 9999);
++        assert_se(upper == 9999);
++}
++
++static void test_parse_cpu_set(void) {
++        cpu_set_t *c = NULL;
++        int ncpus;
++        int cpu;
++
++        /* Simple range (from CPUAffinity example) */
++        ncpus = parse_cpu_set_and_warn("1 2", &c, NULL, "fake", 1, "CPUAffinity");
++        assert_se(ncpus >= 1024);
++        assert_se(CPU_ISSET_S(1, CPU_ALLOC_SIZE(ncpus), c));
++        assert_se(CPU_ISSET_S(2, CPU_ALLOC_SIZE(ncpus), c));
++        assert_se(CPU_COUNT_S(CPU_ALLOC_SIZE(ncpus), c) == 2);
++        c = mfree(c);
++
++        /* A more interesting range */
++        ncpus = parse_cpu_set_and_warn("0 1 2 3 8 9 10 11", &c, NULL, "fake", 1, "CPUAffinity");
++        assert_se(ncpus >= 1024);
++        assert_se(CPU_COUNT_S(CPU_ALLOC_SIZE(ncpus), c) == 8);
++        for (cpu = 0; cpu < 4; cpu++)
++                assert_se(CPU_ISSET_S(cpu, CPU_ALLOC_SIZE(ncpus), c));
++        for (cpu = 8; cpu < 12; cpu++)
++                assert_se(CPU_ISSET_S(cpu, CPU_ALLOC_SIZE(ncpus), c));
++        c = mfree(c);
++
++        /* Quoted strings */
++        ncpus = parse_cpu_set_and_warn("8 '9' 10 \"11\"", &c, NULL, "fake", 1, "CPUAffinity");
++        assert_se(ncpus >= 1024);
++        assert_se(CPU_COUNT_S(CPU_ALLOC_SIZE(ncpus), c) == 4);
++        for (cpu = 8; cpu < 12; cpu++)
++                assert_se(CPU_ISSET_S(cpu, CPU_ALLOC_SIZE(ncpus), c));
++        c = mfree(c);
++
++        /* Use commas as separators */
++        ncpus = parse_cpu_set_and_warn("0,1,2,3 8,9,10,11", &c, NULL, "fake", 1, "CPUAffinity");
++        assert_se(ncpus >= 1024);
++        assert_se(CPU_COUNT_S(CPU_ALLOC_SIZE(ncpus), c) == 8);
++        for (cpu = 0; cpu < 4; cpu++)
++                assert_se(CPU_ISSET_S(cpu, CPU_ALLOC_SIZE(ncpus), c));
++        for (cpu = 8; cpu < 12; cpu++)
++                assert_se(CPU_ISSET_S(cpu, CPU_ALLOC_SIZE(ncpus), c));
++        c = mfree(c);
++
++        /* Commas with spaces (and trailing comma, space) */
++        ncpus = parse_cpu_set_and_warn("0, 1, 2, 3, 4, 5, 6, 7, ", &c, NULL, "fake", 1, "CPUAffinity");
++        assert_se(ncpus >= 1024);
++        assert_se(CPU_COUNT_S(CPU_ALLOC_SIZE(ncpus), c) == 8);
++        for (cpu = 0; cpu < 8; cpu++)
++                assert_se(CPU_ISSET_S(cpu, CPU_ALLOC_SIZE(ncpus), c));
++        c = mfree(c);
++
++        /* Ranges */
++        ncpus = parse_cpu_set_and_warn("0-3,8-11", &c, NULL, "fake", 1, "CPUAffinity");
++        assert_se(ncpus >= 1024);
++        assert_se(CPU_COUNT_S(CPU_ALLOC_SIZE(ncpus), c) == 8);
++        for (cpu = 0; cpu < 4; cpu++)
++                assert_se(CPU_ISSET_S(cpu, CPU_ALLOC_SIZE(ncpus), c));
++        for (cpu = 8; cpu < 12; cpu++)
++                assert_se(CPU_ISSET_S(cpu, CPU_ALLOC_SIZE(ncpus), c));
++        c = mfree(c);
++
++        /* Ranges with trailing comma, space */
++        ncpus = parse_cpu_set_and_warn("0-3  8-11, ", &c, NULL, "fake", 1, "CPUAffinity");
++        assert_se(ncpus >= 1024);
++        assert_se(CPU_COUNT_S(CPU_ALLOC_SIZE(ncpus), c) == 8);
++        for (cpu = 0; cpu < 4; cpu++)
++                assert_se(CPU_ISSET_S(cpu, CPU_ALLOC_SIZE(ncpus), c));
++        for (cpu = 8; cpu < 12; cpu++)
++                assert_se(CPU_ISSET_S(cpu, CPU_ALLOC_SIZE(ncpus), c));
++        c = mfree(c);
++
++        /* Negative range (returns empty cpu_set) */
++        ncpus = parse_cpu_set_and_warn("3-0", &c, NULL, "fake", 1, "CPUAffinity");
++        assert_se(ncpus >= 1024);
++        assert_se(CPU_COUNT_S(CPU_ALLOC_SIZE(ncpus), c) == 0);
++        c = mfree(c);
++
++        /* Overlapping ranges */
++        ncpus = parse_cpu_set_and_warn("0-7 4-11", &c, NULL, "fake", 1, "CPUAffinity");
++        assert_se(ncpus >= 1024);
++        assert_se(CPU_COUNT_S(CPU_ALLOC_SIZE(ncpus), c) == 12);
++        for (cpu = 0; cpu < 12; cpu++)
++                assert_se(CPU_ISSET_S(cpu, CPU_ALLOC_SIZE(ncpus), c));
++        c = mfree(c);
++
++        /* Mix ranges and individual CPUs */
++        ncpus = parse_cpu_set_and_warn("0,1 4-11", &c, NULL, "fake", 1, "CPUAffinity");
++        assert_se(ncpus >= 1024);
++        assert_se(CPU_COUNT_S(CPU_ALLOC_SIZE(ncpus), c) == 10);
++        assert_se(CPU_ISSET_S(0, CPU_ALLOC_SIZE(ncpus), c));
++        assert_se(CPU_ISSET_S(1, CPU_ALLOC_SIZE(ncpus), c));
++        for (cpu = 4; cpu < 12; cpu++)
++                assert_se(CPU_ISSET_S(cpu, CPU_ALLOC_SIZE(ncpus), c));
++        c = mfree(c);
++
++        /* Garbage */
++        ncpus = parse_cpu_set_and_warn("0 1 2 3 garbage", &c, NULL, "fake", 1, "CPUAffinity");
++        assert_se(ncpus < 0);
++        assert_se(!c);
++
++        /* Range with garbage */
++        ncpus = parse_cpu_set_and_warn("0-3 8-garbage", &c, NULL, "fake", 1, "CPUAffinity");
++        assert_se(ncpus < 0);
++        assert_se(!c);
++
++        /* Empty string */
++        c = NULL;
++        ncpus = parse_cpu_set_and_warn("", &c, NULL, "fake", 1, "CPUAffinity");
++        assert_se(ncpus == 0);  /* empty string returns 0 */
++        assert_se(!c);
++
++        /* Runaway quoted string */
++        ncpus = parse_cpu_set_and_warn("0 1 2 3 \"4 5 6 7 ", &c, NULL, "fake", 1, "CPUAffinity");
++        assert_se(ncpus < 0);
++        assert_se(!c);
++}
++
+ static void test_config_parse_iec_off(void) {
+         off_t offset = 0;
+         assert_se(config_parse_iec_off(NULL, "/this/file", 11, "Section", 22, "Size", 0, "4M", &offset, NULL) == 0);
+@@ -1605,6 +1899,8 @@ int main(int argc, char *argv[]) {
+         test_get_process_comm();
+         test_protect_errno();
+         test_parse_size();
++        test_parse_range();
++        test_parse_cpu_set();
+         test_config_parse_iec_off();
+         test_strextend();
+         test_strrep();

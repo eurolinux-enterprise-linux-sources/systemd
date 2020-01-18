@@ -1,0 +1,31 @@
+From 1fa67ac23b3fff0e04c55df8cca6a54994adf175 Mon Sep 17 00:00:00 2001
+From: Ivan Shapovalov <intelfx@intelfx.name>
+Date: Wed, 30 Aug 2017 19:49:07 +0300
+Subject: [PATCH] cryptsetup-generator: do not bind to the decrypted device
+ unit (#6538)
+
+This breaks things when the decrypted device is not immediately
+`SYSTEMD_READY=1` (e. g. when a multi-device btrfs system is placed on
+multiple cryptsetup devices).
+
+Fixes #6537.
+
+(cherry picked from commit e9ea4526a3a3b41eced29b8d742498cc36750424)
+
+Related: #1511043
+---
+ src/cryptsetup/cryptsetup-generator.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/src/cryptsetup/cryptsetup-generator.c b/src/cryptsetup/cryptsetup-generator.c
+index c387e2104..5f29093f5 100644
+--- a/src/cryptsetup/cryptsetup-generator.c
++++ b/src/cryptsetup/cryptsetup-generator.c
+@@ -110,7 +110,6 @@ static int create_disk(
+                 "SourcePath=/etc/crypttab\n"
+                 "DefaultDependencies=no\n"
+                 "Conflicts=umount.target\n"
+-                "BindsTo=dev-mapper-%%i.device\n"
+                 "IgnoreOnIsolate=true\n"
+                 "After=systemd-readahead-collect.service systemd-readahead-replay.service\n"
+                 "After=%s\n",

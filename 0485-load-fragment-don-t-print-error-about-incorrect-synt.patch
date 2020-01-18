@@ -1,0 +1,29 @@
+From c6774e13acf7b3d8783bc5ab31b2ea72b2fc9aaf Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Tue, 25 Apr 2017 14:53:47 +0200
+Subject: [PATCH] load-fragment: don't print error about incorrect syntax when
+ IPv6 is disabled
+
+(cherry-picked from commit f847b8b7df1de5686f8cbe5a4944a85dfb303595)
+
+Resolves: #1377055
+---
+ src/core/load-fragment.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index 411475024..58e44b89b 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -367,8 +367,9 @@ int config_parse_socket_listen(const char *unit,
+ 
+                 r = socket_address_parse(&p->address, k ? k : rvalue);
+                 if (r < 0) {
+-                        log_syntax(unit, LOG_ERR, filename, line, -r,
+-                                   "Failed to parse address value, ignoring: %s", rvalue);
++                        if (r != -EAFNOSUPPORT)
++                                log_syntax(unit, LOG_ERR, filename, line, -r,
++                                           "Failed to parse address value, ignoring: %s", rvalue);
+                         return 0;
+                 }
+ 

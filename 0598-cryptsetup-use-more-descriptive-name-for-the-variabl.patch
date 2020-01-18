@@ -1,0 +1,106 @@
+From 1e02c945fbf54f2b9179ab84794a05cffb3efd98 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Tue, 12 Dec 2017 20:00:31 +0100
+Subject: [PATCH] cryptsetup: use more descriptive name for the variable and
+ drop redundant function
+
+Let's rename escaped_name to disk_path since this is an actual content
+that pointer refers to. It is either path to encrypted block device
+or path to encrypted image file.
+
+Also drop redundant function disk_major_minor(). src is always set, and
+it always points to either encrypted block device path (or symlink to
+such device) or to encrypted image. In case it is set to device path
+there is no need to reset it to /dev/block/major:minor symlink since
+those paths are equivalent.
+
+(cherry-picked from commit ea7e7c1e9c3b579ee94a11a192f1013ee4cb829e)
+
+Related: #1511043
+---
+ src/cryptsetup/cryptsetup.c | 41 ++++++++-----------------------------
+ 1 file changed, 8 insertions(+), 33 deletions(-)
+
+diff --git a/src/cryptsetup/cryptsetup.c b/src/cryptsetup/cryptsetup.c
+index c57d2b294..69a015614 100644
+--- a/src/cryptsetup/cryptsetup.c
++++ b/src/cryptsetup/cryptsetup.c
+@@ -217,23 +217,6 @@ static void log_glue(int level, const char *msg, void *usrptr) {
+         log_debug("%s", msg);
+ }
+ 
+-static int disk_major_minor(const char *path, char **ret) {
+-        struct stat st;
+-
+-        assert(path);
+-
+-        if (stat(path, &st) < 0)
+-                return -errno;
+-
+-        if (!S_ISBLK(st.st_mode))
+-                return -EINVAL;
+-
+-        if (asprintf(ret, "/dev/block/%d:%d", major(st.st_rdev), minor(st.st_rdev)) < 0)
+-                return -errno;
+-
+-        return 0;
+-}
+-
+ static char* disk_description(const char *path) {
+ 
+         static const char name_fields[] =
+@@ -299,11 +282,11 @@ static int get_password(const char *vol, const char *src, usec_t until, bool acc
+         int r = 0;
+         char **p;
+         _cleanup_free_ char *text = NULL;
+-        _cleanup_free_ char *escaped_name = NULL;
++        _cleanup_free_ char *disk_path = NULL;
+         char *id;
+         const char *name = NULL;
+         _cleanup_free_ char *description = NULL, *name_buffer = NULL,
+-                *mount_point = NULL, *maj_min = NULL;
++                *mount_point = NULL;
+ 
+         assert(vol);
+         assert(src);
+@@ -312,6 +295,10 @@ static int get_password(const char *vol, const char *src, usec_t until, bool acc
+         description = disk_description(src);
+         mount_point = disk_mount_point(vol);
+ 
++        disk_path = cescape(src);
++        if (!disk_path)
++                return log_oom();
++
+         if (description && streq(vol, description)) {
+                 /* If the description string is simply the
+                  * volume name, then let's not show this
+@@ -335,19 +322,7 @@ static int get_password(const char *vol, const char *src, usec_t until, bool acc
+         if (asprintf(&text, "Please enter passphrase for disk %s!", name) < 0)
+                 return log_oom();
+ 
+-        if (src)
+-                (void) disk_major_minor(src, &maj_min);
+-
+-        if (maj_min) {
+-                escaped_name = maj_min;
+-                maj_min = NULL;
+-        } else
+-                escaped_name = cescape(src);
+-
+-        if (!escaped_name)
+-                return log_oom();
+-
+-        id = strjoina("cryptsetup:", escaped_name);
++        id = strjoina("cryptsetup:", disk_path);
+ 
+         r = ask_password_auto(text, "drive-harddisk", id, until, accept_cached, passwords);
+         if (r < 0)
+@@ -361,7 +336,7 @@ static int get_password(const char *vol, const char *src, usec_t until, bool acc
+                 if (asprintf(&text, "Please enter passphrase for disk %s! (verification)", name) < 0)
+                         return log_oom();
+ 
+-                id = strjoina("cryptsetup-verification:", escaped_name);
++                id = strjoina("cryptsetup-verification:", disk_path);
+ 
+                 r = ask_password_auto(text, "drive-harddisk", id, until, false, &passwords2);
+                 if (r < 0)

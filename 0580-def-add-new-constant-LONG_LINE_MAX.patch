@@ -1,0 +1,28 @@
+From 4cd343cf1a25e603ea78acbac027589f6a53a118 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Thu, 23 Nov 2017 09:22:21 +0100
+Subject: [PATCH] def: add new constant LONG_LINE_MAX
+
+LONG_LINE_MAX is much like LINE_MAX, but longer.
+
+As it turns out LINE_MAX at 4096 is too short for many usecases. Since
+the general concept of having a common maximum line length limit makes
+sense let's add our own, and make it larger (1MB for now).
+
+(cherry-picked from commit 189912440f6545404e84b3cd1d6ca54f1057e3e6)
+
+Resolves: #1503106
+---
+ src/shared/def.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/shared/def.h b/src/shared/def.h
+index 76daf012d..9e008a6d2 100644
+--- a/src/shared/def.h
++++ b/src/shared/def.h
+@@ -87,3 +87,5 @@
+ 
+ #define NOTIFY_FD_MAX 768
+ #define NOTIFY_BUFFER_MAX PIPE_BUF
++
++#define LONG_LINE_MAX (1U*1024U*1024U)

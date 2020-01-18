@@ -1,0 +1,27 @@
+From a571e5420b188913e4986f65c33294c2b39e3f7d Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Tue, 14 Jul 2015 17:24:09 +0200
+Subject: [PATCH] udev: fix crash in path_id builtin
+
+RHEL-only
+
+Resolves: #957112
+---
+ src/udev/udev-builtin-path_id.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/udev/udev-builtin-path_id.c b/src/udev/udev-builtin-path_id.c
+index 025392df5..9ca608468 100644
+--- a/src/udev/udev-builtin-path_id.c
++++ b/src/udev/udev-builtin-path_id.c
+@@ -737,6 +737,10 @@ out:
+                 }
+ 
+                 free(path);
++                path = NULL;
++                supported_transport = false;
++                supported_parent = false;
++
+ 
+                 if (new_sas_path) {
+                         enable_new_sas_path = false;

@@ -1,0 +1,74 @@
+From fb798a267d2bad8df98f49c2a4a309efa5569759 Mon Sep 17 00:00:00 2001
+From: Ronny Chevalier <chevalier.ronny@gmail.com>
+Date: Mon, 21 Sep 2015 15:36:07 +0200
+Subject: [PATCH] test-execute: add tests for RuntimeDirectory
+
+Cherry-picked from: cc3ddc851fbe5adf9dfc7e4a702a8b5b6a1186d6
+Resolves: #1324826
+---
+ src/test/test-execute.c                 | 7 +++++++
+ test/exec-runtimedirectory-mode.service | 8 ++++++++
+ test/exec-runtimedirectory.service      | 7 +++++++
+ 3 files changed, 22 insertions(+)
+ create mode 100644 test/exec-runtimedirectory-mode.service
+ create mode 100644 test/exec-runtimedirectory.service
+
+diff --git a/src/test/test-execute.c b/src/test/test-execute.c
+index 00f3607b4..90b1c871c 100644
+--- a/src/test/test-execute.c
++++ b/src/test/test-execute.c
+@@ -141,6 +141,11 @@ static void test_exec_umask(Manager *m) {
+         test(m, "exec-umask-0177.service", 0, CLD_EXITED);
+ }
+ 
++static void test_exec_runtimedirectory(Manager *m) {
++        test(m, "exec-runtimedirectory.service", 0, CLD_EXITED);
++        test(m, "exec-runtimedirectory-mode.service", 0, CLD_EXITED);
++}
++
+ int main(int argc, char *argv[]) {
+         test_function_t tests[] = {
+                 test_exec_workingdirectory,
+@@ -154,6 +159,7 @@ int main(int argc, char *argv[]) {
+                 test_exec_group,
+                 test_exec_environment,
+                 test_exec_umask,
++                test_exec_runtimedirectory,
+                 NULL,
+         };
+         test_function_t *test = NULL;
+@@ -169,6 +175,7 @@ int main(int argc, char *argv[]) {
+                 return EXIT_TEST_SKIP;
+         }
+ 
++        assert_se(setenv("XDG_RUNTIME_DIR", "/tmp/", 1) == 0);
+         assert_se(set_unit_path(TEST_DIR ":") >= 0);
+ 
+         r = manager_new(SYSTEMD_USER, true, &m);
+diff --git a/test/exec-runtimedirectory-mode.service b/test/exec-runtimedirectory-mode.service
+new file mode 100644
+index 000000000..ba6d7ee39
+--- /dev/null
++++ b/test/exec-runtimedirectory-mode.service
+@@ -0,0 +1,8 @@
++[Unit]
++Description=Test for RuntimeDirectoryMode
++
++[Service]
++ExecStart=/bin/sh -c 's=$(stat -c %a /tmp/test-exec_runtimedirectory-mode); echo $s; exit $(test $s = "750")'
++Type=oneshot
++RuntimeDirectory=test-exec_runtimedirectory-mode
++RuntimeDirectoryMode=0750
+diff --git a/test/exec-runtimedirectory.service b/test/exec-runtimedirectory.service
+new file mode 100644
+index 000000000..c12a6c63d
+--- /dev/null
++++ b/test/exec-runtimedirectory.service
+@@ -0,0 +1,7 @@
++[Unit]
++Description=Test for RuntimeDirectory
++
++[Service]
++ExecStart=/bin/sh -c 'exit $(test -d /tmp/test-exec_runtimedirectory)'
++Type=oneshot
++RuntimeDirectory=test-exec_runtimedirectory

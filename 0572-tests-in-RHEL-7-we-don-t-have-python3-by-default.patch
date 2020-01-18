@@ -1,0 +1,27 @@
+From 8a8fa94333650d3c34fcd42b696598cdc930a876 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Mon, 2 Oct 2017 16:20:11 +0200
+Subject: [PATCH] tests: in RHEL-7 we don't have python3 by default
+
+Note that for running this test it is necessary to install backport of
+enum package from python-3.4 to python2.
+
+yum install -y python-enum34
+
+RHEL-only
+
+Related: #1404657, #1471230
+---
+ test/test-exec-deserialization.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/test/test-exec-deserialization.py b/test/test-exec-deserialization.py
+index b974b1c13..859778a7a 100755
+--- a/test/test-exec-deserialization.py
++++ b/test/test-exec-deserialization.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python3
++#!/usr/bin/python
+ 
+ #
+ #  Copyright 2017 Michal Sekletar <msekleta@redhat.com>

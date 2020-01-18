@@ -1,0 +1,33 @@
+From d4582346f47064de24470b5f92e418966004925f Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Thu, 28 Aug 2014 15:12:10 +0200
+Subject: [PATCH] man: mention System Administrator's Guide in systemctl
+ manpage
+
+Resolves: #978948
+---
+ man/systemctl.xml | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/man/systemctl.xml b/man/systemctl.xml
+index 338c1d328..6f30474c3 100644
+--- a/man/systemctl.xml
++++ b/man/systemctl.xml
+@@ -1713,6 +1713,17 @@ kobject-uevent 1 systemd-udevd-kernel.socket systemd-udevd.service
+     <xi:include href="less-variables.xml" xpointer="less"/>
+   </refsect1>
+ 
++  <refsect1>
++    <title>Examples</title>
++    <para>
++            For examples how to use systemctl in comparsion
++            with old service and chkconfig command please see:
++            <ulink url="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/System_Administrators_Guide/sect-Managing_Services_with_systemd-Services.html">
++                    Managing System Services
++            </ulink>
++    </para>
++  </refsect1>
++
+   <refsect1>
+     <title>See Also</title>
+     <para>

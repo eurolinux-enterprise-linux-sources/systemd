@@ -1,0 +1,988 @@
+From 111080b06c79e6bcbe9da4786f9c7229f1fb573e Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Thu, 20 Oct 2016 14:48:33 +0200
+Subject: [PATCH] install: introduce UnitFileFlags
+
+Introduce a new enum to get rid of some boolean arguments of unit_file_*
+functions. It unifies the code, makes it a bit cleaner and extensible.
+
+(cherry picked from commit b3796dd8349af4235143889e44522a730c1635c0)
+Related: #1413041
+---
+ src/core/dbus-manager.c      | 36 +++++++++++++++------
+ src/core/main.c              |  2 +-
+ src/shared/install.c         | 61 ++++++++++++++++--------------------
+ src/shared/install.h         | 25 +++++++++------
+ src/systemctl/systemctl.c    | 28 +++++++++++------
+ src/test/test-install-root.c | 58 +++++++++++++++++-----------------
+ src/test/test-install.c      | 38 +++++++++++-----------
+ 7 files changed, 135 insertions(+), 113 deletions(-)
+
+diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
+index c2067c099..5b40aa20f 100644
+--- a/src/core/dbus-manager.c
++++ b/src/core/dbus-manager.c
+@@ -41,6 +41,11 @@
+ #include "dbus-execute.h"
+ #include "bus-common-errors.h"
+ 
++static UnitFileFlags unit_file_bools_to_flags(bool runtime, bool force) {
++        return (runtime ? UNIT_FILE_RUNTIME : 0) |
++               (force   ? UNIT_FILE_FORCE   : 0);
++}
++
+ static int property_get_version(
+                 sd_bus *bus,
+                 const char *path,
+@@ -1647,7 +1652,7 @@ static int method_enable_unit_files_generic(
+                 sd_bus_message *message,
+                 Manager *m,
+                 const char *verb,
+-                int (*call)(UnitFileScope scope, bool runtime, const char *root_dir, char *files[], bool force, UnitFileChange **changes, unsigned *n_changes),
++                int (*call)(UnitFileScope scope, UnitFileFlags flags, const char *root_dir, char *files[], UnitFileChange **changes, unsigned *n_changes),
+                 bool carries_install_info,
+                 sd_bus_error *error) {
+ 
+@@ -1655,6 +1660,7 @@ static int method_enable_unit_files_generic(
+         UnitFileChange *changes = NULL;
+         unsigned n_changes = 0;
+         UnitFileScope scope;
++        UnitFileFlags flags;
+         int runtime, force, r;
+ 
+         assert(bus);
+@@ -1676,12 +1682,13 @@ static int method_enable_unit_files_generic(
+                 return r;
+ 
+         r = mac_selinux_unit_access_check_strv(l, message, m, verb, error);
++        flags = unit_file_bools_to_flags(runtime, force);
+         if (r < 0)
+                 return r;
+ 
+         scope = m->running_as == SYSTEMD_SYSTEM ? UNIT_FILE_SYSTEM : UNIT_FILE_USER;
+ 
+-        r = call(scope, runtime, NULL, l, force, &changes, &n_changes);
++        r = call(scope, flags, NULL, l, &changes, &n_changes);
+         if (r < 0)
+                 return r;
+ 
+@@ -1700,8 +1707,8 @@ static int method_link_unit_files(sd_bus *bus, sd_bus_message *message, void *us
+         return method_enable_unit_files_generic(bus, message, userdata, "enable", unit_file_link, false, error);
+ }
+ 
+-static int unit_file_preset_without_mode(UnitFileScope scope, bool runtime, const char *root_dir, char **files, bool force, UnitFileChange **changes, unsigned *n_changes) {
+-        return unit_file_preset(scope, runtime, root_dir, files, UNIT_FILE_PRESET_FULL, force, changes, n_changes);
++static int unit_file_preset_without_mode(UnitFileScope scope, UnitFileFlags flags, const char *root_dir, char **files, UnitFileChange **changes, unsigned *n_changes) {
++        return unit_file_preset(scope, flags, root_dir, files, UNIT_FILE_PRESET_FULL, changes, n_changes);
+ }
+ 
+ static int method_preset_unit_files(sd_bus *bus, sd_bus_message *message, void *userdata, sd_bus_error *error) {
+@@ -1721,6 +1728,7 @@ static int method_preset_unit_files_with_mode(sd_bus *bus, sd_bus_message *messa
+         UnitFilePresetMode mm;
+         UnitFileScope scope;
+         int runtime, force, r;
++        UnitFileFlags flags;
+         const char *mode;
+ 
+         assert(bus);
+@@ -1741,6 +1749,8 @@ static int method_preset_unit_files_with_mode(sd_bus *bus, sd_bus_message *messa
+         if (r < 0)
+                 return r;
+ 
++        flags = unit_file_bools_to_flags(runtime, force);
++
+         if (isempty(mode))
+                 mm = UNIT_FILE_PRESET_FULL;
+         else {
+@@ -1755,7 +1765,7 @@ static int method_preset_unit_files_with_mode(sd_bus *bus, sd_bus_message *messa
+ 
+         scope = m->running_as == SYSTEMD_SYSTEM ? UNIT_FILE_SYSTEM : UNIT_FILE_USER;
+ 
+-        r = unit_file_preset(scope, runtime, NULL, l, mm, force, &changes, &n_changes);
++        r = unit_file_preset(scope, flags, NULL, l, mm, &changes, &n_changes);
+         if (r < 0)
+                 return r;
+ 
+@@ -1767,7 +1777,7 @@ static int method_disable_unit_files_generic(
+                 sd_bus_message *message,
+                 Manager *m, const
+                 char *verb,
+-                int (*call)(UnitFileScope scope, bool runtime, const char *root_dir, char *files[], UnitFileChange **changes, unsigned *n_changes),
++                int (*call)(UnitFileScope scope, UnitFileFlags flags, const char *root_dir, char *files[], UnitFileChange **changes, unsigned *n_changes),
+                 sd_bus_error *error) {
+ 
+         _cleanup_strv_free_ char **l = NULL;
+@@ -1800,7 +1810,7 @@ static int method_disable_unit_files_generic(
+ 
+         scope = m->running_as == SYSTEMD_SYSTEM ? UNIT_FILE_SYSTEM : UNIT_FILE_USER;
+ 
+-        r = call(scope, runtime, NULL, l, &changes, &n_changes);
++        r = call(scope, runtime ? UNIT_FILE_RUNTIME : 0, NULL, l, &changes, &n_changes);
+         if (r < 0)
+                 return r;
+ 
+@@ -1843,7 +1853,7 @@ static int method_set_default_target(sd_bus *bus, sd_bus_message *message, void
+ 
+         scope = m->running_as == SYSTEMD_SYSTEM ? UNIT_FILE_SYSTEM : UNIT_FILE_USER;
+ 
+-        r = unit_file_set_default(scope, NULL, name, force, &changes, &n_changes);
++        r = unit_file_set_default(scope, force ? UNIT_FILE_FORCE : 0, NULL, name, &changes, &n_changes);
+         if (r < 0)
+                 return r;
+ 
+@@ -1857,6 +1867,7 @@ static int method_preset_all_unit_files(sd_bus *bus, sd_bus_message *message, vo
+         UnitFilePresetMode mm;
+         UnitFileScope scope;
+         const char *mode;
++        UnitFileFlags flags;
+         int force, runtime, r;
+ 
+         assert(bus);
+@@ -1877,6 +1888,8 @@ static int method_preset_all_unit_files(sd_bus *bus, sd_bus_message *message, vo
+         if (r < 0)
+                 return r;
+ 
++        flags = unit_file_bools_to_flags(runtime, force);
++
+         if (isempty(mode))
+                 mm = UNIT_FILE_PRESET_FULL;
+         else {
+@@ -1887,7 +1900,7 @@ static int method_preset_all_unit_files(sd_bus *bus, sd_bus_message *message, vo
+ 
+         scope = m->running_as == SYSTEMD_SYSTEM ? UNIT_FILE_SYSTEM : UNIT_FILE_USER;
+ 
+-        r = unit_file_preset_all(scope, runtime, NULL, mm, force, &changes, &n_changes);
++        r = unit_file_preset_all(scope, flags, NULL, mm, &changes, &n_changes);
+         if (r < 0) {
+                 unit_file_changes_free(changes, n_changes);
+                 return r;
+@@ -1906,6 +1919,7 @@ static int method_add_dependency_unit_files(sd_bus *bus, sd_bus_message *message
+         char *target;
+         char *type;
+         UnitDependency dep;
++        UnitFileFlags flags;
+ 
+         assert(bus);
+         assert(message);
+@@ -1925,6 +1939,8 @@ static int method_add_dependency_unit_files(sd_bus *bus, sd_bus_message *message
+         if (r < 0)
+                 return r;
+ 
++        flags = unit_file_bools_to_flags(runtime, force);
++
+         dep = unit_dependency_from_string(type);
+         if (dep < 0)
+                 return -EINVAL;
+@@ -1935,7 +1951,7 @@ static int method_add_dependency_unit_files(sd_bus *bus, sd_bus_message *message
+ 
+         scope = m->running_as == SYSTEMD_SYSTEM ? UNIT_FILE_SYSTEM : UNIT_FILE_USER;
+ 
+-        r = unit_file_add_dependency(scope, runtime, NULL, l, target, dep, force, &changes, &n_changes);
++        r = unit_file_add_dependency(scope, flags, NULL, l, target, dep, &changes, &n_changes);
+         if (r < 0)
+                 return r;
+ 
+diff --git a/src/core/main.c b/src/core/main.c
+index 820cbc3e5..a0df1e5ce 100644
+--- a/src/core/main.c
++++ b/src/core/main.c
+@@ -1658,7 +1658,7 @@ int main(int argc, char *argv[]) {
+                 bump_rlimit_nofile(&saved_rlimit_nofile);
+ 
+                 if (empty_etc) {
+-                        r = unit_file_preset_all(UNIT_FILE_SYSTEM, false, NULL, UNIT_FILE_PRESET_FULL, false, NULL, 0);
++                        r = unit_file_preset_all(UNIT_FILE_SYSTEM, 0, NULL, UNIT_FILE_PRESET_FULL, NULL, 0);
+                         if (r < 0)
+                                 log_warning_errno(r, "Failed to populate /etc with preset unit settings, ignoring: %m");
+                         else
+diff --git a/src/shared/install.c b/src/shared/install.c
+index 62bdf674c..b3df6b35c 100644
+--- a/src/shared/install.c
++++ b/src/shared/install.c
+@@ -1549,10 +1549,9 @@ static int install_context_mark_for_removal(
+ 
+ int unit_file_mask(
+                 UnitFileScope scope,
+-                bool runtime,
++                UnitFileFlags flags,
+                 const char *root_dir,
+                 char **files,
+-                bool force,
+                 UnitFileChange **changes,
+                 unsigned *n_changes) {
+ 
+@@ -1567,7 +1566,7 @@ int unit_file_mask(
+         if (r < 0)
+                 return r;
+ 
+-        r = get_config_path(scope, runtime, root_dir, &prefix);
++        r = get_config_path(scope, flags & UNIT_FILE_RUNTIME, root_dir, &prefix);
+         if (r < 0)
+                 return r;
+ 
+@@ -1584,7 +1583,7 @@ int unit_file_mask(
+                 if (!path)
+                         return -ENOMEM;
+ 
+-                q = create_symlink("/dev/null", path, force, changes, n_changes);
++                q = create_symlink("/dev/null", path, !!(flags & UNIT_FILE_FORCE), changes, n_changes);
+                 if (q < 0 && r >= 0)
+                         r = q;
+         }
+@@ -1594,7 +1593,7 @@ int unit_file_mask(
+ 
+ int unit_file_unmask(
+                 UnitFileScope scope,
+-                bool runtime,
++                UnitFileFlags flags,
+                 const char *root_dir,
+                 char **files,
+                 UnitFileChange **changes,
+@@ -1614,7 +1613,7 @@ int unit_file_unmask(
+         if (r < 0)
+                 return r;
+ 
+-        r = get_config_path(scope, runtime, root_dir, &config_path);
++        r = get_config_path(scope, flags & UNIT_FILE_RUNTIME, root_dir, &config_path);
+         if (r < 0)
+                 return r;
+ 
+@@ -1677,10 +1676,9 @@ int unit_file_unmask(
+ 
+ int unit_file_link(
+                 UnitFileScope scope,
+-                bool runtime,
++                UnitFileFlags flags,
+                 const char *root_dir,
+                 char **files,
+-                bool force,
+                 UnitFileChange **changes,
+                 unsigned *n_changes) {
+ 
+@@ -1702,7 +1700,7 @@ int unit_file_link(
+         if (r < 0)
+                 return r;
+ 
+-        r = get_config_path(scope, runtime, root_dir, &config_path);
++        r = get_config_path(scope, flags & UNIT_FILE_RUNTIME, root_dir, &config_path);
+         if (r < 0)
+                 return r;
+ 
+@@ -1757,7 +1755,7 @@ int unit_file_link(
+                 if (!path)
+                         return -ENOMEM;
+ 
+-                q = create_symlink(*i, path, force, changes, n_changes);
++                q = create_symlink(*i, path, !!(flags & UNIT_FILE_FORCE), changes, n_changes);
+                 if (q < 0 && r >= 0)
+                         r = q;
+         }
+@@ -1767,12 +1765,11 @@ int unit_file_link(
+ 
+ int unit_file_add_dependency(
+                 UnitFileScope scope,
+-                bool runtime,
++                UnitFileFlags flags,
+                 const char *root_dir,
+                 char **files,
+                 const char *target,
+                 UnitDependency dep,
+-                bool force,
+                 UnitFileChange **changes,
+                 unsigned *n_changes) {
+ 
+@@ -1801,7 +1798,7 @@ int unit_file_add_dependency(
+         if (r < 0)
+                 return r;
+ 
+-        r = get_config_path(scope, runtime, root_dir, &config_path);
++        r = get_config_path(scope, flags & UNIT_FILE_RUNTIME, root_dir, &config_path);
+         if (r < 0)
+                 return r;
+ 
+@@ -1839,16 +1836,15 @@ int unit_file_add_dependency(
+                         return -ENOMEM;
+          }
+ 
+-        return install_context_apply(scope, &c, &paths, config_path, root_dir, force, SEARCH_FOLLOW_CONFIG_SYMLINKS, changes, n_changes);
++        return install_context_apply(scope, &c, &paths, config_path, root_dir, !!(flags & UNIT_FILE_FORCE), SEARCH_FOLLOW_CONFIG_SYMLINKS, changes, n_changes);
+ }
+ 
+ 
+ int unit_file_enable(
+                 UnitFileScope scope,
+-                bool runtime,
++                UnitFileFlags flags,
+                 const char *root_dir,
+                 char **files,
+-                bool force,
+                 UnitFileChange **changes,
+                 unsigned *n_changes) {
+ 
+@@ -1870,7 +1866,7 @@ int unit_file_enable(
+         if (r < 0)
+                 return r;
+ 
+-        r = get_config_path(scope, runtime, root_dir, &config_path);
++        r = get_config_path(scope, flags & UNIT_FILE_RUNTIME, root_dir, &config_path);
+         if (r < 0)
+                 return r;
+ 
+@@ -1889,12 +1885,12 @@ int unit_file_enable(
+         useful to determine whether the passed files had any
+         installation data at all. */
+ 
+-        return install_context_apply(scope, &c, &paths, config_path, root_dir, force, SEARCH_LOAD, changes, n_changes);
++        return install_context_apply(scope, &c, &paths, config_path, root_dir, !!(flags & UNIT_FILE_FORCE), SEARCH_LOAD, changes, n_changes);
+ }
+ 
+ int unit_file_disable(
+                 UnitFileScope scope,
+-                bool runtime,
++                UnitFileFlags flags,
+                 const char *root_dir,
+                 char **files,
+                 UnitFileChange **changes,
+@@ -1918,7 +1914,7 @@ int unit_file_disable(
+         if (r < 0)
+                 return r;
+ 
+-        r = get_config_path(scope, runtime, root_dir, &config_path);
++        r = get_config_path(scope, flags & UNIT_FILE_RUNTIME, root_dir, &config_path);
+         if (r < 0)
+                 return r;
+ 
+@@ -1940,10 +1936,9 @@ int unit_file_disable(
+ 
+ int unit_file_reenable(
+                 UnitFileScope scope,
+-                bool runtime,
++                UnitFileFlags flags,
+                 const char *root_dir,
+                 char **files,
+-                bool force,
+                 UnitFileChange **changes,
+                 unsigned *n_changes) {
+ 
+@@ -1958,19 +1953,19 @@ int unit_file_reenable(
+                 n[i] = basename(files[i]);
+         n[i] = NULL;
+ 
+-        r = unit_file_disable(scope, runtime, root_dir, n, changes, n_changes);
++        r = unit_file_disable(scope, flags, root_dir, n, changes, n_changes);
+         if (r < 0)
+                 return r;
+ 
+         /* But the enable command with the full name */
+-        return unit_file_enable(scope, runtime, root_dir, files, force, changes, n_changes);
++        return unit_file_enable(scope, flags, root_dir, files, changes, n_changes);
+ }
+ 
+ int unit_file_set_default(
+                 UnitFileScope scope,
++                UnitFileFlags flags,
+                 const char *root_dir,
+                 const char *name,
+-                bool force,
+                 UnitFileChange **changes,
+                 unsigned *n_changes) {
+ 
+@@ -2010,7 +2005,7 @@ int unit_file_set_default(
+ 
+         path = strjoina(config_path, "/" SPECIAL_DEFAULT_TARGET);
+ 
+-        return create_symlink(i->path, path, force, changes, n_changes);
++        return create_symlink(i->path, path, !!(flags & UNIT_FILE_FORCE), changes, n_changes);
+ }
+ 
+ int unit_file_get_default(
+@@ -2311,11 +2306,10 @@ static int preset_prepare_one(
+ 
+ int unit_file_preset(
+                 UnitFileScope scope,
+-                bool runtime,
++                UnitFileFlags flags,
+                 const char *root_dir,
+                 char **files,
+                 UnitFilePresetMode mode,
+-                bool force,
+                 UnitFileChange **changes,
+                 unsigned *n_changes) {
+ 
+@@ -2337,7 +2331,7 @@ int unit_file_preset(
+         if (r < 0)
+                 return r;
+ 
+-        r = get_config_path(scope, runtime, root_dir, &config_path);
++        r = get_config_path(scope, flags & UNIT_FILE_RUNTIME, root_dir, &config_path);
+         if (r < 0)
+                 return r;
+ 
+@@ -2350,15 +2344,14 @@ int unit_file_preset(
+                         return r;
+         }
+ 
+-        return execute_preset(scope, &plus, &minus, &paths, config_path, root_dir, files, mode, force, changes, n_changes);
++        return execute_preset(scope, &plus, &minus, &paths, config_path, root_dir, files, mode, !!(flags & UNIT_FILE_FORCE), changes, n_changes);
+ }
+ 
+ int unit_file_preset_all(
+                 UnitFileScope scope,
+-                bool runtime,
++                UnitFileFlags flags,
+                 const char *root_dir,
+                 UnitFilePresetMode mode,
+-                bool force,
+                 UnitFileChange **changes,
+                 unsigned *n_changes) {
+ 
+@@ -2380,7 +2373,7 @@ int unit_file_preset_all(
+         if (r < 0)
+                 return r;
+ 
+-        r = get_config_path(scope, runtime, root_dir, &config_path);
++        r = get_config_path(scope, flags & UNIT_FILE_RUNTIME, root_dir, &config_path);
+         if (r < 0)
+                 return r;
+ 
+@@ -2434,7 +2427,7 @@ int unit_file_preset_all(
+                 }
+         }
+ 
+-        return execute_preset(scope, &plus, &minus, &paths, config_path, root_dir, NULL, mode, force, changes, n_changes);
++        return execute_preset(scope, &plus, &minus, &paths, config_path, root_dir, NULL, mode, !!(flags & UNIT_FILE_FORCE), changes, n_changes);
+ }
+ 
+ static void unit_file_list_free_one(UnitFileList *f) {
+diff --git a/src/shared/install.h b/src/shared/install.h
+index 7e40445d3..c961b53d0 100644
+--- a/src/shared/install.h
++++ b/src/shared/install.h
+@@ -66,6 +66,11 @@ typedef enum UnitFileChangeType {
+         _UNIT_FILE_CHANGE_TYPE_INVALID = -1
+ } UnitFileChangeType;
+ 
++typedef enum UnitFileFlags {
++        UNIT_FILE_RUNTIME = 1,
++        UNIT_FILE_FORCE = 1 << 1
++} UnitFileFlags;
++
+ static inline bool unit_file_change_is_modification(UnitFileChangeType type) {
+         return IN_SET(type, UNIT_FILE_SYMLINK, UNIT_FILE_UNLINK);
+ }
+@@ -120,17 +125,17 @@ static inline bool UNIT_FILE_INSTALL_INFO_HAS_ALSO(InstallInfo *i) {
+         return !strv_isempty(i->also);
+ }
+ 
+-int unit_file_enable(UnitFileScope scope, bool runtime, const char *root_dir, char **files, bool force, UnitFileChange **changes, unsigned *n_changes);
+-int unit_file_disable(UnitFileScope scope, bool runtime, const char *root_dir, char **files, UnitFileChange **changes, unsigned *n_changes);
+-int unit_file_reenable(UnitFileScope scope, bool runtime, const char *root_dir, char **files, bool force, UnitFileChange **changes, unsigned *n_changes);
+-int unit_file_link(UnitFileScope scope, bool runtime, const char *root_dir, char **files, bool force, UnitFileChange **changes, unsigned *n_changes);
+-int unit_file_preset(UnitFileScope scope, bool runtime, const char *root_dir, char **files, UnitFilePresetMode mode, bool force, UnitFileChange **changes, unsigned *n_changes);
+-int unit_file_preset_all(UnitFileScope scope, bool runtime, const char *root_dir, UnitFilePresetMode mode, bool force, UnitFileChange **changes, unsigned *n_changes);
+-int unit_file_mask(UnitFileScope scope, bool runtime, const char *root_dir, char **files, bool force, UnitFileChange **changes, unsigned *n_changes);
+-int unit_file_unmask(UnitFileScope scope, bool runtime, const char *root_dir, char **files, UnitFileChange **changes, unsigned *n_changes);
+-int unit_file_set_default(UnitFileScope scope, const char *root_dir, const char *file, bool force, UnitFileChange **changes, unsigned *n_changes);
++int unit_file_enable(UnitFileScope scope, UnitFileFlags flags, const char *root_dir, char **files, UnitFileChange **changes, unsigned *n_changes);
++int unit_file_disable(UnitFileScope scope, UnitFileFlags flags, const char *root_dir, char **files, UnitFileChange **changes, unsigned *n_changes);
++int unit_file_reenable(UnitFileScope scope, UnitFileFlags flags, const char *root_dir, char **files, UnitFileChange **changes, unsigned *n_changes);
++int unit_file_link(UnitFileScope scope, UnitFileFlags flags, const char *root_dir, char **files, UnitFileChange **changes, unsigned *n_changes);
++int unit_file_preset(UnitFileScope scope, UnitFileFlags flags, const char *root_dir, char **files, UnitFilePresetMode mode, UnitFileChange **changes, unsigned *n_changes);
++int unit_file_preset_all(UnitFileScope scope, UnitFileFlags flags, const char *root_dir, UnitFilePresetMode mode, UnitFileChange **changes, unsigned *n_changes);
++int unit_file_mask(UnitFileScope scope, UnitFileFlags flags, const char *root_dir, char **files, UnitFileChange **changes, unsigned *n_changes);
++int unit_file_unmask(UnitFileScope scope, UnitFileFlags flags, const char *root_dir, char **files, UnitFileChange **changes, unsigned *n_changes);
++int unit_file_set_default(UnitFileScope scope, UnitFileFlags flags, const char *root_dir, const char *file, UnitFileChange **changes, unsigned *n_changes);
+ int unit_file_get_default(UnitFileScope scope, const char *root_dir, char **name);
+-int unit_file_add_dependency(UnitFileScope scope, bool runtime, const char *root_dir, char **files, const char *target, UnitDependency dep, bool force, UnitFileChange **changes, unsigned *n_changes);
++int unit_file_add_dependency(UnitFileScope scope, UnitFileFlags flags, const char *root_dir, char **files, const char *target, UnitDependency dep, UnitFileChange **changes, unsigned *n_changes);
+ 
+ int unit_file_lookup_state(UnitFileScope scope, const char *root_dir,const LookupPaths *paths, const char *name, UnitFileState *ret);
+ int unit_file_get_state(UnitFileScope scope, const char *root_dir, const char *filename, UnitFileState *ret);
+diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
+index 1e1009f38..e0dbf0fda 100644
+--- a/src/systemctl/systemctl.c
++++ b/src/systemctl/systemctl.c
+@@ -165,6 +165,11 @@ static int daemon_reload(sd_bus *bus, char **args);
+ static int halt_now(enum action a);
+ static int check_one_unit(sd_bus *bus, const char *name, const char *good_states, bool quiet);
+ 
++static UnitFileFlags args_to_flags(void) {
++        return (arg_runtime ? UNIT_FILE_RUNTIME : 0) |
++               (arg_force   ? UNIT_FILE_FORCE   : 0);
++}
++
+ static char** strv_skip_first(char **strv) {
+         if (strv_length(strv) > 0)
+                 return strv + 1;
+@@ -1974,7 +1979,7 @@ static int set_default(sd_bus *bus, char **args) {
+                 return log_oom();
+ 
+         if (!bus || avoid_bus()) {
+-                r = unit_file_set_default(arg_scope, arg_root, unit, true, &changes, &n_changes);
++                r = unit_file_set_default(arg_scope, UNIT_FILE_FORCE, arg_root, unit, &changes, &n_changes);
+                 if (r < 0)
+                         return log_error_errno(r, "Failed to set default target: %m");
+ 
+@@ -5407,22 +5412,25 @@ static int enable_unit(sd_bus *bus, char **args) {
+         }
+ 
+         if (!bus || avoid_bus()) {
++                UnitFileFlags flags;
++
++                flags = args_to_flags();
+                 if (streq(verb, "enable")) {
+-                        r = unit_file_enable(arg_scope, arg_runtime, arg_root, names, arg_force, &changes, &n_changes);
++                        r = unit_file_enable(arg_scope, flags, arg_root, names, &changes, &n_changes);
+                         carries_install_info = r;
+                 } else if (streq(verb, "disable"))
+-                        r = unit_file_disable(arg_scope, arg_runtime, arg_root, names, &changes, &n_changes);
++                        r = unit_file_disable(arg_scope, flags, arg_root, names, &changes, &n_changes);
+                 else if (streq(verb, "reenable")) {
+-                        r = unit_file_reenable(arg_scope, arg_runtime, arg_root, names, arg_force, &changes, &n_changes);
++                        r = unit_file_reenable(arg_scope, flags, arg_root, names, &changes, &n_changes);
+                         carries_install_info = r;
+                 } else if (streq(verb, "link"))
+-                        r = unit_file_link(arg_scope, arg_runtime, arg_root, names, arg_force, &changes, &n_changes);
++                        r = unit_file_link(arg_scope, flags, arg_root, names, &changes, &n_changes);
+                 else if (streq(verb, "preset")) {
+-                        r = unit_file_preset(arg_scope, arg_runtime, arg_root, names, arg_preset_mode, arg_force, &changes, &n_changes);
++                        r = unit_file_preset(arg_scope, flags, arg_root, names, arg_preset_mode, &changes, &n_changes);
+                 } else if (streq(verb, "mask"))
+-                        r = unit_file_mask(arg_scope, arg_runtime, arg_root, names, arg_force, &changes, &n_changes);
++                        r = unit_file_mask(arg_scope, flags, arg_root, names, &changes, &n_changes);
+                 else if (streq(verb, "unmask"))
+-                        r = unit_file_unmask(arg_scope, arg_runtime, arg_root, names, &changes, &n_changes);
++                        r = unit_file_unmask(arg_scope, flags, arg_root, names, &changes, &n_changes);
+                 else
+                         assert_not_reached("Unknown verb");
+ 
+@@ -5588,7 +5596,7 @@ static int add_dependency(sd_bus *bus, char **args) {
+                 UnitFileChange *changes = NULL;
+                 unsigned n_changes = 0;
+ 
+-                r = unit_file_add_dependency(arg_scope, arg_runtime, arg_root, names, target, dep, arg_force, &changes, &n_changes);
++                r = unit_file_add_dependency(arg_scope, args_to_flags(), arg_root, names, target, dep, &changes, &n_changes);
+ 
+                 if (r < 0)
+                         return log_error_errno(r, "Can't add dependency: %m");
+@@ -5652,7 +5660,7 @@ static int preset_all(sd_bus *bus, char **args) {
+ 
+         if (!bus || avoid_bus()) {
+ 
+-                r = unit_file_preset_all(arg_scope, arg_runtime, arg_root, arg_preset_mode, arg_force, &changes, &n_changes);
++                r = unit_file_preset_all(arg_scope, args_to_flags(), arg_root, arg_preset_mode, &changes, &n_changes);
+                 if (r < 0) {
+                         log_error_errno(r, "Operation failed: %m");
+                         goto finish;
+diff --git a/src/test/test-install-root.c b/src/test/test-install-root.c
+index 667c3748c..cb417d4c1 100644
+--- a/src/test/test-install-root.c
++++ b/src/test/test-install-root.c
+@@ -62,7 +62,7 @@ static void test_basic_mask_and_enable(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "d.service", NULL) >= 0);
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "d.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+ 
+-        assert_se(unit_file_mask(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("a.service"), false, &changes, &n_changes) >= 0);
++        assert_se(unit_file_mask(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("a.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 1);
+         assert_se(changes[0].type == UNIT_FILE_SYMLINK);
+         assert_se(streq(changes[0].source, "/dev/null"));
+@@ -78,11 +78,11 @@ static void test_basic_mask_and_enable(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "d.service", &state) >= 0 && state == UNIT_FILE_MASKED);
+ 
+         /* Enabling a masked unit should fail! */
+-        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("a.service"), false, &changes, &n_changes) == -ESHUTDOWN);
++        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("a.service"), &changes, &n_changes) == -ESHUTDOWN);
+         unit_file_changes_free(changes, n_changes);
+         changes = NULL; n_changes = 0;
+ 
+-        assert_se(unit_file_unmask(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("a.service"), &changes, &n_changes) >= 0);
++        assert_se(unit_file_unmask(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("a.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 1);
+         assert_se(changes[0].type == UNIT_FILE_UNLINK);
+         p = strjoina(root, SYSTEM_CONFIG_UNIT_PATH"/a.service");
+@@ -90,7 +90,7 @@ static void test_basic_mask_and_enable(const char *root) {
+         unit_file_changes_free(changes, n_changes);
+         changes = NULL; n_changes = 0;
+ 
+-        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("a.service"), false, &changes, &n_changes) == 1);
++        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("a.service"), &changes, &n_changes) == 1);
+         assert_se(n_changes == 1);
+         assert_se(changes[0].type == UNIT_FILE_SYMLINK);
+         assert_se(streq(changes[0].source, "/usr/lib/systemd/system/a.service"));
+@@ -105,12 +105,12 @@ static void test_basic_mask_and_enable(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "d.service", &state) >= 0 && state == UNIT_FILE_ENABLED);
+ 
+         /* Enabling it again should succeed but be a NOP */
+-        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("a.service"), false, &changes, &n_changes) == 1);
++        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("a.service"), &changes, &n_changes) == 1);
+         assert_se(n_changes == 0);
+         unit_file_changes_free(changes, n_changes);
+         changes = NULL; n_changes = 0;
+ 
+-        assert_se(unit_file_disable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("a.service"), &changes, &n_changes) >= 0);
++        assert_se(unit_file_disable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("a.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 1);
+         assert_se(changes[0].type == UNIT_FILE_UNLINK);
+         p = strjoina(root, SYSTEM_CONFIG_UNIT_PATH"/multi-user.target.wants/a.service");
+@@ -124,13 +124,13 @@ static void test_basic_mask_and_enable(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "d.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+ 
+         /* Disabling a disabled unit must suceed but be a NOP */
+-        assert_se(unit_file_disable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("a.service"), &changes, &n_changes) >= 0);
++        assert_se(unit_file_disable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("a.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 0);
+         unit_file_changes_free(changes, n_changes);
+         changes = NULL; n_changes = 0;
+ 
+         /* Let's enable this indirectly via a symlink */
+-        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("d.service"), false, &changes, &n_changes) >= 0);
++        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("d.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 1);
+         assert_se(changes[0].type == UNIT_FILE_SYMLINK);
+         assert_se(streq(changes[0].source, "/usr/lib/systemd/system/a.service"));
+@@ -146,7 +146,7 @@ static void test_basic_mask_and_enable(const char *root) {
+ 
+         /* Let's try to reenable */
+ 
+-        assert_se(unit_file_reenable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("b.service"), false, &changes, &n_changes) >= 0);
++        assert_se(unit_file_reenable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("b.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 2);
+         assert_se(changes[0].type == UNIT_FILE_UNLINK);
+         p = strjoina(root, SYSTEM_CONFIG_UNIT_PATH"/multi-user.target.wants/a.service");
+@@ -215,7 +215,7 @@ static void test_linked_units(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "linked3.service", &state) >= 0 && state == UNIT_FILE_LINKED);
+ 
+         /* First, let's link the unit into the search path */
+-        assert_se(unit_file_link(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("/opt/linked.service"), false, &changes, &n_changes) >= 0);
++        assert_se(unit_file_link(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("/opt/linked.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 1);
+         assert_se(changes[0].type == UNIT_FILE_SYMLINK);
+         assert_se(streq(changes[0].source, "/opt/linked.service"));
+@@ -227,7 +227,7 @@ static void test_linked_units(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "linked.service", &state) >= 0 && state == UNIT_FILE_LINKED);
+ 
+         /* Let's unlink it from the search path again */
+-        assert_se(unit_file_disable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("linked.service"), &changes, &n_changes) >= 0);
++        assert_se(unit_file_disable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("linked.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 1);
+         assert_se(changes[0].type == UNIT_FILE_UNLINK);
+         p = strjoina(root, SYSTEM_CONFIG_UNIT_PATH"/linked.service");
+@@ -238,7 +238,7 @@ static void test_linked_units(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "linked.service", NULL) == -ENOENT);
+ 
+         /* Now, let's not just link it, but also enable it */
+-        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("/opt/linked.service"), false, &changes, &n_changes) >= 0);
++        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("/opt/linked.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 2);
+         p = strjoina(root, SYSTEM_CONFIG_UNIT_PATH"/multi-user.target.wants/linked.service");
+         q = strjoina(root, SYSTEM_CONFIG_UNIT_PATH"/linked.service");
+@@ -260,7 +260,7 @@ static void test_linked_units(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "linked.service", &state) >= 0 && state == UNIT_FILE_ENABLED);
+ 
+         /* And let's unlink it again */
+-        assert_se(unit_file_disable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("linked.service"), &changes, &n_changes) >= 0);
++        assert_se(unit_file_disable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("linked.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 2);
+         p = strjoina(root, SYSTEM_CONFIG_UNIT_PATH"/multi-user.target.wants/linked.service");
+         q = strjoina(root, SYSTEM_CONFIG_UNIT_PATH"/linked.service");
+@@ -280,7 +280,7 @@ static void test_linked_units(const char *root) {
+ 
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "linked.service", NULL) == -ENOENT);
+ 
+-        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("linked2.service"), false, &changes, &n_changes) >= 0);
++        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("linked2.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 2);
+         p = strjoina(root, SYSTEM_CONFIG_UNIT_PATH"/multi-user.target.wants/linked2.service");
+         q = strjoina(root, SYSTEM_CONFIG_UNIT_PATH"/linked2.service");
+@@ -299,7 +299,7 @@ static void test_linked_units(const char *root) {
+         unit_file_changes_free(changes, n_changes);
+         changes = NULL; n_changes = 0;
+ 
+-        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("linked3.service"), false, &changes, &n_changes) == -ELOOP);
++        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("linked3.service"), &changes, &n_changes) == -ELOOP);
+         unit_file_changes_free(changes, n_changes);
+         changes = NULL; n_changes = 0;
+ }
+@@ -318,14 +318,14 @@ static void test_default(const char *root) {
+ 
+         assert_se(unit_file_get_default(UNIT_FILE_SYSTEM, root, &def) == -ENOENT);
+ 
+-        assert_se(unit_file_set_default(UNIT_FILE_SYSTEM, root, "idontexist.target", false, &changes, &n_changes) == -ENOENT);
++        assert_se(unit_file_set_default(UNIT_FILE_SYSTEM, 0, root, "idontexist.target", &changes, &n_changes) == -ENOENT);
+         assert_se(n_changes == 0);
+         unit_file_changes_free(changes, n_changes);
+         changes = NULL; n_changes = 0;
+ 
+         assert_se(unit_file_get_default(UNIT_FILE_SYSTEM, root, &def) == -ENOENT);
+ 
+-        assert_se(unit_file_set_default(UNIT_FILE_SYSTEM, root, "test-default.target", false, &changes, &n_changes) >= 0);
++        assert_se(unit_file_set_default(UNIT_FILE_SYSTEM, 0, root, "test-default.target", &changes, &n_changes) >= 0);
+         assert_se(n_changes == 1);
+         assert_se(changes[0].type == UNIT_FILE_SYMLINK);
+         assert_se(streq(changes[0].source, "/usr/lib/systemd/system/test-default-real.target"));
+@@ -355,7 +355,7 @@ static void test_add_dependency(const char *root) {
+         p = strjoina(root, "/usr/lib/systemd/system/add-dependency-test-service.service");
+         assert_se(symlink("real-add-dependency-test-service.service", p) >= 0);
+ 
+-        assert_se(unit_file_add_dependency(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("add-dependency-test-service.service"), "add-dependency-test-target.target", UNIT_WANTS, false, &changes, &n_changes) >= 0);
++        assert_se(unit_file_add_dependency(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("add-dependency-test-service.service"), "add-dependency-test-target.target", UNIT_WANTS, &changes, &n_changes) >= 0);
+         assert_se(n_changes == 1);
+         assert_se(changes[0].type == UNIT_FILE_SYMLINK);
+         assert_se(streq(changes[0].source, "/usr/lib/systemd/system/real-add-dependency-test-service.service"));
+@@ -392,7 +392,7 @@ static void test_template_enable(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "template-symlink@def.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "template-symlink@foo.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+ 
+-        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("template@.service"), false, &changes, &n_changes) >= 0);
++        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("template@.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 1);
+         assert_se(changes[0].type == UNIT_FILE_SYMLINK);
+         assert_se(streq(changes[0].source, "/usr/lib/systemd/system/template@.service"));
+@@ -408,7 +408,7 @@ static void test_template_enable(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "template-symlink@def.service", &state) >= 0 && state == UNIT_FILE_ENABLED);
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "template-symlink@foo.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+ 
+-        assert_se(unit_file_disable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("template@.service"), &changes, &n_changes) >= 0);
++        assert_se(unit_file_disable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("template@.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 1);
+         assert_se(changes[0].type == UNIT_FILE_UNLINK);
+         assert_se(streq(changes[0].path, p));
+@@ -422,7 +422,7 @@ static void test_template_enable(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "template-symlink@def.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "template-symlink@foo.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+ 
+-        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("template@foo.service"), false, &changes, &n_changes) >= 0);
++        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("template@foo.service"), &changes, &n_changes) >= 0);
+         assert_se(changes[0].type == UNIT_FILE_SYMLINK);
+         assert_se(streq(changes[0].source, "/usr/lib/systemd/system/template@.service"));
+         p = strjoina(root, SYSTEM_CONFIG_UNIT_PATH"/multi-user.target.wants/template@foo.service");
+@@ -437,7 +437,7 @@ static void test_template_enable(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "template-symlink@def.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "template-symlink@foo.service", &state) >= 0 && state == UNIT_FILE_ENABLED);
+ 
+-        assert_se(unit_file_disable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("template@foo.service"), &changes, &n_changes) >= 0);
++        assert_se(unit_file_disable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("template@foo.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 1);
+         assert_se(changes[0].type == UNIT_FILE_UNLINK);
+         assert_se(streq(changes[0].path, p));
+@@ -453,7 +453,7 @@ static void test_template_enable(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "template-symlink@foo.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "template-symlink@quux.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+ 
+-        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("template-symlink@quux.service"), false, &changes, &n_changes) >= 0);
++        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("template-symlink@quux.service"), &changes, &n_changes) >= 0);
+         assert_se(changes[0].type == UNIT_FILE_SYMLINK);
+         assert_se(streq(changes[0].source, "/usr/lib/systemd/system/template@.service"));
+         p = strjoina(root, SYSTEM_CONFIG_UNIT_PATH"/multi-user.target.wants/template@quux.service");
+@@ -498,7 +498,7 @@ static void test_indirect(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "indirectb.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "indirectc.service", &state) >= 0 && state == UNIT_FILE_INDIRECT);
+ 
+-        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("indirectc.service"), false, &changes, &n_changes) >= 0);
++        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("indirectc.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 1);
+         assert_se(changes[0].type == UNIT_FILE_SYMLINK);
+         assert_se(streq(changes[0].source, "/usr/lib/systemd/system/indirectb.service"));
+@@ -511,7 +511,7 @@ static void test_indirect(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "indirectb.service", &state) >= 0 && state == UNIT_FILE_ENABLED);
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "indirectc.service", &state) >= 0 && state == UNIT_FILE_INDIRECT);
+ 
+-        assert_se(unit_file_disable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("indirectc.service"), &changes, &n_changes) >= 0);
++        assert_se(unit_file_disable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("indirectc.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 1);
+         assert_se(changes[0].type == UNIT_FILE_UNLINK);
+         p = strjoina(root, SYSTEM_CONFIG_UNIT_PATH"/multi-user.target.wants/indirectb.service");
+@@ -551,7 +551,7 @@ static void test_preset_and_list(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "preset-yes.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "preset-no.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+ 
+-        assert_se(unit_file_preset(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("preset-yes.service"), UNIT_FILE_PRESET_FULL, false, &changes, &n_changes) >= 0);
++        assert_se(unit_file_preset(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("preset-yes.service"), UNIT_FILE_PRESET_FULL, &changes, &n_changes) >= 0);
+         assert_se(n_changes == 1);
+         assert_se(changes[0].type == UNIT_FILE_SYMLINK);
+         assert_se(streq(changes[0].source, "/usr/lib/systemd/system/preset-yes.service"));
+@@ -563,7 +563,7 @@ static void test_preset_and_list(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "preset-yes.service", &state) >= 0 && state == UNIT_FILE_ENABLED);
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "preset-no.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+ 
+-        assert_se(unit_file_disable(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("preset-yes.service"), &changes, &n_changes) >= 0);
++        assert_se(unit_file_disable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("preset-yes.service"), &changes, &n_changes) >= 0);
+         assert_se(n_changes == 1);
+         assert_se(changes[0].type == UNIT_FILE_UNLINK);
+         p = strjoina(root, SYSTEM_CONFIG_UNIT_PATH"/multi-user.target.wants/preset-yes.service");
+@@ -574,7 +574,7 @@ static void test_preset_and_list(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "preset-yes.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "preset-no.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+ 
+-        assert_se(unit_file_preset(UNIT_FILE_SYSTEM, false, root, STRV_MAKE("preset-no.service"), UNIT_FILE_PRESET_FULL, false, &changes, &n_changes) >= 0);
++        assert_se(unit_file_preset(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("preset-no.service"), UNIT_FILE_PRESET_FULL, &changes, &n_changes) >= 0);
+         assert_se(n_changes == 0);
+         unit_file_changes_free(changes, n_changes);
+         changes = NULL; n_changes = 0;
+@@ -582,7 +582,7 @@ static void test_preset_and_list(const char *root) {
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "preset-yes.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+         assert_se(unit_file_get_state(UNIT_FILE_SYSTEM, root, "preset-no.service", &state) >= 0 && state == UNIT_FILE_DISABLED);
+ 
+-        assert_se(unit_file_preset_all(UNIT_FILE_SYSTEM, false, root, UNIT_FILE_PRESET_FULL, false, &changes, &n_changes) >= 0);
++        assert_se(unit_file_preset_all(UNIT_FILE_SYSTEM, 0, root, UNIT_FILE_PRESET_FULL, &changes, &n_changes) >= 0);
+ 
+         assert_se(n_changes > 0);
+ 
+diff --git a/src/test/test-install.c b/src/test/test-install.c
+index 08a1faf2c..0cae0e794 100644
+--- a/src/test/test-install.c
++++ b/src/test/test-install.c
+@@ -73,12 +73,12 @@ int main(int argc, char* argv[]) {
+ 
+         log_error("enable");
+ 
+-        r = unit_file_enable(UNIT_FILE_SYSTEM, false, NULL, (char**) files, false, &changes, &n_changes);
++        r = unit_file_enable(UNIT_FILE_SYSTEM, 0, NULL, (char**) files, &changes, &n_changes);
+         assert_se(r >= 0);
+ 
+         log_error("enable2");
+ 
+-        r = unit_file_enable(UNIT_FILE_SYSTEM, false, NULL, (char**) files, false, &changes, &n_changes);
++        r = unit_file_enable(UNIT_FILE_SYSTEM, 0, NULL, (char**) files, &changes, &n_changes);
+         assert_se(r >= 0);
+ 
+         dump_changes(changes, n_changes);
+@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
+         changes = NULL;
+         n_changes = 0;
+ 
+-        r = unit_file_disable(UNIT_FILE_SYSTEM, false, NULL, (char**) files, &changes, &n_changes);
++        r = unit_file_disable(UNIT_FILE_SYSTEM, 0, NULL, (char**) files, &changes, &n_changes);
+         assert_se(r >= 0);
+ 
+         dump_changes(changes, n_changes);
+@@ -107,10 +107,10 @@ int main(int argc, char* argv[]) {
+         changes = NULL;
+         n_changes = 0;
+ 
+-        r = unit_file_mask(UNIT_FILE_SYSTEM, false, NULL, (char**) files, false, &changes, &n_changes);
++        r = unit_file_mask(UNIT_FILE_SYSTEM, 0, NULL, (char**) files, &changes, &n_changes);
+         assert_se(r >= 0);
+         log_error("mask2");
+-        r = unit_file_mask(UNIT_FILE_SYSTEM, false, NULL, (char**) files, false, &changes, &n_changes);
++        r = unit_file_mask(UNIT_FILE_SYSTEM, 0, NULL, (char**) files, &changes, &n_changes);
+         assert_se(r >= 0);
+ 
+         dump_changes(changes, n_changes);
+@@ -124,10 +124,10 @@ int main(int argc, char* argv[]) {
+         changes = NULL;
+         n_changes = 0;
+ 
+-        r = unit_file_unmask(UNIT_FILE_SYSTEM, false, NULL, (char**) files, &changes, &n_changes);
++        r = unit_file_unmask(UNIT_FILE_SYSTEM, 0, NULL, (char**) files, &changes, &n_changes);
+         assert_se(r >= 0);
+         log_error("unmask2");
+-        r = unit_file_unmask(UNIT_FILE_SYSTEM, false, NULL, (char**) files, &changes, &n_changes);
++        r = unit_file_unmask(UNIT_FILE_SYSTEM, 0, NULL, (char**) files, &changes, &n_changes);
+         assert_se(r >= 0);
+ 
+         dump_changes(changes, n_changes);
+@@ -141,7 +141,7 @@ int main(int argc, char* argv[]) {
+         changes = NULL;
+         n_changes = 0;
+ 
+-        r = unit_file_mask(UNIT_FILE_SYSTEM, false, NULL, (char**) files, false, &changes, &n_changes);
++        r = unit_file_mask(UNIT_FILE_SYSTEM, 0, NULL, (char**) files, &changes, &n_changes);
+         assert_se(r >= 0);
+ 
+         dump_changes(changes, n_changes);
+@@ -155,10 +155,10 @@ int main(int argc, char* argv[]) {
+         changes = NULL;
+         n_changes = 0;
+ 
+-        r = unit_file_disable(UNIT_FILE_SYSTEM, false, NULL, (char**) files, &changes, &n_changes);
++        r = unit_file_disable(UNIT_FILE_SYSTEM, 0, NULL, (char**) files, &changes, &n_changes);
+         assert_se(r >= 0);
+         log_error("disable2");
+-        r = unit_file_disable(UNIT_FILE_SYSTEM, false, NULL, (char**) files, &changes, &n_changes);
++        r = unit_file_disable(UNIT_FILE_SYSTEM, 0, NULL, (char**) files, &changes, &n_changes);
+         assert_se(r >= 0);
+ 
+         dump_changes(changes, n_changes);
+@@ -172,7 +172,7 @@ int main(int argc, char* argv[]) {
+         changes = NULL;
+         n_changes = 0;
+ 
+-        r = unit_file_unmask(UNIT_FILE_SYSTEM, false, NULL, (char**) files, &changes, &n_changes);
++        r = unit_file_unmask(UNIT_FILE_SYSTEM, 0, NULL, (char**) files, &changes, &n_changes);
+         assert_se(r >= 0);
+ 
+         dump_changes(changes, n_changes);
+@@ -186,7 +186,7 @@ int main(int argc, char* argv[]) {
+         changes = NULL;
+         n_changes = 0;
+ 
+-        r = unit_file_enable(UNIT_FILE_SYSTEM, false, NULL, (char**) files2, false, &changes, &n_changes);
++        r = unit_file_enable(UNIT_FILE_SYSTEM, 0, NULL, (char**) files2, &changes, &n_changes);
+         assert_se(r >= 0);
+ 
+         dump_changes(changes, n_changes);
+@@ -200,7 +200,7 @@ int main(int argc, char* argv[]) {
+         changes = NULL;
+         n_changes = 0;
+ 
+-        r = unit_file_disable(UNIT_FILE_SYSTEM, false, NULL, STRV_MAKE(basename(files2[0])), &changes, &n_changes);
++        r = unit_file_disable(UNIT_FILE_SYSTEM, 0, NULL, STRV_MAKE(basename(files2[0])), &changes, &n_changes);
+         assert_se(r >= 0);
+ 
+         dump_changes(changes, n_changes);
+@@ -213,7 +213,7 @@ int main(int argc, char* argv[]) {
+         changes = NULL;
+         n_changes = 0;
+ 
+-        r = unit_file_link(UNIT_FILE_SYSTEM, false, NULL, (char**) files2, false, &changes, &n_changes);
++        r = unit_file_link(UNIT_FILE_SYSTEM, 0, NULL, (char**) files2, &changes, &n_changes);
+         assert_se(r >= 0);
+ 
+         dump_changes(changes, n_changes);
+@@ -227,7 +227,7 @@ int main(int argc, char* argv[]) {
+         changes = NULL;
+         n_changes = 0;
+ 
+-        r = unit_file_disable(UNIT_FILE_SYSTEM, false, NULL, STRV_MAKE(basename(files2[0])), &changes, &n_changes);
++        r = unit_file_disable(UNIT_FILE_SYSTEM, 0, NULL, STRV_MAKE(basename(files2[0])), &changes, &n_changes);
+         assert_se(r >= 0);
+ 
+         dump_changes(changes, n_changes);
+@@ -240,7 +240,7 @@ int main(int argc, char* argv[]) {
+         changes = NULL;
+         n_changes = 0;
+ 
+-        r = unit_file_link(UNIT_FILE_SYSTEM, false, NULL, (char**) files2, false, &changes, &n_changes);
++        r = unit_file_link(UNIT_FILE_SYSTEM, 0, NULL, (char**) files2, &changes, &n_changes);
+         assert_se(r >= 0);
+ 
+         dump_changes(changes, n_changes);
+@@ -254,7 +254,7 @@ int main(int argc, char* argv[]) {
+         changes = NULL;
+         n_changes = 0;
+ 
+-        r = unit_file_reenable(UNIT_FILE_SYSTEM, false, NULL, (char**) files2, false, &changes, &n_changes);
++        r = unit_file_reenable(UNIT_FILE_SYSTEM, 0, NULL, (char**) files2, &changes, &n_changes);
+         assert_se(r >= 0);
+ 
+         dump_changes(changes, n_changes);
+@@ -268,7 +268,7 @@ int main(int argc, char* argv[]) {
+         changes = NULL;
+         n_changes = 0;
+ 
+-        r = unit_file_disable(UNIT_FILE_SYSTEM, false, NULL, STRV_MAKE(basename(files2[0])), &changes, &n_changes);
++        r = unit_file_disable(UNIT_FILE_SYSTEM, 0, NULL, STRV_MAKE(basename(files2[0])), &changes, &n_changes);
+         assert_se(r >= 0);
+ 
+         dump_changes(changes, n_changes);
+@@ -280,7 +280,7 @@ int main(int argc, char* argv[]) {
+         changes = NULL;
+         n_changes = 0;
+ 
+-        r = unit_file_preset(UNIT_FILE_SYSTEM, false, NULL, (char**) files, UNIT_FILE_PRESET_FULL, false, &changes, &n_changes);
++        r = unit_file_preset(UNIT_FILE_SYSTEM, 0, NULL, (char**) files, UNIT_FILE_PRESET_FULL, &changes, &n_changes);
+         assert_se(r >= 0);
+ 
+         dump_changes(changes, n_changes);

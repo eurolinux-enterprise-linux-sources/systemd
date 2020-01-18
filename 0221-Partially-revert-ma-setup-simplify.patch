@@ -1,0 +1,67 @@
+From 21559c09b39155d44f8997703a35211623a38689 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Mon, 1 Jun 2015 10:33:48 -0400
+Subject: [PATCH] Partially revert "ma-setup: simplify"
+
+copy_bytes() tries to do the write in chunks, but ima kernel code
+needs every rule to be written in one write. Writing the whole file
+at once avoids the issue.
+
+http://lists.freedesktop.org/archives/systemd-devel/2015-June/032623.html
+http://sourceforge.net/p/linux-ima/mailman/message/34145236/
+https://bugzilla.redhat.com/show_bug.cgi?id=1226948
+(cherry picked from commit 116b6c8687e1da25fcecf80ba6ac16866e308d50)
+
+Cherry-picked from: 116b6c8
+Resolves: #1222517
+---
+ src/core/ima-setup.c | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/src/core/ima-setup.c b/src/core/ima-setup.c
+index 0e0d16a7c..1d4acfa3b 100644
+--- a/src/core/ima-setup.c
++++ b/src/core/ima-setup.c
+@@ -27,9 +27,10 @@
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <fcntl.h>
++#include <sys/stat.h>
++#include <sys/mman.h>
+ 
+ #include "ima-setup.h"
+-#include "copy.h"
+ #include "util.h"
+ #include "log.h"
+ 
+@@ -42,6 +43,8 @@ int ima_setup(void) {
+ 
+ #ifdef HAVE_IMA
+         _cleanup_close_ int policyfd = -1, imafd = -1;
++        struct stat st;
++        char *policy;
+ 
+         if (access(IMA_SECFS_DIR, F_OK) < 0) {
+                 log_debug("IMA support is disabled in the kernel, ignoring.");
+@@ -66,12 +69,20 @@ int ima_setup(void) {
+                 return 0;
+         }
+ 
+-        r = copy_bytes(policyfd, imafd, (off_t) -1, false);
++        if (fstat(policyfd, &st) < 0)
++                return log_error_errno(errno, "Failed to fstat "IMA_POLICY_PATH": %m");
++
++        policy = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, policyfd, 0);
++        if (policy == MAP_FAILED)
++                return log_error_errno(errno, "Failed to mmap "IMA_POLICY_PATH": %m");
++
++        r = loop_write(imafd, policy, (size_t) st.st_size, false);
+         if (r < 0)
+                 log_error_errno(r, "Failed to load the IMA custom policy file "IMA_POLICY_PATH": %m");
+         else
+                 log_info("Successfully loaded the IMA custom policy "IMA_POLICY_PATH".");
+ 
++        munmap(policy, st.st_size);
+ #endif /* HAVE_IMA */
+         return r;
+ }

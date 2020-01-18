@@ -1,0 +1,39 @@
+From 92ff0ade63ae85c6b6170af7b1209aaf37298ab1 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jan.synacek@gmail.com>
+Date: Tue, 24 Jan 2017 04:06:05 +0100
+Subject: [PATCH] core: improve error message when RefuseManualStart(Stop) is
+ hit (#5132)
+
+(cherry picked from commit 7e974e8530e3605db8186bd0c33bf36087e24e22)
+Resolves: #1026648
+---
+ src/core/dbus-unit.c | 2 +-
+ src/core/dbus.c      | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/core/dbus-unit.c b/src/core/dbus-unit.c
+index 89b00e94c..056a17ac1 100644
+--- a/src/core/dbus-unit.c
++++ b/src/core/dbus-unit.c
+@@ -843,7 +843,7 @@ int bus_unit_queue_job(
+         if ((type == JOB_START && u->refuse_manual_start) ||
+             (type == JOB_STOP && u->refuse_manual_stop) ||
+             ((type == JOB_RESTART || type == JOB_TRY_RESTART) && (u->refuse_manual_start || u->refuse_manual_stop)))
+-                return sd_bus_error_setf(error, BUS_ERROR_ONLY_BY_DEPENDENCY, "Operation refused, unit %s may be requested by dependency only.", u->id);
++                return sd_bus_error_setf(error, BUS_ERROR_ONLY_BY_DEPENDENCY, "Operation refused, unit %s may be requested by dependency only (it is configured to refuse manual start/stop).", u->id);
+ 
+         r = manager_add_job(u->manager, type, u, mode, true, error, &j);
+         if (r < 0)
+diff --git a/src/core/dbus.c b/src/core/dbus.c
+index 29524d49a..0061211fa 100644
+--- a/src/core/dbus.c
++++ b/src/core/dbus.c
+@@ -187,7 +187,7 @@ static int signal_activation_request(sd_bus *bus, sd_bus_message *message, void
+                 goto failed;
+ 
+         if (u->refuse_manual_start) {
+-                r = sd_bus_error_setf(&error, BUS_ERROR_ONLY_BY_DEPENDENCY, "Operation refused, %s may be requested by dependency only.", u->id);
++                r = sd_bus_error_setf(&error, BUS_ERROR_ONLY_BY_DEPENDENCY, "Operation refused, %s may be requested by dependency only (it is configured to refuse manual start/stop).", u->id);
+                 goto failed;
+         }
+ 

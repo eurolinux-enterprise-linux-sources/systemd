@@ -1,0 +1,281 @@
+From afa96dafde9d50f2b53ccf8136ead9ed79544877 Mon Sep 17 00:00:00 2001
+From: Shawn Landden <shawn@churchofgit.com>
+Date: Tue, 10 Mar 2015 04:41:59 -0700
+Subject: [PATCH] add REMOTE_ADDR and REMOTE_PORT for Accept=yes
+
+Cherry-picked from: 3b1c524154c876aecebc98787975cc2943100210
+Resolves: #1341154
+---
+ TODO                                     |  2 -
+ man/systemd.socket.xml                   |  7 ++-
+ src/core/service.c                       | 42 ++++++++++++-
+ src/libsystemd/sd-resolve/test-resolve.c |  2 +-
+ src/shared/socket-util.c                 | 76 +++++++++++++++++-------
+ src/shared/socket-util.h                 |  4 +-
+ src/timesync/timesyncd-server.h          |  2 +-
+ 7 files changed, 107 insertions(+), 28 deletions(-)
+
+diff --git a/TODO b/TODO
+index d96d2bf0e..498d82c21 100644
+--- a/TODO
++++ b/TODO
+@@ -185,8 +185,6 @@ Features:
+ * as soon as we have kdbus, and sender timestamps, revisit coalescing multiple parallel daemon reloads:
+   http://lists.freedesktop.org/archives/systemd-devel/2014-December/025862.html
+ 
+-* set $REMOTE_IP (or $REMOTE_ADDR/$REMOTE_PORT) environment variable when doing per-connection socket activation. use format introduced by xinetd or CGI for this
+-
+ * the install state probably shouldn't get confused by generated units, think dbus1/kdbus compat!
+ 
+ * in systemctl list-unit-files: show the install value the presets would suggest for a service in a third column
+diff --git a/man/systemd.socket.xml b/man/systemd.socket.xml
+index 2f541937f..350a95648 100644
+--- a/man/systemd.socket.xml
++++ b/man/systemd.socket.xml
+@@ -357,7 +357,12 @@
+         daemons designed for usage with
+         <citerefentry><refentrytitle>inetd</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+         to work unmodified with systemd socket
+-        activation.</para></listitem>
++        activation.</para>
++
++        <para>For IPv4 and IPv6 connections the <varname>REMOTE_ADDR</varname>
++        environment variable will contain the remote IP, and <varname>REMOTE_PORT</varname>
++        will contain the remote port. This is the same as the format used by CGI.
++        For SOCK_RAW the port is the IP protocol.</para></listitem>
+       </varlistentry>
+ 
+       <varlistentry>
+diff --git a/src/core/service.c b/src/core/service.c
+index ae5e61000..c76713b1c 100644
+--- a/src/core/service.c
++++ b/src/core/service.c
+@@ -1094,7 +1094,7 @@ static int service_spawn(
+         if (r < 0)
+                 goto fail;
+ 
+-        our_env = new0(char*, 4);
++        our_env = new0(char*, 6);
+         if (!our_env) {
+                 r = -ENOMEM;
+                 goto fail;
+@@ -1118,6 +1118,46 @@ static int service_spawn(
+                         goto fail;
+                 }
+ 
++        if (UNIT_DEREF(s->accept_socket)) {
++                union sockaddr_union sa;
++                socklen_t salen = sizeof(sa);
++
++                r = getpeername(s->socket_fd, &sa.sa, &salen);
++                if (r < 0) {
++                        r = -errno;
++                        goto fail;
++                }
++
++                if (IN_SET(sa.sa.sa_family, AF_INET, AF_INET6)) {
++                        _cleanup_free_ char *addr = NULL;
++                        char *t;
++                        int port;
++
++                        r = sockaddr_pretty(&sa.sa, salen, true, false, &addr);
++                        if (r < 0)
++                                goto fail;
++
++                        t = strappend("REMOTE_ADDR=", addr);
++                        if (!t) {
++                                r = -ENOMEM;
++                                goto fail;
++                        }
++                        our_env[n_env++] = t;
++
++                        port = sockaddr_port(&sa.sa);
++                        if (port < 0) {
++                                r = port;
++                                goto fail;
++                        }
++
++                        if (asprintf(&t, "REMOTE_PORT=%u", port) < 0) {
++                                r = -ENOMEM;
++                                goto fail;
++                        }
++                        our_env[n_env++] = t;
++                }
++        }
++
+         final_env = strv_env_merge(2, UNIT(s)->manager->environment, our_env, NULL);
+         if (!final_env) {
+                 r = -ENOMEM;
+diff --git a/src/libsystemd/sd-resolve/test-resolve.c b/src/libsystemd/sd-resolve/test-resolve.c
+index d08e1b5a0..a14b6de19 100644
+--- a/src/libsystemd/sd-resolve/test-resolve.c
++++ b/src/libsystemd/sd-resolve/test-resolve.c
+@@ -49,7 +49,7 @@ static int getaddrinfo_handler(sd_resolve_query *q, int ret, const struct addrin
+         for (i = ai; i; i = i->ai_next) {
+                 _cleanup_free_ char *addr = NULL;
+ 
+-                assert_se(sockaddr_pretty(i->ai_addr, i->ai_addrlen, false, &addr) == 0);
++                assert_se(sockaddr_pretty(i->ai_addr, i->ai_addrlen, false, true, &addr) == 0);
+                 puts(addr);
+         }
+ 
+diff --git a/src/shared/socket-util.c b/src/shared/socket-util.c
+index 407d0afee..a21251014 100644
+--- a/src/shared/socket-util.c
++++ b/src/shared/socket-util.c
+@@ -302,7 +302,7 @@ int socket_address_print(const SocketAddress *a, char **ret) {
+                 return 0;
+         }
+ 
+-        return sockaddr_pretty(&a->sockaddr.sa, a->size, false, ret);
++        return sockaddr_pretty(&a->sockaddr.sa, a->size, false, true, ret);
+ }
+ 
+ bool socket_address_can_accept(const SocketAddress *a) {
+@@ -471,7 +471,20 @@ bool socket_address_matches_fd(const SocketAddress *a, int fd) {
+         return socket_address_equal(a, &b);
+ }
+ 
+-int sockaddr_pretty(const struct sockaddr *_sa, socklen_t salen, bool translate_ipv6, char **ret) {
++int sockaddr_port(const struct sockaddr *_sa) {
++        union sockaddr_union *sa = (union sockaddr_union*) _sa;
++
++        assert(sa);
++
++        if (!IN_SET(sa->sa.sa_family, AF_INET, AF_INET6))
++                return -EAFNOSUPPORT;
++
++        return ntohs(sa->sa.sa_family == AF_INET6 ?
++                       sa->in6.sin6_port :
++                       sa->in.sin_port);
++}
++
++int sockaddr_pretty(const struct sockaddr *_sa, socklen_t salen, bool translate_ipv6, bool include_port, char **ret) {
+         union sockaddr_union *sa = (union sockaddr_union*) _sa;
+         char *p;
+ 
+@@ -485,11 +498,18 @@ int sockaddr_pretty(const struct sockaddr *_sa, socklen_t salen, bool translate_
+ 
+                 a = ntohl(sa->in.sin_addr.s_addr);
+ 
+-                if (asprintf(&p,
+-                             "%u.%u.%u.%u:%u",
+-                             a >> 24, (a >> 16) & 0xFF, (a >> 8) & 0xFF, a & 0xFF,
+-                             ntohs(sa->in.sin_port)) < 0)
+-                        return -ENOMEM;
++                if (include_port) {
++                        if (asprintf(&p,
++                                     "%u.%u.%u.%u:%u",
++                                     a >> 24, (a >> 16) & 0xFF, (a >> 8) & 0xFF, a & 0xFF,
++                                     ntohs(sa->in.sin_port)) < 0)
++                                return -ENOMEM;
++                } else {
++                        if (asprintf(&p,
++                                     "%u.%u.%u.%u",
++                                     a >> 24, (a >> 16) & 0xFF, (a >> 8) & 0xFF, a & 0xFF) < 0)
++                                return -ENOMEM;
++                }
+ 
+                 break;
+         }
+@@ -501,20 +521,34 @@ int sockaddr_pretty(const struct sockaddr *_sa, socklen_t salen, bool translate_
+ 
+                 if (translate_ipv6 && memcmp(&sa->in6.sin6_addr, ipv4_prefix, sizeof(ipv4_prefix)) == 0) {
+                         const uint8_t *a = sa->in6.sin6_addr.s6_addr+12;
+-
+-                        if (asprintf(&p,
+-                                     "%u.%u.%u.%u:%u",
+-                                     a[0], a[1], a[2], a[3],
+-                                     ntohs(sa->in6.sin6_port)) < 0)
+-                                return -ENOMEM;
++                        if (include_port) {
++                                if (asprintf(&p,
++                                             "%u.%u.%u.%u:%u",
++                                             a[0], a[1], a[2], a[3],
++                                             ntohs(sa->in6.sin6_port)) < 0)
++                                        return -ENOMEM;
++                        } else {
++                                if (asprintf(&p,
++                                             "%u.%u.%u.%u",
++                                             a[0], a[1], a[2], a[3]) < 0)
++                                        return -ENOMEM;
++                        }
+                 } else {
+                         char a[INET6_ADDRSTRLEN];
+ 
+-                        if (asprintf(&p,
+-                                     "[%s]:%u",
+-                                     inet_ntop(AF_INET6, &sa->in6.sin6_addr, a, sizeof(a)),
+-                                     ntohs(sa->in6.sin6_port)) < 0)
+-                                return -ENOMEM;
++                        inet_ntop(AF_INET6, &sa->in6.sin6_addr, a, sizeof(a));
++
++                        if (include_port) {
++                                if (asprintf(&p,
++                                             "[%s]:%u",
++                                             a,
++                                             ntohs(sa->in6.sin6_port)) < 0)
++                                        return -ENOMEM;
++                        } else {
++                                p = strdup(a);
++                                if (!p)
++                                        return -ENOMEM;
++                        }
+                 }
+ 
+                 break;
+@@ -589,7 +623,7 @@ int getpeername_pretty(int fd, char **ret) {
+         /* For remote sockets we translate IPv6 addresses back to IPv4
+          * if applicable, since that's nicer. */
+ 
+-        return sockaddr_pretty(&sa.sa, salen, true, ret);
++        return sockaddr_pretty(&sa.sa, salen, true, true, ret);
+ }
+ 
+ int getsockname_pretty(int fd, char **ret) {
+@@ -607,7 +641,7 @@ int getsockname_pretty(int fd, char **ret) {
+          * listening sockets where the difference between IPv4 and
+          * IPv6 matters. */
+ 
+-        return sockaddr_pretty(&sa.sa, salen, false, ret);
++        return sockaddr_pretty(&sa.sa, salen, false, true, ret);
+ }
+ 
+ int socknameinfo_pretty(union sockaddr_union *sa, socklen_t salen, char **_ret) {
+@@ -621,7 +655,7 @@ int socknameinfo_pretty(union sockaddr_union *sa, socklen_t salen, char **_ret)
+         if (r != 0) {
+                 int saved_errno = errno;
+ 
+-                r = sockaddr_pretty(&sa->sa, salen, true, &ret);
++                r = sockaddr_pretty(&sa->sa, salen, true, true, &ret);
+                 if (r < 0)
+                         return log_error_errno(r, "sockadd_pretty() failed: %m");
+ 
+diff --git a/src/shared/socket-util.h b/src/shared/socket-util.h
+index 07d0aff72..6bfb677fb 100644
+--- a/src/shared/socket-util.h
++++ b/src/shared/socket-util.h
+@@ -98,7 +98,9 @@ const char* socket_address_get_path(const SocketAddress *a);
+ 
+ bool socket_ipv6_is_supported(void);
+ 
+-int sockaddr_pretty(const struct sockaddr *_sa, socklen_t salen, bool translate_ipv6, char **ret);
++int sockaddr_port(const struct sockaddr *_sa) _pure_;
++
++int sockaddr_pretty(const struct sockaddr *_sa, socklen_t salen, bool translate_ipv6, bool include_port, char **ret);
+ int getpeername_pretty(int fd, char **ret);
+ int getsockname_pretty(int fd, char **ret);
+ 
+diff --git a/src/timesync/timesyncd-server.h b/src/timesync/timesyncd-server.h
+index 243b44a0e..18c44445e 100644
+--- a/src/timesync/timesyncd-server.h
++++ b/src/timesync/timesyncd-server.h
+@@ -59,7 +59,7 @@ struct ServerName {
+ int server_address_new(ServerName *n, ServerAddress **ret, const union sockaddr_union *sockaddr, socklen_t socklen);
+ ServerAddress* server_address_free(ServerAddress *a);
+ static inline int server_address_pretty(ServerAddress *a, char **pretty) {
+-        return sockaddr_pretty(&a->sockaddr.sa, a->socklen, true, pretty);
++        return sockaddr_pretty(&a->sockaddr.sa, a->socklen, true, true, pretty);
+ }
+ 
+ int server_name_new(Manager *m, ServerName **ret, ServerType type,const char *string);

@@ -1,0 +1,37 @@
+From f441ddae6363a10b1e8d8764bc906866f6ee6f48 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Thu, 29 Sep 2016 16:07:41 +0200
+Subject: [PATCH] pid1: more informative error message for ignored
+ notifications
+
+It's probably easier to diagnose a bad notification message if the
+contents are printed. But still, do anything only if debugging is on.
+
+ Conflicts:
+	src/core/manager.c
+
+Cherry-picked from: a86b76753d7868c2d05f046f601bc7dc89fc2203
+Resolves: #1380259
+---
+ src/core/manager.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/src/core/manager.c b/src/core/manager.c
+index 0376c4d4b..27f032b9d 100644
+--- a/src/core/manager.c
++++ b/src/core/manager.c
+@@ -1631,6 +1631,14 @@ static void manager_invoke_notify_message(Manager *m, Unit *u, pid_t pid, const
+ 
+         if (UNIT_VTABLE(u)->notify_message)
+                 UNIT_VTABLE(u)->notify_message(u, pid, tags, fds);
++        else if (_unlikely_(log_get_max_level() >= LOG_DEBUG)) {
++                _cleanup_free_ char *x = NULL, *y = NULL;
++
++                x = cescape(buf);
++                if (x)
++                        y = ellipsize(x, 20, 90);
++                log_unit_debug(u, "Got notification message \"%s\", ignoring.", strnull(y));
++        }
+ }
+ 
+ static int manager_dispatch_notify_fd(sd_event_source *source, int fd, uint32_t revents, void *userdata) {

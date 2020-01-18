@@ -1,0 +1,156 @@
+From 5be84b3ae46c0fd35c3e80d4f457bf5aedc8af8f Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 23 Sep 2015 17:27:39 +0200
+Subject: [PATCH] units: increase watchdog timeout to 3min for all our services
+
+Apparently, disk IO issues are more frequent than we hope, and 1min
+waiting for disk IO happens, so let's increase the watchdog timeout a
+bit, for all our services.
+
+See #1353 for an example where this triggers.
+
+(cherry picked from commit c2fc2c2560f0ca0fab383753c065e45d76f465e5)
+Resolves: #1267707
+---
+ units/systemd-hostnamed.service.in   | 2 +-
+ units/systemd-importd.service.in     | 2 +-
+ units/systemd-journald.service.in    | 2 +-
+ units/systemd-localed.service.in     | 2 +-
+ units/systemd-logind.service.in      | 2 +-
+ units/systemd-machined.service.in    | 2 +-
+ units/systemd-networkd.service.in    | 2 +-
+ units/systemd-resolved.service.m4.in | 2 +-
+ units/systemd-timedated.service.in   | 2 +-
+ units/systemd-timesyncd.service.in   | 2 +-
+ 10 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/units/systemd-hostnamed.service.in b/units/systemd-hostnamed.service.in
+index cc88ecd0d..b7079e4a7 100644
+--- a/units/systemd-hostnamed.service.in
++++ b/units/systemd-hostnamed.service.in
+@@ -14,7 +14,7 @@ Documentation=http://www.freedesktop.org/wiki/Software/systemd/hostnamed
+ ExecStart=@rootlibexecdir@/systemd-hostnamed
+ BusName=org.freedesktop.hostname1
+ CapabilityBoundingSet=CAP_SYS_ADMIN
+-WatchdogSec=1min
++WatchdogSec=3min
+ PrivateTmp=yes
+ PrivateDevices=yes
+ PrivateNetwork=yes
+diff --git a/units/systemd-importd.service.in b/units/systemd-importd.service.in
+index 5534a49ed..60e8e9c85 100644
+--- a/units/systemd-importd.service.in
++++ b/units/systemd-importd.service.in
+@@ -14,7 +14,7 @@ ExecStart=@rootlibexecdir@/systemd-importd
+ BusName=org.freedesktop.import1
+ CapabilityBoundingSet=CAP_CHOWN CAP_FOWNER CAP_FSETID CAP_MKNOD CAP_SETFCAP CAP_SYS_ADMIN CAP_SETPCAP
+ NoNewPrivileges=yes
+-WatchdogSec=1min
++WatchdogSec=3min
+ PrivateTmp=yes
+ ProtectSystem=full
+ ProtectHome=yes
+diff --git a/units/systemd-journald.service.in b/units/systemd-journald.service.in
+index 9d4462283..8575912bb 100644
+--- a/units/systemd-journald.service.in
++++ b/units/systemd-journald.service.in
+@@ -22,7 +22,7 @@ RestartSec=0
+ NotifyAccess=all
+ StandardOutput=null
+ CapabilityBoundingSet=CAP_SYS_ADMIN CAP_DAC_OVERRIDE CAP_SYS_PTRACE CAP_SYSLOG CAP_AUDIT_CONTROL CAP_AUDIT_READ CAP_CHOWN CAP_DAC_READ_SEARCH CAP_FOWNER CAP_SETUID CAP_SETGID CAP_MAC_OVERRIDE
+-WatchdogSec=1min
++WatchdogSec=3min
+ 
+ # Increase the default a bit in order to allow many simultaneous
+ # services being run since we keep one fd open per service. Also, when
+diff --git a/units/systemd-localed.service.in b/units/systemd-localed.service.in
+index bfa097844..9b13f901a 100644
+--- a/units/systemd-localed.service.in
++++ b/units/systemd-localed.service.in
+@@ -14,7 +14,7 @@ Documentation=http://www.freedesktop.org/wiki/Software/systemd/localed
+ ExecStart=@rootlibexecdir@/systemd-localed
+ BusName=org.freedesktop.locale1
+ CapabilityBoundingSet=
+-WatchdogSec=1min
++WatchdogSec=3min
+ PrivateTmp=yes
+ PrivateDevices=yes
+ PrivateNetwork=yes
+diff --git a/units/systemd-logind.service.in b/units/systemd-logind.service.in
+index f087e99ce..ff049134e 100644
+--- a/units/systemd-logind.service.in
++++ b/units/systemd-logind.service.in
+@@ -24,7 +24,7 @@ Restart=always
+ RestartSec=0
+ BusName=org.freedesktop.login1
+ CapabilityBoundingSet=CAP_SYS_ADMIN CAP_MAC_ADMIN CAP_AUDIT_CONTROL CAP_CHOWN CAP_KILL CAP_DAC_READ_SEARCH CAP_DAC_OVERRIDE CAP_FOWNER CAP_SYS_TTY_CONFIG
+-WatchdogSec=1min
++WatchdogSec=3min
+ 
+ # Increase the default a bit in order to allow many simultaneous
+ # logins since we keep one fd open per session.
+diff --git a/units/systemd-machined.service.in b/units/systemd-machined.service.in
+index 15f34d9db..35cde9869 100644
+--- a/units/systemd-machined.service.in
++++ b/units/systemd-machined.service.in
+@@ -16,7 +16,7 @@ After=machine.slice
+ ExecStart=@rootlibexecdir@/systemd-machined
+ BusName=org.freedesktop.machine1
+ CapabilityBoundingSet=CAP_KILL CAP_SYS_PTRACE CAP_SYS_ADMIN CAP_SETGID CAP_SYS_CHROOT CAP_DAC_READ_SEARCH
+-WatchdogSec=1min
++WatchdogSec=3min
+ PrivateTmp=yes
+ PrivateDevices=yes
+ PrivateNetwork=yes
+diff --git a/units/systemd-networkd.service.in b/units/systemd-networkd.service.in
+index 5a91b8e49..d3808c430 100644
+--- a/units/systemd-networkd.service.in
++++ b/units/systemd-networkd.service.in
+@@ -25,7 +25,7 @@ ExecStart=@rootlibexecdir@/systemd-networkd
+ CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_BROADCAST CAP_NET_RAW CAP_SETUID CAP_SETGID CAP_SETPCAP CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER
+ ProtectSystem=full
+ ProtectHome=yes
+-WatchdogSec=1min
++WatchdogSec=3min
+ 
+ [Install]
+ WantedBy=multi-user.target
+diff --git a/units/systemd-resolved.service.m4.in b/units/systemd-resolved.service.m4.in
+index 98ae564af..46864e6a3 100644
+--- a/units/systemd-resolved.service.m4.in
++++ b/units/systemd-resolved.service.m4.in
+@@ -25,7 +25,7 @@ ExecStart=@rootlibexecdir@/systemd-resolved
+ CapabilityBoundingSet=CAP_SETUID CAP_SETGID CAP_SETPCAP CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER
+ ProtectSystem=full
+ ProtectHome=yes
+-WatchdogSec=1min
++WatchdogSec=3min
+ 
+ [Install]
+ WantedBy=multi-user.target
+diff --git a/units/systemd-timedated.service.in b/units/systemd-timedated.service.in
+index fe5ccb460..0c9599db2 100644
+--- a/units/systemd-timedated.service.in
++++ b/units/systemd-timedated.service.in
+@@ -14,7 +14,7 @@ Documentation=http://www.freedesktop.org/wiki/Software/systemd/timedated
+ ExecStart=@rootlibexecdir@/systemd-timedated
+ BusName=org.freedesktop.timedate1
+ CapabilityBoundingSet=CAP_SYS_TIME
+-WatchdogSec=1min
++WatchdogSec=3min
+ PrivateTmp=yes
+ ProtectSystem=yes
+ ProtectHome=yes
+diff --git a/units/systemd-timesyncd.service.in b/units/systemd-timesyncd.service.in
+index 39edafc8d..c7d1d2b4f 100644
+--- a/units/systemd-timesyncd.service.in
++++ b/units/systemd-timesyncd.service.in
+@@ -27,7 +27,7 @@ PrivateTmp=yes
+ PrivateDevices=yes
+ ProtectSystem=full
+ ProtectHome=yes
+-WatchdogSec=1min
++WatchdogSec=3min
+ 
+ [Install]
+ WantedBy=sysinit.target

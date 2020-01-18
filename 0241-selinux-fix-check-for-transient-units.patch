@@ -1,0 +1,118 @@
+From e3f34eb2e0edc9cefe92e58e2ad4c98bcccf2090 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Thu, 27 Aug 2015 10:33:15 +0200
+Subject: [PATCH] selinux: fix check for transient units
+
+SELinux does not have a path to check for a snapshot service creation.
+This ends up giving us a bogus check.
+
+On snapshot creation we should check if the remote process type, has the
+ability to start a service with the type that systemd is running with.
+
+Based on patch from Vaclav Pavlin and Dan Walsh
+http://lists.freedesktop.org/archives/systemd-devel/2013-November/014021.html
+
+RHEL only
+Resolves: #1255129
+---
+ src/core/dbus-manager.c   |  4 ++--
+ src/core/selinux-access.c | 11 ++++++-----
+ src/core/selinux-access.h |  9 ++++++---
+ 3 files changed, 14 insertions(+), 10 deletions(-)
+
+diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
+index 2bc37ba60..1ec350e03 100644
+--- a/src/core/dbus-manager.c
++++ b/src/core/dbus-manager.c
+@@ -734,7 +734,7 @@ static int method_start_transient_unit(sd_bus *bus, sd_bus_message *message, voi
+         if (mode < 0)
+                 return sd_bus_error_setf(error, SD_BUS_ERROR_INVALID_ARGS, "Job mode %s is invalid.", smode);
+ 
+-        r = mac_selinux_access_check(message, "start", error);
++        r = mac_selinux_runtime_unit_access_check(message, "start", error);
+         if (r < 0)
+                 return r;
+ 
+@@ -1092,7 +1092,7 @@ static int method_create_snapshot(sd_bus *bus, sd_bus_message *message, void *us
+         assert(message);
+         assert(m);
+ 
+-        r = mac_selinux_access_check(message, "start", error);
++        r = mac_selinux_runtime_unit_access_check(message, "start", error);
+         if (r < 0)
+                 return r;
+ 
+diff --git a/src/core/selinux-access.c b/src/core/selinux-access.c
+index ce4f39459..91460b8af 100644
+--- a/src/core/selinux-access.c
++++ b/src/core/selinux-access.c
+@@ -175,6 +175,7 @@ void mac_selinux_access_free(void) {
+ */
+ int mac_selinux_generic_access_check(
+                 sd_bus_message *message,
++                bool system,
+                 const char *path,
+                 const char *permission,
+                 sd_bus_error *error) {
+@@ -213,7 +214,9 @@ int mac_selinux_generic_access_check(
+         if (r < 0)
+                 goto finish;
+ 
+-        if (path) {
++        tclass = "service";
++
++        if (path && !system) {
+                 /* Get the file context of the unit file */
+ 
+                 r = getfilecon(path, &fcon);
+@@ -221,16 +224,14 @@ int mac_selinux_generic_access_check(
+                         r = sd_bus_error_setf(error, SD_BUS_ERROR_ACCESS_DENIED, "Failed to get file context on %s.", path);
+                         goto finish;
+                 }
+-
+-                tclass = "service";
+         } else {
+                 r = getcon(&fcon);
+                 if (r < 0) {
+                         r = sd_bus_error_setf(error, SD_BUS_ERROR_ACCESS_DENIED, "Failed to get current context.");
+                         goto finish;
+                 }
+-
+-                tclass = "system";
++                if (system)
++                        tclass = "system";
+         }
+ 
+         sd_bus_creds_get_cmdline(creds, &cmdline);
+diff --git a/src/core/selinux-access.h b/src/core/selinux-access.h
+index dd1e8bb9d..7dc271b35 100644
+--- a/src/core/selinux-access.h
++++ b/src/core/selinux-access.h
+@@ -28,21 +28,24 @@
+ 
+ void mac_selinux_access_free(void);
+ 
+-int mac_selinux_generic_access_check(sd_bus_message *message, const char *path, const char *permission, sd_bus_error *error);
++int mac_selinux_generic_access_check(sd_bus_message *message, bool system, const char *path, const char *permission, sd_bus_error *error);
+ 
+ int mac_selinux_unit_access_check_strv(char **units, sd_bus_message *message, Manager *m, const char *permission, sd_bus_error *error);
+ 
+ #ifdef HAVE_SELINUX
+ 
+ #define mac_selinux_access_check(message, permission, error) \
+-        mac_selinux_generic_access_check((message), NULL, (permission), (error))
++        mac_selinux_generic_access_check((message), true, NULL, (permission), (error))
+ 
+ #define mac_selinux_unit_access_check(unit, message, permission, error) \
+         ({                                                              \
+                 Unit *_unit = (unit);                                   \
+-                mac_selinux_generic_access_check((message), _unit->source_path ?: _unit->fragment_path, (permission), (error)); \
++                mac_selinux_generic_access_check((message), false, _unit->source_path ?: _unit->fragment_path, (permission), (error)); \
+         })
+ 
++#define mac_selinux_runtime_unit_access_check(message, permission, error) \
++        mac_selinux_generic_access_check((message), false, NULL, (permission), (error))
++
+ #else
+ 
+ #define mac_selinux_access_check(message, permission, error) 0

@@ -1,0 +1,43 @@
+From 573e86d7e9f0038044d5cba2a1a543e24b063a79 Mon Sep 17 00:00:00 2001
+From: Aleksander Adamowski <olo@fb.com>
+Date: Mon, 11 Jan 2016 15:26:41 -0800
+Subject: [PATCH] Fix miscalculated buffer size and uses of size-unlimited
+ sprintf() function.
+
+Not sure if this results in an exploitable buffer overflow, probably not
+since the the int value is likely sanitized somewhere earlier and it's
+being put through a bit mask shortly before being used.
+
+Cherry-picked from: 13f5402c6b734ed4c2b3e8b7c3d3bf6d815e7661
+Related: #1318994
+---
+ src/journal/journald-syslog.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/journal/journald-syslog.c b/src/journal/journald-syslog.c
+index 8602b4a95..b499a0d38 100644
+--- a/src/journal/journald-syslog.c
++++ b/src/journal/journald-syslog.c
+@@ -317,7 +317,7 @@ void server_process_syslog_message(
+         size_t label_len) {
+ 
+         char syslog_priority[sizeof("PRIORITY=") + DECIMAL_STR_MAX(int)],
+-             syslog_facility[sizeof("SYSLOG_FACILITY") + DECIMAL_STR_MAX(int)];
++             syslog_facility[sizeof("SYSLOG_FACILITY=") + DECIMAL_STR_MAX(int)];
+         const char *message = NULL, *syslog_identifier = NULL, *syslog_pid = NULL;
+         struct iovec iovec[N_IOVEC_META_FIELDS + 6];
+         unsigned n = 0;
+@@ -348,11 +348,11 @@ void server_process_syslog_message(
+ 
+         IOVEC_SET_STRING(iovec[n++], "_TRANSPORT=syslog");
+ 
+-        sprintf(syslog_priority, "PRIORITY=%i", priority & LOG_PRIMASK);
++        snprintf(syslog_priority, sizeof(syslog_priority), "PRIORITY=%i", priority & LOG_PRIMASK);
+         IOVEC_SET_STRING(iovec[n++], syslog_priority);
+ 
+         if (priority & LOG_FACMASK) {
+-                sprintf(syslog_facility, "SYSLOG_FACILITY=%i", LOG_FAC(priority));
++                snprintf(syslog_facility, sizeof(syslog_facility), "SYSLOG_FACILITY=%i", LOG_FAC(priority));
+                 IOVEC_SET_STRING(iovec[n++], syslog_facility);
+         }
+ 

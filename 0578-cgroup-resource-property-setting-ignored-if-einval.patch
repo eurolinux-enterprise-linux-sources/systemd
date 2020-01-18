@@ -1,0 +1,729 @@
+From cbeadf0e57c0d240977d574a8b5726b441f519a9 Mon Sep 17 00:00:00 2001
+From: Jan Rybar <jrybar@redhat.com>
+Date: Fri, 22 Sep 2017 11:53:50 +0200
+Subject: [PATCH] cgroup resource property setting ignored if einval
+
+Resolves: rhbz#1302305
+Cherry-picked from: d53d94743c5e5e3a4a6, 3fdf9ad
+---
+ man/systemd.resource-control.xml |   9 ++-
+ src/core/cgroup.c                |  54 ++++++-------
+ src/core/cgroup.h                |  14 ++--
+ src/core/dbus-cgroup.c           | 125 ++++++++++++-------------------
+ src/core/load-fragment.c         |  54 +++++--------
+ src/core/unit.c                  |   4 +-
+ src/libsystemd/sd-bus/bus-util.c |  35 ++++++---
+ src/shared/cgroup-util.c         |  41 ++++++++++
+ src/shared/cgroup-util.h         |  27 +++++++
+ 9 files changed, 205 insertions(+), 158 deletions(-)
+
+diff --git a/man/systemd.resource-control.xml b/man/systemd.resource-control.xml
+index f507c6748..6ab17e8cb 100644
+--- a/man/systemd.resource-control.xml
++++ b/man/systemd.resource-control.xml
+@@ -118,10 +118,11 @@
+ 
+         <listitem>
+           <para>Assign the specified CPU time share weight to the
+-          processes executed. Those options take an integer value and
++          processes executed. These options take an integer value and
+           control the <literal>cpu.shares</literal> control group
+-          attribute, which defaults to 1024. For details about this
+-          control group attribute, see <ulink
++          attribute. The allowed range is 2 to 262144. Defaults to
++          1024. For details about this control group attribute, see
++          <ulink
+           url="https://www.kernel.org/doc/Documentation/scheduler/sched-design-CFS.txt">sched-design-CFS.txt</ulink>.
+           The available CPU time is split up among all units within
+           one slice relative to their CPU time share weight.</para>
+@@ -258,7 +259,7 @@
+         the executed processes. Takes a single weight value (between
+         10 and 1000) to set the default block IO weight. This controls
+         the <literal>blkio.weight</literal> control group attribute,
+-        which defaults to 1000. For details about this control group
++        which defaults to 500. For details about this control group
+         attribute, see <ulink
+         url="https://www.kernel.org/doc/Documentation/cgroups/blkio-controller.txt">blkio-controller.txt</ulink>.
+         The available IO bandwidth is split up among all units within
+diff --git a/src/core/cgroup.c b/src/core/cgroup.c
+index d4a8f9cbe..0779fa555 100644
+--- a/src/core/cgroup.c
++++ b/src/core/cgroup.c
+@@ -35,14 +35,16 @@ void cgroup_context_init(CGroupContext *c) {
+         /* Initialize everything to the kernel defaults, assuming the
+          * structure is preinitialized to 0 */
+ 
+-        c->cpu_shares = (unsigned long) -1;
+-        c->startup_cpu_shares = (unsigned long) -1;
++        c->cpu_shares = CGROUP_CPU_SHARES_INVALID;
++        c->startup_cpu_shares = CGROUP_CPU_SHARES_INVALID;
++        c->cpu_quota_per_sec_usec = USEC_INFINITY;
++
+         c->memory_limit = (uint64_t) -1;
+-        c->blockio_weight = (unsigned long) -1;
+-        c->startup_blockio_weight = (unsigned long) -1;
+-        c->tasks_max = (uint64_t) -1;
+ 
+-        c->cpu_quota_per_sec_usec = USEC_INFINITY;
++        c->blockio_weight = CGROUP_BLKIO_WEIGHT_INVALID;
++        c->startup_blockio_weight = CGROUP_BLKIO_WEIGHT_INVALID;
++
++        c->tasks_max = (uint64_t) -1;
+ }
+ 
+ void cgroup_context_free_device_allow(CGroupContext *c, CGroupDeviceAllow *a) {
+@@ -100,11 +102,12 @@ void cgroup_context_dump(CGroupContext *c, FILE* f, const char *prefix) {
+                 "%sCPUAccounting=%s\n"
+                 "%sBlockIOAccounting=%s\n"
+                 "%sMemoryAccounting=%s\n"
+-                "%sCPUShares=%lu\n"
+-                "%sStartupCPUShares=%lu\n"
++                "%sTasksAccounting=%s\n"
++                "%sCPUShares=%" PRIu64 "\n"
++                "%sStartupCPUShares=%" PRIu64 "\n"
+                 "%sCPUQuotaPerSecSec=%s\n"
+-                "%sBlockIOWeight=%lu\n"
+-                "%sStartupBlockIOWeight=%lu\n"
++                "%sBlockIOWeight=%" PRIu64 "\n"
++                "%sStartupBlockIOWeight=%" PRIu64 "\n"
+                 "%sMemoryLimit=%" PRIu64 "\n"
+                 "%sTasksMax=%" PRIu64 "\n"
+                 "%sDevicePolicy=%s\n"
+@@ -112,6 +115,7 @@ void cgroup_context_dump(CGroupContext *c, FILE* f, const char *prefix) {
+                 prefix, yes_no(c->cpu_accounting),
+                 prefix, yes_no(c->blockio_accounting),
+                 prefix, yes_no(c->memory_accounting),
++                prefix, yes_no(c->tasks_accounting),
+                 prefix, c->cpu_shares,
+                 prefix, c->startup_cpu_shares,
+                 prefix, format_timespan(u, sizeof(u), c->cpu_quota_per_sec_usec, 1),
+@@ -131,7 +135,7 @@ void cgroup_context_dump(CGroupContext *c, FILE* f, const char *prefix) {
+ 
+         LIST_FOREACH(device_weights, w, c->blockio_device_weights)
+                 fprintf(f,
+-                        "%sBlockIODeviceWeight=%s %lu",
++                        "%sBlockIODeviceWeight=%s %" PRIu64,
+                         prefix,
+                         w->path,
+                         w->weight);
+@@ -307,11 +311,11 @@ void cgroup_context_apply(CGroupContext *c, CGroupControllerMask mask, const cha
+          * and missing cgroups, i.e. EROFS and ENOENT. */
+ 
+         if ((mask & CGROUP_CPU) && !is_root) {
+-                char buf[MAX(DECIMAL_STR_MAX(unsigned long), DECIMAL_STR_MAX(usec_t)) + 1];
++                char buf[MAX(DECIMAL_STR_MAX(uint64_t), DECIMAL_STR_MAX(usec_t)) + 1];
+ 
+-                sprintf(buf, "%lu\n",
+-                        IN_SET(state, MANAGER_STARTING, MANAGER_INITIALIZING) && c->startup_cpu_shares != (unsigned long) -1 ? c->startup_cpu_shares :
+-                        c->cpu_shares != (unsigned long) -1 ? c->cpu_shares : 1024);
++                sprintf(buf, "%" PRIu64 "\n",
++                        IN_SET(state, MANAGER_STARTING, MANAGER_INITIALIZING) && c->startup_cpu_shares != CGROUP_CPU_SHARES_INVALID ? c->startup_cpu_shares :
++                        c->cpu_shares != CGROUP_CPU_SHARES_INVALID ? c->cpu_shares : CGROUP_CPU_SHARES_DEFAULT);
+                 r = cg_set_attribute("cpu", path, "cpu.shares", buf);
+                 if (r < 0)
+                         log_full_errno(IN_SET(r, -ENOENT, -EROFS) ? LOG_DEBUG : LOG_WARNING, r,
+@@ -334,15 +338,15 @@ void cgroup_context_apply(CGroupContext *c, CGroupControllerMask mask, const cha
+         }
+ 
+         if (mask & CGROUP_BLKIO) {
+-                char buf[MAX3(DECIMAL_STR_MAX(unsigned long)+1,
+-                              DECIMAL_STR_MAX(dev_t)*2+2+DECIMAL_STR_MAX(unsigned long)*1,
+-                              DECIMAL_STR_MAX(dev_t)*2+2+DECIMAL_STR_MAX(uint64_t)+1)];
++                char buf[MAX(DECIMAL_STR_MAX(uint64_t)+1,
++                             DECIMAL_STR_MAX(dev_t)*2+2+DECIMAL_STR_MAX(uint64_t)+1)];
+                 CGroupBlockIODeviceWeight *w;
+                 CGroupBlockIODeviceBandwidth *b;
+ 
+                 if (!is_root) {
+-                        sprintf(buf, "%lu\n", IN_SET(state, MANAGER_STARTING, MANAGER_INITIALIZING) && c->startup_blockio_weight != (unsigned long) -1 ? c->startup_blockio_weight :
+-                                c->blockio_weight != (unsigned long) -1 ? c->blockio_weight : 1000);
++                        sprintf(buf, "%" PRIu64 "\n",
++                                IN_SET(state, MANAGER_STARTING, MANAGER_INITIALIZING) && c->startup_blockio_weight != CGROUP_BLKIO_WEIGHT_INVALID ? c->startup_blockio_weight :
++                                c->blockio_weight != CGROUP_BLKIO_WEIGHT_INVALID ? c->blockio_weight : CGROUP_BLKIO_WEIGHT_DEFAULT);
+                         r = cg_set_attribute("blkio", path, "blkio.weight", buf);
+                         if (r < 0)
+                                 log_full_errno(IN_SET(r, -ENOENT, -EROFS) ? LOG_DEBUG : LOG_WARNING, r,
+@@ -356,7 +360,7 @@ void cgroup_context_apply(CGroupContext *c, CGroupControllerMask mask, const cha
+                                 if (r < 0)
+                                         continue;
+ 
+-                                sprintf(buf, "%u:%u %lu", major(dev), minor(dev), w->weight);
++                                sprintf(buf, "%u:%u %" PRIu64 "\n", major(dev), minor(dev), w->weight);
+                                 r = cg_set_attribute("blkio", path, "blkio.weight_device", buf);
+                                 if (r < 0)
+                                         log_full_errno(IN_SET(r, -ENOENT, -EROFS) ? LOG_DEBUG : LOG_WARNING, r,
+@@ -482,14 +486,14 @@ CGroupControllerMask cgroup_context_get_mask(CGroupContext *c) {
+         /* Figure out which controllers we need */
+ 
+         if (c->cpu_accounting ||
+-            c->cpu_shares != (unsigned long) -1 ||
+-            c->startup_cpu_shares != (unsigned long) -1 ||
++            c->cpu_shares != CGROUP_CPU_SHARES_INVALID ||
++            c->startup_cpu_shares != CGROUP_CPU_SHARES_INVALID ||
+             c->cpu_quota_per_sec_usec != USEC_INFINITY)
+                 mask |= CGROUP_CPUACCT | CGROUP_CPU;
+ 
+         if (c->blockio_accounting ||
+-            c->blockio_weight != (unsigned long) -1 ||
+-            c->startup_blockio_weight != (unsigned long) -1 ||
++            c->blockio_weight != CGROUP_BLKIO_WEIGHT_INVALID ||
++            c->startup_blockio_weight != CGROUP_BLKIO_WEIGHT_INVALID ||
+             c->blockio_device_weights ||
+             c->blockio_device_bandwidths)
+                 mask |= CGROUP_BLKIO;
+diff --git a/src/core/cgroup.h b/src/core/cgroup.h
+index 8af3eaa3a..870f39c52 100644
+--- a/src/core/cgroup.h
++++ b/src/core/cgroup.h
+@@ -58,7 +58,7 @@ struct CGroupDeviceAllow {
+ struct CGroupBlockIODeviceWeight {
+         LIST_FIELDS(CGroupBlockIODeviceWeight, device_weights);
+         char *path;
+-        unsigned long weight;
++        uint64_t weight;
+ };
+ 
+ struct CGroupBlockIODeviceBandwidth {
+@@ -74,12 +74,12 @@ struct CGroupContext {
+         bool memory_accounting;
+         bool tasks_accounting;
+ 
+-        unsigned long cpu_shares;
+-        unsigned long startup_cpu_shares;
++        uint64_t cpu_shares;
++        uint64_t startup_cpu_shares;
+         usec_t cpu_quota_per_sec_usec;
+ 
+-        unsigned long blockio_weight;
+-        unsigned long startup_blockio_weight;
++        uint64_t blockio_weight;
++        uint64_t startup_blockio_weight;
+         LIST_HEAD(CGroupBlockIODeviceWeight, blockio_device_weights);
+         LIST_HEAD(CGroupBlockIODeviceBandwidth, blockio_device_bandwidths);
+ 
+@@ -88,9 +88,9 @@ struct CGroupContext {
+         CGroupDevicePolicy device_policy;
+         LIST_HEAD(CGroupDeviceAllow, device_allow);
+ 
+-        bool delegate;
+-
+         uint64_t tasks_max;
++
++        bool delegate;
+ };
+ 
+ #include "unit.h"
+diff --git a/src/core/dbus-cgroup.c b/src/core/dbus-cgroup.c
+index fa76c60c1..ffeeb5aa9 100644
+--- a/src/core/dbus-cgroup.c
++++ b/src/core/dbus-cgroup.c
+@@ -133,34 +133,16 @@ static int property_get_device_allow(
+         return sd_bus_message_close_container(reply);
+ }
+ 
+-static int property_get_ulong_as_u64(
+-                sd_bus *bus,
+-                const char *path,
+-                const char *interface,
+-                const char *property,
+-                sd_bus_message *reply,
+-                void *userdata,
+-                sd_bus_error *error) {
+-
+-        unsigned long *ul = userdata;
+-
+-        assert(bus);
+-        assert(reply);
+-        assert(ul);
+-
+-        return sd_bus_message_append(reply, "t", *ul == (unsigned long) -1 ? (uint64_t) -1 : (uint64_t) *ul);
+-}
+-
+ const sd_bus_vtable bus_cgroup_vtable[] = {
+         SD_BUS_VTABLE_START(0),
+         SD_BUS_PROPERTY("Delegate", "b", bus_property_get_bool, offsetof(CGroupContext, delegate), 0),
+         SD_BUS_PROPERTY("CPUAccounting", "b", bus_property_get_bool, offsetof(CGroupContext, cpu_accounting), 0),
+-        SD_BUS_PROPERTY("CPUShares", "t", property_get_ulong_as_u64, offsetof(CGroupContext, cpu_shares), 0),
+-        SD_BUS_PROPERTY("StartupCPUShares", "t", property_get_ulong_as_u64, offsetof(CGroupContext, startup_cpu_shares), 0),
++        SD_BUS_PROPERTY("CPUShares", "t", NULL, offsetof(CGroupContext, cpu_shares), 0),
++        SD_BUS_PROPERTY("StartupCPUShares", "t", NULL, offsetof(CGroupContext, startup_cpu_shares), 0),
+         SD_BUS_PROPERTY("CPUQuotaPerSecUSec", "t", bus_property_get_usec, offsetof(CGroupContext, cpu_quota_per_sec_usec), 0),
+         SD_BUS_PROPERTY("BlockIOAccounting", "b", bus_property_get_bool, offsetof(CGroupContext, blockio_accounting), 0),
+-        SD_BUS_PROPERTY("BlockIOWeight", "t", property_get_ulong_as_u64, offsetof(CGroupContext, blockio_weight), 0),
+-        SD_BUS_PROPERTY("StartupBlockIOWeight", "t", property_get_ulong_as_u64, offsetof(CGroupContext, startup_blockio_weight), 0),
++        SD_BUS_PROPERTY("BlockIOWeight", "t", NULL, offsetof(CGroupContext, blockio_weight), 0),
++        SD_BUS_PROPERTY("StartupBlockIOWeight", "t", NULL, offsetof(CGroupContext, startup_blockio_weight), 0),
+         SD_BUS_PROPERTY("BlockIODeviceWeight", "a(st)", property_get_blockio_device_weight, 0, 0),
+         SD_BUS_PROPERTY("BlockIOReadBandwidth", "a(st)", property_get_blockio_device_bandwidths, 0, 0),
+         SD_BUS_PROPERTY("BlockIOWriteBandwidth", "a(st)", property_get_blockio_device_bandwidths, 0, 0),
+@@ -237,49 +219,45 @@ int bus_cgroup_set_property(
+                 return 1;
+ 
+         } else if (streq(name, "CPUShares")) {
+-                uint64_t u64;
+-                unsigned long ul;
++                uint64_t shares;
+ 
+-                r = sd_bus_message_read(message, "t", &u64);
++                r = sd_bus_message_read(message, "t", &shares);
+                 if (r < 0)
+                         return r;
+ 
+-                if (u64 == (uint64_t) -1)
+-                        ul = (unsigned long) -1;
+-                else {
+-                        ul = (unsigned long) u64;
+-                        if (ul <= 0 || (uint64_t) ul != u64)
+-                                return sd_bus_error_set_errnof(error, EINVAL, "CPUShares value out of range");
+-                }
++                if (!CGROUP_CPU_SHARES_IS_OK(shares))
++                        return sd_bus_error_set_errnof(error, EINVAL, "CPUShares value out of range");
+ 
+                 if (mode != UNIT_CHECK) {
+-                        c->cpu_shares = ul;
++                        c->cpu_shares = shares;
+                         u->cgroup_realized_mask &= ~CGROUP_CPU;
+-                        unit_write_drop_in_private_format(u, mode, name, "CPUShares=%lu", ul);
++
++                        if (shares == CGROUP_CPU_SHARES_INVALID)
++                                unit_write_drop_in_private(u, mode, name, "CPUShares=");
++                        else
++                                unit_write_drop_in_private_format(u, mode, name, "CPUShares=%" PRIu64, shares);
+                 }
+ 
+                 return 1;
+ 
+         } else if (streq(name, "StartupCPUShares")) {
+-                uint64_t u64;
+-                unsigned long ul;
++                uint64_t shares;
+ 
+-                r = sd_bus_message_read(message, "t", &u64);
++                r = sd_bus_message_read(message, "t", &shares);
+                 if (r < 0)
+                         return r;
+ 
+-                if (u64 == (uint64_t) -1)
+-                        ul = (unsigned long) -1;
+-                else {
+-                        ul = (unsigned long) u64;
+-                        if (ul <= 0 || (uint64_t) ul != u64)
+-                                return sd_bus_error_set_errnof(error, EINVAL, "StartupCPUShares value out of range");
+-                }
++                if (!CGROUP_CPU_SHARES_IS_OK(shares))
++                        return sd_bus_error_set_errnof(error, EINVAL, "StartupCPUShares value out of range");
+ 
+                 if (mode != UNIT_CHECK) {
+-                        c->startup_cpu_shares = ul;
++                        c->startup_cpu_shares = shares;
+                         u->cgroup_realized_mask &= ~CGROUP_CPU;
+-                        unit_write_drop_in_private_format(u, mode, name, "StartupCPUShares=%lu", ul);
++
++                        if (shares == CGROUP_CPU_SHARES_INVALID)
++                                unit_write_drop_in_private(u, mode, name, "StartupCPUShares=");
++                        else
++                                unit_write_drop_in_private_format(u, mode, name, "StartupCPUShares=%" PRIu64, shares);
+                 }
+ 
+                 return 1;
+@@ -318,49 +296,45 @@ int bus_cgroup_set_property(
+                 return 1;
+ 
+         } else if (streq(name, "BlockIOWeight")) {
+-                uint64_t u64;
+-                unsigned long ul;
++                uint64_t weight;
+ 
+-                r = sd_bus_message_read(message, "t", &u64);
++                r = sd_bus_message_read(message, "t", &weight);
+                 if (r < 0)
+                         return r;
+ 
+-                if (u64 == (uint64_t) -1)
+-                        ul = (unsigned long) -1;
+-                else  {
+-                        ul = (unsigned long) u64;
+-                        if (ul < 10 || ul > 1000)
+-                                return sd_bus_error_set_errnof(error, EINVAL, "BlockIOWeight value out of range");
+-                }
++                if (!CGROUP_BLKIO_WEIGHT_IS_OK(weight))
++                        return sd_bus_error_set_errnof(error, EINVAL, "BlockIOWeight value out of range");
+ 
+                 if (mode != UNIT_CHECK) {
+-                        c->blockio_weight = ul;
++                        c->blockio_weight = weight;
+                         u->cgroup_realized_mask &= ~CGROUP_BLKIO;
+-                        unit_write_drop_in_private_format(u, mode, name, "BlockIOWeight=%lu", ul);
++
++                        if (weight == CGROUP_BLKIO_WEIGHT_INVALID)
++                                unit_write_drop_in_private(u, mode, name, "BlockIOWeight=");
++                        else
++                                unit_write_drop_in_private_format(u, mode, name, "BlockIOWeight=%" PRIu64, weight);
+                 }
+ 
+                 return 1;
+ 
+         } else if (streq(name, "StartupBlockIOWeight")) {
+-                uint64_t u64;
+-                unsigned long ul;
++                uint64_t weight;
+ 
+-                r = sd_bus_message_read(message, "t", &u64);
++                r = sd_bus_message_read(message, "t", &weight);
+                 if (r < 0)
+                         return r;
+ 
+-                if (u64 == (uint64_t) -1)
+-                        ul = (unsigned long) -1;
+-                else  {
+-                        ul = (unsigned long) u64;
+-                        if (ul < 10 || ul > 1000)
+-                                return sd_bus_error_set_errnof(error, EINVAL, "StartupBlockIOWeight value out of range");
+-                }
++                if (CGROUP_BLKIO_WEIGHT_IS_OK(weight))
++                        return sd_bus_error_set_errnof(error, EINVAL, "StartupBlockIOWeight value out of range");
+ 
+                 if (mode != UNIT_CHECK) {
+-                        c->startup_blockio_weight = ul;
++                        c->startup_blockio_weight = weight;
+                         u->cgroup_realized_mask &= ~CGROUP_BLKIO;
+-                        unit_write_drop_in_private_format(u, mode, name, "StartupBlockIOWeight=%lu", ul);
++
++                        if (weight == CGROUP_BLKIO_WEIGHT_INVALID)
++                                unit_write_drop_in_private(u, mode, name, "StartupBlockIOWeight=");
++                        else
++                                unit_write_drop_in_private_format(u, mode, name, "StartupBlockIOWeight=%" PRIu64, weight);
+                 }
+ 
+                 return 1;
+@@ -455,17 +429,16 @@ int bus_cgroup_set_property(
+ 
+         } else if (streq(name, "BlockIODeviceWeight")) {
+                 const char *path;
+-                uint64_t u64;
++                uint64_t weight;
+                 unsigned n = 0;
+ 
+                 r = sd_bus_message_enter_container(message, 'a', "(st)");
+                 if (r < 0)
+                         return r;
+ 
+-                while ((r = sd_bus_message_read(message, "(st)", &path, &u64)) > 0) {
+-                        unsigned long ul = u64;
++                while ((r = sd_bus_message_read(message, "(st)", &path, &weight)) > 0) {
+ 
+-                        if (ul < 10 || ul > 1000)
++                        if (!CGROUP_BLKIO_WEIGHT_IS_OK(weight) || weight == CGROUP_BLKIO_WEIGHT_INVALID)
+                                 return sd_bus_error_set_errnof(error, EINVAL, "BlockIODeviceWeight out of range");
+ 
+                         if (mode != UNIT_CHECK) {
+@@ -491,7 +464,7 @@ int bus_cgroup_set_property(
+                                         LIST_PREPEND(device_weights,c->blockio_device_weights, a);
+                                 }
+ 
+-                                a->weight = ul;
++                                a->weight = weight;
+                         }
+ 
+                         n++;
+@@ -520,7 +493,7 @@ int bus_cgroup_set_property(
+ 
+                         fputs("BlockIODeviceWeight=\n", f);
+                         LIST_FOREACH(device_weights, a, c->blockio_device_weights)
+-                                fprintf(f, "BlockIODeviceWeight=%s %lu\n", a->path, a->weight);
++                                fprintf(f, "BlockIODeviceWeight=%s %" PRIu64 "\n", a->path, a->weight);
+ 
+                         fflush(f);
+                         unit_write_drop_in_private(u, mode, name, buf);
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index a10e1903a..da58bcc5c 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -2951,26 +2951,19 @@ int config_parse_cpu_shares(
+                 void *data,
+                 void *userdata) {
+ 
+-        unsigned long *shares = data, lu;
++        uint64_t *shares = data;
+         int r;
+ 
+         assert(filename);
+         assert(lvalue);
+         assert(rvalue);
+ 
+-        if (isempty(rvalue)) {
+-                *shares = (unsigned long) -1;
+-                return 0;
+-        }
+-
+-        r = safe_atolu(rvalue, &lu);
+-        if (r < 0 || lu <= 0) {
+-                log_syntax(unit, LOG_ERR, filename, line, EINVAL,
+-                           "CPU shares '%s' invalid. Ignoring.", rvalue);
++        r = cg_cpu_shares_parse(rvalue, shares);
++        if (r < 0) {
++                log_syntax(unit, LOG_ERR, filename, line, r, "CPU shares '%s' invalid. Ignoring.", rvalue);
+                 return 0;
+         }
+ 
+-        *shares = lu;
+         return 0;
+ }
+ 
+@@ -3163,26 +3156,19 @@ int config_parse_blockio_weight(
+                 void *data,
+                 void *userdata) {
+ 
+-        unsigned long *weight = data, lu;
++        uint64_t *weight = data;
+         int r;
+ 
+         assert(filename);
+         assert(lvalue);
+         assert(rvalue);
+ 
+-        if (isempty(rvalue)) {
+-                *weight = (unsigned long) -1;
+-                return 0;
+-        }
+-
+-        r = safe_atolu(rvalue, &lu);
+-        if (r < 0 || lu < 10 || lu > 1000) {
+-                log_syntax(unit, LOG_ERR, filename, line, EINVAL,
+-                           "Block IO weight '%s' invalid. Ignoring.", rvalue);
++        r = cg_blkio_weight_parse(rvalue, weight);
++        if (r < 0) {
++                log_syntax(unit, LOG_ERR, filename, line, r, "Block IO weight '%s' invalid. Ignoring.", rvalue);
+                 return 0;
+         }
+ 
+-        *weight = lu;
+         return 0;
+ }
+ 
+@@ -3201,8 +3187,8 @@ int config_parse_blockio_device_weight(
+         _cleanup_free_ char *path = NULL;
+         CGroupBlockIODeviceWeight *w;
+         CGroupContext *c = data;
+-        unsigned long lu;
+         const char *weight;
++        uint64_t u;
+         size_t n;
+         int r;
+ 
+@@ -3219,9 +3205,10 @@ int config_parse_blockio_device_weight(
+ 
+         n = strcspn(rvalue, WHITESPACE);
+         weight = rvalue + n;
+-        if (!*weight) {
+-                log_syntax(unit, LOG_ERR, filename, line, EINVAL,
+-                           "Expected block device and device weight. Ignoring.");
++        weight += strspn(weight, WHITESPACE);
++
++        if (isempty(weight)) {
++                log_syntax(unit, LOG_ERR, filename, line, EINVAL, "Expected block device and device weight. Ignoring.");
+                 return 0;
+         }
+ 
+@@ -3230,19 +3217,18 @@ int config_parse_blockio_device_weight(
+                 return log_oom();
+ 
+         if (!path_startswith(path, "/dev")) {
+-                log_syntax(unit, LOG_ERR, filename, line, EINVAL,
+-                           "Invalid device node path '%s'. Ignoring.", path);
++                log_syntax(unit, LOG_ERR, filename, line, EINVAL, "Invalid device node path '%s'. Ignoring.", path);
+                 return 0;
+         }
+ 
+-        weight += strspn(weight, WHITESPACE);
+-        r = safe_atolu(weight, &lu);
+-        if (r < 0 || lu < 10 || lu > 1000) {
+-                log_syntax(unit, LOG_ERR, filename, line, EINVAL,
+-                           "Block IO weight '%s' invalid. Ignoring.", rvalue);
++        r = cg_blkio_weight_parse(weight, &u);
++        if (r < 0) {
++                log_syntax(unit, LOG_ERR, filename, line, r, "Block IO weight '%s' invalid. Ignoring.", weight);
+                 return 0;
+         }
+ 
++        assert(u != CGROUP_BLKIO_WEIGHT_INVALID);
++
+         w = new0(CGroupBlockIODeviceWeight, 1);
+         if (!w)
+                 return log_oom();
+@@ -3250,7 +3236,7 @@ int config_parse_blockio_device_weight(
+         w->path = path;
+         path = NULL;
+ 
+-        w->weight = lu;
++        w->weight = u;
+ 
+         LIST_PREPEND(device_weights, c->blockio_device_weights, w);
+         return 0;
+diff --git a/src/core/unit.c b/src/core/unit.c
+index 6a2ad6ed3..8c0fde878 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -1178,8 +1178,8 @@ static int unit_add_startup_units(Unit *u) {
+         if (!c)
+                 return 0;
+ 
+-        if (c->startup_cpu_shares == (unsigned long) -1 &&
+-            c->startup_blockio_weight == (unsigned long) -1)
++        if (c->startup_cpu_shares == CGROUP_CPU_SHARES_INVALID &&
++            c->startup_blockio_weight == CGROUP_BLKIO_WEIGHT_INVALID)
+                 return 0;
+ 
+         r = set_put(u->manager->startup_units, u);
+diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
+index 263457427..cbf1eccf7 100644
+--- a/src/libsystemd/sd-bus/bus-util.c
++++ b/src/libsystemd/sd-bus/bus-util.c
+@@ -23,20 +23,23 @@
+ 
+ #include "sd-daemon.h"
+ #include "sd-event.h"
+-#include "util.h"
+-#include "strv.h"
+-#include "macro.h"
++#include "sd-bus.h"
++
++#include "bus-error.h"
++#include "bus-internal.h"
++#include "bus-label.h"
++#include "bus-message.h"
++#include "cgroup-util.h"
+ #include "def.h"
+-#include "path-util.h"
++#include "macro.h"
+ #include "missing.h"
++#include "path-util.h"
+ #include "set.h"
++#include "strv.h"
+ #include "unit-name.h"
++#include "util.h"
+ 
+-#include "sd-bus.h"
+-#include "bus-error.h"
+-#include "bus-message.h"
+ #include "bus-util.h"
+-#include "bus-internal.h"
+ 
+ static int name_owner_change_callback(sd_bus *bus, sd_bus_message *m, void *userdata, sd_bus_error *ret_error) {
+         sd_event *e = userdata;
+@@ -1429,10 +1432,22 @@ int bus_append_unit_property_assignment(sd_bus_message *m, const char *assignmen
+                 }
+ 
+                 r = sd_bus_message_append(m, "sv", "TasksMax", "t", t);
+-        } else if (STR_IN_SET(field, "CPUShares", "BlockIOWeight")) {
++
++        } else if (STR_IN_SET(field, "CPUShares", "StartupCPUShares")) {
++                uint64_t u;
++
++                r = cg_cpu_shares_parse(eq, &u);
++                if (r < 0) {
++                        log_error("Failed to parse %s value %s.", field, eq);
++                        return -EINVAL;
++                }
++
++                r = sd_bus_message_append(m, "v", "t", u);
++
++        } else if (STR_IN_SET(field, "BlockIOWeight", "StartupBlockIOWeight")) {
+                 uint64_t u;
+ 
+-                r = safe_atou64(eq, &u);
++                r = cg_blkio_weight_parse(eq, &u);
+                 if (r < 0) {
+                         log_error("Failed to parse %s value %s.", field, eq);
+                         return -EINVAL;
+diff --git a/src/shared/cgroup-util.c b/src/shared/cgroup-util.c
+index c5d9e4bb5..f67b53b4d 100644
+--- a/src/shared/cgroup-util.c
++++ b/src/shared/cgroup-util.c
+@@ -1795,3 +1795,44 @@ int cg_kernel_controllers(Set *controllers) {
+ 
+         return 0;
+ }
++
++
++int cg_cpu_shares_parse(const char *s, uint64_t *ret) {
++        uint64_t u;
++        int r;
++
++        if (isempty(s)) {
++                *ret = CGROUP_CPU_SHARES_INVALID;
++                return 0;
++        }
++
++        r = safe_atou64(s, &u);
++        if (r < 0)
++                return r;
++
++        if (u < CGROUP_CPU_SHARES_MIN || u > CGROUP_CPU_SHARES_MAX)
++                return -ERANGE;
++
++        *ret = u;
++        return 0;
++}
++
++int cg_blkio_weight_parse(const char *s, uint64_t *ret) {
++        uint64_t u;
++        int r;
++
++        if (isempty(s)) {
++                *ret = CGROUP_BLKIO_WEIGHT_INVALID;
++                return 0;
++        }
++
++        r = safe_atou64(s, &u);
++        if (r < 0)
++                return r;
++
++        if (u < CGROUP_BLKIO_WEIGHT_MIN || u > CGROUP_BLKIO_WEIGHT_MAX)
++                return -ERANGE;
++
++        *ret = u;
++        return 0;
++}
+diff --git a/src/shared/cgroup-util.h b/src/shared/cgroup-util.h
+index 31bd8d311..615c1f03e 100644
+--- a/src/shared/cgroup-util.h
++++ b/src/shared/cgroup-util.h
+@@ -39,6 +39,30 @@ typedef enum CGroupControllerMask {
+         _CGROUP_CONTROLLER_MASK_ALL = 31
+ } CGroupControllerMask;
+ 
++/* Special values for the cpu.shares attribute */
++#define CGROUP_CPU_SHARES_INVALID ((uint64_t) -1)
++#define CGROUP_CPU_SHARES_MIN UINT64_C(2)
++#define CGROUP_CPU_SHARES_MAX UINT64_C(262144)
++#define CGROUP_CPU_SHARES_DEFAULT UINT64_C(1024)
++
++static inline bool CGROUP_CPU_SHARES_IS_OK(uint64_t x) {
++        return
++            x == CGROUP_CPU_SHARES_INVALID ||
++            (x >= CGROUP_CPU_SHARES_MIN && x <= CGROUP_CPU_SHARES_MAX);
++}
++
++/* Special values for the blkio.weight attribute */
++#define CGROUP_BLKIO_WEIGHT_INVALID ((uint64_t) -1)
++#define CGROUP_BLKIO_WEIGHT_MIN UINT64_C(10)
++#define CGROUP_BLKIO_WEIGHT_MAX UINT64_C(1000)
++#define CGROUP_BLKIO_WEIGHT_DEFAULT UINT64_C(500)
++
++static inline bool CGROUP_BLKIO_WEIGHT_IS_OK(uint64_t x) {
++        return
++            x == CGROUP_BLKIO_WEIGHT_INVALID ||
++            (x >= CGROUP_BLKIO_WEIGHT_MIN && x <= CGROUP_BLKIO_WEIGHT_MAX);
++}
++
+ /*
+  * General rules:
+  *
+@@ -136,3 +160,6 @@ int cg_trim_everywhere(CGroupControllerMask supported, const char *path, bool de
+ CGroupControllerMask cg_mask_supported(void);
+ 
+ int cg_kernel_controllers(Set *controllers);
++
++int cg_cpu_shares_parse(const char *s, uint64_t *ret);
++int cg_blkio_weight_parse(const char *s, uint64_t *ret);

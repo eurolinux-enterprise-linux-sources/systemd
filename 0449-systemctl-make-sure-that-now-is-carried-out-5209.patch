@@ -1,0 +1,46 @@
+From 10bf9c070764d09a4b39aa65ccba8b7501918a34 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jan.synacek@gmail.com>
+Date: Wed, 8 Feb 2017 20:57:08 +0100
+Subject: [PATCH] systemctl: make sure that --now is carried out (#5209)
+
+When services are already enabled/disabled/masked, make sure
+that --now still enforces start/stop.
+(cherry picked from commit 6bc30691b109302d386007c6bdabcc27d04991bc)
+Resolves: #1417459
+---
+ src/systemctl/systemctl.c | 20 ++++++++++++--------
+ 1 file changed, 12 insertions(+), 8 deletions(-)
+
+diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
+index ff8b4e978..0333599c8 100644
+--- a/src/systemctl/systemctl.c
++++ b/src/systemctl/systemctl.c
+@@ -5549,16 +5549,20 @@ static int enable_unit(sd_bus *bus, char **args) {
+                             "3) A unit may be started when needed via activation (socket, path, timer,\n"
+                             "   D-Bus, udev, scripted systemctl call, ...).\n");
+ 
+-        if (arg_now && n_changes > 0 && STR_IN_SET(args[0], "enable", "disable", "mask")) {
+-                char *new_args[n_changes + 2];
+-                unsigned i;
++        if (arg_now && STR_IN_SET(args[0], "enable", "disable", "mask")) {
++                unsigned len, i;
+ 
+-                new_args[0] = streq(args[0], "enable") ? (char *)"start" : (char *)"stop";
+-                for (i = 0; i < n_changes; i++)
+-                        new_args[i + 1] = basename(changes[i].path);
+-                new_args[i + 1] = NULL;
++                len = strv_length(names);
++                {
++                        char *new_args[len + 2];
+ 
+-                r = start_unit(bus, new_args);
++                        new_args[0] = (char*) (streq(args[0], "enable") ? "start" : "stop");
++                        for (i = 0; i < len; i++)
++                                new_args[i + 1] = basename(names[i]);
++                        new_args[i + 1] = NULL;
++
++                        r = start_unit(bus, new_args);
++                }
+         }
+ 
+ finish:

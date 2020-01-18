@@ -1,0 +1,70 @@
+From f1801ded8014054752356123849f86b6746f2a49 Mon Sep 17 00:00:00 2001
+From: Evgeny Vereshchagin <evvers@ya.ru>
+Date: Fri, 30 Oct 2015 09:25:12 +0300
+Subject: [PATCH] core: port config_parse_bounding_set to extract_first_word
+
+Cherry-picked from: 9ef57298cc57b105c62e2f1dab9ef5837d910604
+Resolves: #1387398
+---
+ src/core/load-fragment.c | 29 ++++++++++++++++++-----------
+ 1 file changed, 18 insertions(+), 11 deletions(-)
+
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index 6fc4d745d..4830d7ad6 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -1028,10 +1028,10 @@ int config_parse_bounding_set(const char *unit,
+ 
+         uint64_t *capability_bounding_set_drop = data;
+         uint64_t capability_bounding_set;
+-        const char *word, *state;
+-        size_t l;
+         bool invert = false;
+         uint64_t sum = 0;
++        const char *prev;
++        const char *cur;
+ 
+         assert(filename);
+         assert(lvalue);
+@@ -1048,25 +1048,32 @@ int config_parse_bounding_set(const char *unit,
+          * non-inverted everywhere to have a fully normalized
+          * interface. */
+ 
+-        FOREACH_WORD_QUOTED(word, l, rvalue, state) {
+-                _cleanup_free_ char *t = NULL;
++        prev = cur = rvalue;
++        for (;;) {
++                _cleanup_free_ char *word = NULL;
+                 int cap;
++                int r;
+ 
+-                t = strndup(word, l);
+-                if (!t)
++                r = extract_first_word(&cur, &word, NULL, EXTRACT_QUOTES);
++                if (r == 0)
++                        break;
++                if (r == -ENOMEM)
+                         return log_oom();
++                if (r < 0) {
++                        log_syntax(unit, LOG_ERR, filename, line, r, "Trailing garbage in bounding set, ignoring: %s", prev);
++                        break;
++                }
+ 
+-                cap = capability_from_name(t);
++                cap = capability_from_name(word);
+                 if (cap < 0) {
+-                        log_syntax(unit, LOG_ERR, filename, line, errno, "Failed to parse capability in bounding set, ignoring: %s", t);
++                        log_syntax(unit, LOG_ERR, filename, line, 0, "Failed to parse capability in bounding set, ignoring: %s", word);
++                        prev = cur;
+                         continue;
+                 }
+ 
+                 sum |= ((uint64_t) 1ULL) << (uint64_t) cap;
++                prev = cur;
+         }
+-        if (!isempty(state))
+-                log_syntax(unit, LOG_ERR, filename, line, EINVAL,
+-                           "Trailing garbage, ignoring.");
+ 
+         capability_bounding_set = invert ? ~sum : sum;
+         if (*capability_bounding_set_drop && capability_bounding_set)

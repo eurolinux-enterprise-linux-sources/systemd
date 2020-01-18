@@ -1,0 +1,40 @@
+From 70c096e5ae7bb7b415c82ee6cc177ac2d557feff Mon Sep 17 00:00:00 2001
+From: Yu Watanabe <watanabe.yu+github@gmail.com>
+Date: Sun, 24 Jan 2016 15:45:47 +0900
+Subject: [PATCH] journal-remote: make --url option support arbitrary url
+
+Currently, --url option supports the only form like http(s)://some.host:19531.
+This commit adds support to call systemd-journal-remote as follwos:
+systemd-journal-remote --url='http://some.host:19531'
+systemd-journal-remote --url='http://some.host:19531/'
+systemd-journal-remote --url='http://some.host:19531/entries'
+systemd-journal-remote --url='http://some.host:19531/entries?boot&follow'
+The first three example result the same and retrieve all entries.
+The last example retrieves only current boot entries and wait new events.
+
+Cherry-picked from: b68f6b0a794f9e6cb6457a0ac55041c4e7b1a5cb
+Resolves: #1505385
+---
+ src/journal-remote/journal-remote.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/src/journal-remote/journal-remote.c b/src/journal-remote/journal-remote.c
+index 4fac55cc9..a455fb6bd 100644
+--- a/src/journal-remote/journal-remote.c
++++ b/src/journal-remote/journal-remote.c
+@@ -894,7 +894,14 @@ static int remoteserver_init(RemoteServer *s,
+         if (arg_url) {
+                 const char *url, *hostname;
+ 
+-                url = strjoina(arg_url, "/entries");
++                if (!strstr(arg_url, "/entries")) {
++                        if (endswith(arg_url, "/"))
++                                url = strjoina(arg_url, "entries");
++                        else
++                                url = strjoina(arg_url, "/entries");
++                }
++                else
++                        url = strdupa(arg_url);
+ 
+                 if (arg_getter) {
+                         log_info("Spawning getter %s...", url);

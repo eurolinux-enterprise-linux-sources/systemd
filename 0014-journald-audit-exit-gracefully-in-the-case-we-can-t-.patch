@@ -1,0 +1,27 @@
+From 9b5e05005e534fc7fb6dc56c94e3296bb17fe122 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Fri, 6 Mar 2015 12:41:20 +0100
+Subject: [PATCH] journald-audit: exit gracefully in the case we can't join
+ audit multicast group
+
+---
+ src/journal/journald-audit.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/src/journal/journald-audit.c b/src/journal/journald-audit.c
+index c2f1545cc..151097a6e 100644
+--- a/src/journal/journald-audit.c
++++ b/src/journal/journald-audit.c
+@@ -529,8 +529,10 @@ int server_open_audit(Server *s) {
+                 }
+ 
+                 r = bind(s->audit_fd, &sa.sa, sizeof(sa.nl));
+-                if (r < 0)
+-                        return log_error_errno(errno, "Failed to join audit multicast group: %m");
++                if (r < 0) {
++                        log_warning_errno(errno, "Failed to join audit multicast group, ignoring: %m");
++                        return 0;
++                }
+         } else
+                 fd_nonblock(s->audit_fd, 1);
+ 

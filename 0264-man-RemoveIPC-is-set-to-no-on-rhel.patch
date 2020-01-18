@@ -1,0 +1,25 @@
+From 7602b4a03ef2b932ef3c22ce25d01a782074059f Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Thu, 10 Dec 2015 09:34:34 +0100
+Subject: [PATCH] man: RemoveIPC is set to no on rhel
+
+RHEL-only
+
+Related: #1284588
+---
+ man/logind.conf.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/man/logind.conf.xml b/man/logind.conf.xml
+index d02d57356..54651f07d 100644
+--- a/man/logind.conf.xml
++++ b/man/logind.conf.xml
+@@ -276,7 +276,7 @@
+         memory and message queues, as well as POSIX shared memory and
+         message queues. Note that IPC objects of the root user are
+         excluded from the effect of this setting. Defaults to
+-        <literal>yes</literal>.</para></listitem>
++        <literal>no</literal>.</para></listitem>
+       </varlistentry>
+ 
+     </variablelist>

@@ -1,0 +1,38 @@
+From 2a1f91ffc371f2bc3767a806ff387517ff9b9fc8 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Thu, 9 Jul 2015 18:43:55 -0300
+Subject: [PATCH] tmpfiles: don't recursively descend into journal directories
+ in /var
+
+Do so only in /run. We shouldn't alter ACLs for existing files in /var,
+but only for new files. If the admin made changes to the ACLs they
+shouls stay in place.
+
+We should still do recursive ACL changes for files in /run, since those
+are not persistent, and will hence lack ACLs on every boot.
+
+Also, /var/log/journal might be quit large, /run/log/journal is usually
+not, hence we should avoid the recursive descending on /var, but not on
+/run.
+
+Fixes #534
+
+(cherry picked from commit 8b258a645ae63dff3ab8dde6520d2e770e2a40f1)
+Related: #1411199
+---
+ tmpfiles.d/systemd.conf.m4 | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tmpfiles.d/systemd.conf.m4 b/tmpfiles.d/systemd.conf.m4
+index b447b01f5..d9d51af92 100644
+--- a/tmpfiles.d/systemd.conf.m4
++++ b/tmpfiles.d/systemd.conf.m4
+@@ -35,7 +35,7 @@ z /var/log/journal 2755 root systemd-journal - -
+ z /var/log/journal/%m 2755 root systemd-journal - -
+ m4_ifdef(`HAVE_ACL',``
+ a+ /var/log/journal/%m - - - - d:group:adm:r-x,d:group:wheel:r-x
+-A+ /var/log/journal/%m - - - - group:adm:r-x,group:wheel:r-x
++a+ /var/log/journal/%m - - - - group:adm:r-x,group:wheel:r-x
+ '')m4_dnl
+ 
+ d /var/lib/systemd 0755 root root -

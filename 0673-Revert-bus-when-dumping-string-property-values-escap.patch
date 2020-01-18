@@ -1,0 +1,94 @@
+From 8e5cb71473f8392a69eee0acea11e198ce7cd4c9 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Sat, 1 Jul 2017 16:17:12 -0400
+Subject: [PATCH] Revert "bus: when dumping string property values escape the
+ chars we use as end-of-line and end-of-item marks"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This reverts commit 27e9c5af817147ea1c678769e45e83f2e4b4ae96.
+
+Property values already use escaping, so escaping them a second time is
+confusing. It also should be mostly unnecessary: we take care to make property
+values only contains strings which (after the initial escaping) are printable
+and parseable without any futher escaping.
+
+Before revert:
+$ systemctl list-dependencies 'dev-mapper-luks\x2d8db85dcf\x2d6230\x2d4e88\x2d940d\x2dba176d062b31.device'
+dev-mapper-luks\x2d8db85dcf\x2d6230\x2d4e88\x2d940d\x2dba176d062b31.device
+● ├─dev-mapper-luks\x2d8db85dcf\x2d6230\x2d4e88\x2d940d\x2dba176d062b31.swap
+● └─systemd-cryptsetup@luks\x2d8db85dcf\x2d6230\x2d4e88\x2d940d\x2dba176d062b31.service
+$ systemctl show -p Wants,Requires 'dev-mapper-luks\x2d8db85dcf\x2d6230\x2d4e88\x2d940d\x2dba176d062b31.device'
+Requires=systemd-cryptsetup@luks\x5cx2d8db85dcf\x5cx2d6230\x5cx2d4e88\x5cx2d940d\x5cx2dba176d062b31.service
+Wants=dev-mapper-luks\x5cx2d8db85dcf\x5cx2d6230\x5cx2d4e88\x5cx2d940d\x5cx2dba176d062b31.swap
+
+Difference between systemctl show before revert and now:
+-Slice=system-systemd\x5cx2dcryptsetup.slice
++Slice=system-systemd\x2dcryptsetup.slice
+
+-Id=systemd-cryptsetup@luks\x5cx2d8db85dcf\x5cx2d6230\x5cx2d4e88\x5cx2d940d\x5cx2dba176d062b31.service
++Id=systemd-cryptsetup@luks\x2d8db85dcf\x2d6230\x2d4e88\x2d940d\x2dba176d062b31.service
+
+-Names=systemd-cryptsetup@luks\x5cx2d8db85dcf\x5cx2d6230\x5cx2d4e88\x5cx2d940d\x5cx2dba176d062b31.service
++Names=systemd-cryptsetup@luks\x2d8db85dcf\x2d6230\x2d4e88\x2d940d\x2dba176d062b31.service
+
+-Requires=system-systemd\x5cx2dcryptsetup.slice
++Requires=system-systemd\x2dcryptsetup.slice
+
+-BindsTo=dev-mapper-luks\x5cx2d8db85dcf\x5cx2d6230\x5cx2d4e88\x5cx2d940d\x5cx2dba176d062b31.device dev-disk-by\x5cx2duuid-8db85dcf\x5cx2d6230\x5cx2d4e88\x5cx2d940d\x5cx2dba176d062b31.device
++BindsTo=dev-mapper-luks\x2d8db85dcf\x2d6230\x2d4e88\x2d940d\x2dba176d062b31.device dev-disk-by\x2duuid-8db85dcf\x2d6230\x2d4e88\x2d940d\x2dba176d062b31.device
+
+-RequiredBy=dev-mapper-luks\x5cx2d8db85dcf\x5cx2d6230\x5cx2d4e88\x5cx2d940d\x5cx2dba176d062b31.device cryptsetup.target
++RequiredBy=dev-mapper-luks\x2d8db85dcf\x2d6230\x2d4e88\x2d940d\x2dba176d062b31.device cryptsetup.target
+
+-WantedBy=dev-disk-by\x5cx2duuid-8db85dcf\x5cx2d6230\x5cx2d4e88\x5cx2d940d\x5cx2dba176d062b31.device
++WantedBy=dev-disk-by\x2duuid-8db85dcf\x2d6230\x2d4e88\x2d940d\x2dba176d062b31.device
+
+(cherry picked from commit 3dfbc968e8343172faf754a3c81e27f0dbd8f157)
+
+Resolves: #1643172
+---
+ src/libsystemd/sd-bus/bus-util.c | 19 +++----------------
+ 1 file changed, 3 insertions(+), 16 deletions(-)
+
+diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
+index b1bdbad2d..9b77059a9 100644
+--- a/src/libsystemd/sd-bus/bus-util.c
++++ b/src/libsystemd/sd-bus/bus-util.c
+@@ -643,15 +643,8 @@ int bus_print_property(const char *name, sd_bus_message *property, bool all) {
+                 if (r < 0)
+                         return r;
+ 
+-                if (all || !isempty(s)) {
+-                        _cleanup_free_ char *escaped = NULL;
+-
+-                        escaped = xescape(s, "\n");
+-                        if (!escaped)
+-                                return -ENOMEM;
+-
+-                        printf("%s=%s\n", name, escaped);
+-                }
++                if (all || !isempty(s))
++                        printf("%s=%s\n", name, s);
+ 
+                 return 1;
+         }
+@@ -742,16 +735,10 @@ int bus_print_property(const char *name, sd_bus_message *property, bool all) {
+                                 return r;
+ 
+                         while((r = sd_bus_message_read_basic(property, SD_BUS_TYPE_STRING, &str)) > 0) {
+-                                _cleanup_free_ char *escaped = NULL;
+-
+                                 if (first)
+                                         printf("%s=", name);
+ 
+-                                escaped = xescape(str, "\n ");
+-                                if (!escaped)
+-                                        return -ENOMEM;
+-
+-                                printf("%s%s", first ? "" : " ", escaped);
++                                printf("%s%s", first ? "" : " ", str);
+ 
+                                 first = false;
+                         }

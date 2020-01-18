@@ -1,0 +1,83 @@
+From 382877acc6c029e59e359a076d203ca03b4b9e9e Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Wed, 3 May 2017 14:34:36 +0200
+Subject: [PATCH] compile with -Werror
+
+The maybe-uninitialized flag has to be disabled, because gcc on RHEL7
+reports tons of obvious false-positive warnings when variables are
+wrapped with _cleanup_.
+
+Also, LTO is better to be disabled. According to gcc folks, it makes
+debugging really hard and is not really recommended on RHEL7. Plus it
+makes the compilation fail with
+
+In function '__ppoll_alias',
+    inlined from 'bus_poll' at src/libsystemd/sd-bus/sd-bus.c:2822:11:
+/usr/include/bits/poll2.h:71:9: warning: call to '__ppoll_chk_warn' declared with attribute warning: ppoll called with fds buffer too small file nfds entries
+  return __ppoll_chk (__fds, __nfds, __timeout, __ss, __bos (__fds));
+
+That is also a gcc bug, already fixed in the gcc upstream
+(https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61886).
+
+Resolves: #1447937
+---
+ configure.ac               | 12 ++----------
+ src/core/main.c            |  1 -
+ src/login/logind-session.c |  2 +-
+ 3 files changed, 3 insertions(+), 12 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 2734368dc..def9fe5ce 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -187,7 +187,8 @@ CC_CHECK_FLAGS_APPEND([with_cflags], [CFLAGS], [\
+         -Wno-unused-parameter \
+         -Wno-missing-field-initializers \
+         -Wno-unused-result \
+-        -Werror=overflow \
++        -Werror \
++        -Wno-error=maybe-uninitialized \
+         -Wdate-time \
+         -Wnested-externs \
+         -ffast-math \
+@@ -208,15 +209,6 @@ AS_CASE([$CC], [*clang*],
+                -Wno-gnu-variable-sized-type-not-at-end \
+         ])])
+ 
+-AC_ARG_ENABLE([lto], AS_HELP_STRING([--disable-lto], [Disable Link time optimization]))
+-AS_IF([test "x$enable_lto" != "xno"], [
+-AS_CASE([$CFLAGS], [*-O[[12345\ ]]*], [
+-         CC_CHECK_FLAGS_APPEND([with_cflags], [CFLAGS], [-flto -ffat-lto-objects])
+-         CC_CHECK_FLAGS_APPEND([with_ldflags], [LDFLAGS],[-Wl,-fuse-ld=gold])
+-         ],
+-[AC_MSG_RESULT([skipping -flto, optimization not enabled])])
+-])
+-
+ AC_SUBST([OUR_CFLAGS], "$with_cflags $sanitizer_cflags")
+ 
+ AS_CASE([$CFLAGS], [*-O[[12345sz\ ]]*],
+diff --git a/src/core/main.c b/src/core/main.c
+index 50c9714f7..37e3ea0ce 100644
+--- a/src/core/main.c
++++ b/src/core/main.c
+@@ -1205,7 +1205,6 @@ static int status_welcome(void) {
+ 
+ static int write_container_id(void) {
+         const char *c;
+-        int r;
+ 
+         c = getenv("container");
+         if (isempty(c))
+diff --git a/src/login/logind-session.c b/src/login/logind-session.c
+index 4575a029f..daf875a7d 100644
+--- a/src/login/logind-session.c
++++ b/src/login/logind-session.c
+@@ -183,7 +183,7 @@ int session_save(Session *s) {
+                 "STATE=%s\n"
+                 "REMOTE=%i\n"
+                 "STOPPING=%i\n",
+-                (unsigned long) s->user->uid,
++                s->user->uid,
+                 s->user->name,
+                 session_is_active(s),
+                 session_state_to_string(session_get_state(s)),

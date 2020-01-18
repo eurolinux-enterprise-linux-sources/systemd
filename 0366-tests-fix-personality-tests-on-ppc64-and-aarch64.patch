@@ -1,0 +1,85 @@
+From 89a7c7e55af18c4f18c0d83c244dbe20ddb85515 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Fri, 29 Jul 2016 15:03:02 +0200
+Subject: [PATCH] tests: fix personality tests on ppc64 and aarch64
+
+Resolves: #1361049
+---
+ src/shared/util.c                     | 16 ++++++++++++++++
+ src/test/test-execute.c               |  6 ++++++
+ test/exec-personality-aarch64.service |  7 +++++++
+ test/exec-personality-ppc64.service   |  7 +++++++
+ 4 files changed, 36 insertions(+)
+ create mode 100644 test/exec-personality-aarch64.service
+ create mode 100644 test/exec-personality-ppc64.service
+
+diff --git a/src/shared/util.c b/src/shared/util.c
+index f75ed9dd4..303026152 100644
+--- a/src/shared/util.c
++++ b/src/shared/util.c
+@@ -6986,6 +6986,22 @@ unsigned long personality_from_string(const char *p) {
+ 
+         if (streq(p, "s390"))
+                 return PER_LINUX;
++
++#elif defined(__powerpc64__)
++
++#  if defined(__BIG_ENDIAN__)
++        if (streq(p, "ppc64"))
++                return PER_LINUX;
++#  else
++        if (streq(p, "ppc64le"))
++                return PER_LINUX;
++#  endif
++
++#elif defined(__aarch64__)
++
++        if (streq(p, "aarch64"))
++                return PER_LINUX;
++
+ #endif
+ 
+         /* personality(7) documents that 0xffffffffUL is used for
+diff --git a/src/test/test-execute.c b/src/test/test-execute.c
+index 38522a168..5a02960e7 100644
+--- a/src/test/test-execute.c
++++ b/src/test/test-execute.c
+@@ -83,6 +83,12 @@ static void test_exec_personality(Manager *m) {
+ #elif defined(__s390__)
+         test(m, "exec-personality-s390.service", 0, CLD_EXITED);
+ 
++#elif defined(__powerpc64__)
++        test(m, "exec-personality-ppc64.service", 0, CLD_EXITED);
++
++#elif defined(__aarch64__)
++        test(m, "exec-personality-aarch64.service", 0, CLD_EXITED);
++
+ #else
+         test(m, "exec-personality-x86.service", 0, CLD_EXITED);
+ #endif
+diff --git a/test/exec-personality-aarch64.service b/test/exec-personality-aarch64.service
+new file mode 100644
+index 000000000..851117441
+--- /dev/null
++++ b/test/exec-personality-aarch64.service
+@@ -0,0 +1,7 @@
++[Unit]
++Description=Test for Personality=aarch64
++
++[Service]
++ExecStart=/bin/sh -c 'echo $(uname -m); exit $(test $(uname -m) = "aarch64")'
++Type=oneshot
++Personality=aarch64
+diff --git a/test/exec-personality-ppc64.service b/test/exec-personality-ppc64.service
+new file mode 100644
+index 000000000..4432074e6
+--- /dev/null
++++ b/test/exec-personality-ppc64.service
+@@ -0,0 +1,7 @@
++[Unit]
++Description=Test for Personality=ppc64
++
++[Service]
++ExecStart=/bin/sh -c 'echo $(uname -m); exit $(test $(uname -m) = "ppc64" -o $(uname -m) = "ppc64le")'
++Type=oneshot
++Personality=ppc64

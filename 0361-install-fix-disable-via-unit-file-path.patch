@@ -1,0 +1,39 @@
+From 96df052a6a9d09cde2d437861727bf37fe6446b4 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Tue, 12 Jul 2016 09:40:02 +0200
+Subject: [PATCH] install: fix disable via unit file path
+
+Drop the check for unit file name validity. install_info_add does that
+anyway. Also pass NULL in place of name argument to install_info_add if
+we are dealing with path to a unit file. install_info_add will figure
+out a name from a path and it will correctly populate
+UnitFileInstallInfo with both name and path. Then in
+unit_file_search called from install_info_traverse we can take a
+shortcut and attempt to load unit file directly.
+
+Cherry-picked from: 4dfbf0b176ff0e8a352617eba5e79065ee477969
+Resolves: #1348208
+---
+ src/shared/install.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/src/shared/install.c b/src/shared/install.c
+index 5288bb450..f190dbfab 100644
+--- a/src/shared/install.c
++++ b/src/shared/install.c
+@@ -1910,10 +1910,12 @@ int unit_file_disable(
+                 return r;
+ 
+         STRV_FOREACH(i, files) {
+-                if (!unit_name_is_valid(*i, UNIT_NAME_ANY))
+-                        return -EINVAL;
+ 
+-                r = install_info_add(&c, *i, NULL, NULL);
++                if (!is_path(*i))
++                        r = install_info_add(&c, *i, NULL, NULL);
++                else
++                        r = install_info_add(&c, NULL, *i, NULL);
++
+                 if (r < 0)
+                         return r;
+         }

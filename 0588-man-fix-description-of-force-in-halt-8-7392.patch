@@ -1,0 +1,33 @@
+From fa011f2b4e6339f6672835712cb7b281e0603207 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Mon, 20 Nov 2017 14:27:46 +0100
+Subject: [PATCH] man: fix description of --force in halt(8) (#7392)
+
+https://bugzilla.redhat.com/show_bug.cgi?id=1449751
+(cherry picked from commit 5d9adb5b60b815b477ba9e6b19ef0fd7e1854a38)
+
+Resolves: #1515130
+---
+ man/halt.xml | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/man/halt.xml b/man/halt.xml
+index a06dbd009..d0fc25c20 100644
+--- a/man/halt.xml
++++ b/man/halt.xml
+@@ -112,8 +112,13 @@
+         <term><option>-f</option></term>
+         <term><option>--force</option></term>
+ 
+-        <listitem><para>Force immediate halt, power-off, reboot. Do
+-        not contact the init system.</para></listitem>
++        <listitem><para>Force immediate halt, power-off, or reboot. When
++        specified once, this results in an immediate but clean shutdown
++        by the system manager. When specified twice, this results in an
++        immediate shutdown without contacting the system manager. See the
++        description of <option>--force</option> in
++        <citerefentry><refentrytitle>systemctl</refentrytitle><manvolnum>1</manvolnum></citerefentry>
++        for more details.</para></listitem>
+       </varlistentry>
+ 
+       <varlistentry>

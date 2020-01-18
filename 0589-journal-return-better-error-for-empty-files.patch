@@ -1,0 +1,32 @@
+From fcef41057f40008693dd9161c973c2c6117e1433 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Sun, 25 Oct 2015 00:09:44 -0400
+Subject: [PATCH] journal: return better error for empty files
+
+When reading stuff, we should only return EIO when an actual read error
+occured, not when we don't like the data for whatever reason.
+
+We already return ENODATA for all other kinds of file truncation, hence
+do the same for the most obvious kind, so that callers know what ENODATA
+means.
+
+(cherry picked from commit cfb571f30fd415304b2f674f1615dc861058c347)
+
+Related: #1465759
+---
+ src/journal/journal-file.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
+index ebc8e6230..2bb3a9757 100644
+--- a/src/journal/journal-file.c
++++ b/src/journal/journal-file.c
+@@ -2693,7 +2693,7 @@ int journal_file_open(
+         }
+ 
+         if (f->last_stat.st_size < (off_t) HEADER_SIZE_MIN) {
+-                r = -EIO;
++                r = -ENODATA;
+                 goto fail;
+         }
+ 

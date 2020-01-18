@@ -1,0 +1,26 @@
+From b9de0cce0292983b62842990b9ce71c99b1bc434 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Sat, 14 Mar 2015 20:24:47 -0400
+Subject: [PATCH] tmpfiles: remove redundant debug message
+
+Mar 13 19:48:30 adam.happyassassin.net systemd-tmpfiles[970]: "/var/lib/machines" has right mode 40700
+Mar 13 19:48:30 adam.happyassassin.net systemd-tmpfiles[970]: /var/lib/machines created successfully.
+
+(cherry picked from commit 51bfdaf66c381793d2f39ad891f3411a55927da6)
+---
+ src/tmpfiles/tmpfiles.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
+index 1e1096816..73a9c9d5b 100644
+--- a/src/tmpfiles/tmpfiles.c
++++ b/src/tmpfiles/tmpfiles.c
+@@ -1209,8 +1209,6 @@ static int create_item(Item *i) {
+                 break;
+         }
+ 
+-        log_debug("%s created successfully.", i->path);
+-
+         return 0;
+ }
+ 

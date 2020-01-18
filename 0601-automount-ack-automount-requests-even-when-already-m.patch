@@ -1,0 +1,82 @@
+From d9df4d0ed03f56036b04e19a8e6be2c028c4a72e Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Wed, 17 Jan 2018 09:13:24 +0100
+Subject: [PATCH] automount: ack automount requests even when already mounted
+
+If a process accesses an autofs filesystem while systemd is in the
+middle of starting the mount unit on top of it, it is possible for the
+autofs_ptype_missing_direct request from the kernel to be received after
+the mount unit has been fully started:
+
+  systemd forks and execs mount             ...
+            ...                     access autofs, blocks
+  mount exits                               ...
+  systemd receives SIGCHLD                  ...
+            ...                     kernel sends request
+  systemd receives request                  ...
+
+systemd needs to respond to this request, otherwise the kernel will
+continue to block access to the mount point.
+
+(cherry picked from commit e7d54bf58789545a9eb0b3964233defa0b007318)
+
+Resolves: #1535135
+---
+ src/core/automount.c | 28 ++++++++++++++++------------
+ 1 file changed, 16 insertions(+), 12 deletions(-)
+
+diff --git a/src/core/automount.c b/src/core/automount.c
+index 20a5de8ca..182ba5240 100644
+--- a/src/core/automount.c
++++ b/src/core/automount.c
+@@ -712,7 +712,7 @@ static int automount_start_expire(Automount *a) {
+                         automount_dispatch_expire, a);
+ }
+ 
+-static void automount_enter_runnning(Automount *a) {
++static void automount_enter_running(Automount *a) {
+         _cleanup_bus_error_free_ sd_bus_error error = SD_BUS_ERROR_NULL;
+         struct stat st;
+         int r;
+@@ -744,18 +744,22 @@ static void automount_enter_runnning(Automount *a) {
+                 goto fail;
+         }
+ 
+-        if (!S_ISDIR(st.st_mode) || st.st_dev != a->dev_id)
++        /* The mount unit may have been explicitly started before we got the
++         * autofs request. Ack it to unblock anything waiting on the mount point. */
++        if (!S_ISDIR(st.st_mode) || st.st_dev != a->dev_id) {
+                 log_unit_info(UNIT(a)->id,
+                               "%s's automount point already active?", UNIT(a)->id);
+-        else {
+-                r = manager_add_job(UNIT(a)->manager, JOB_START, UNIT_TRIGGER(UNIT(a)),
+-                                    JOB_REPLACE, true, &error, NULL);
+-                if (r < 0) {
+-                        log_unit_warning(UNIT(a)->id,
+-                                         "%s failed to queue mount startup job: %s",
+-                                         UNIT(a)->id, bus_error_message(&error, r));
+-                        goto fail;
+-                }
++                automount_send_ready(a, a->tokens, 0);
++                return;
++        }
++
++        r = manager_add_job(UNIT(a)->manager, JOB_START, UNIT_TRIGGER(UNIT(a)),
++                        JOB_REPLACE, true, &error, NULL);
++        if (r < 0) {
++                log_unit_warning(UNIT(a)->id,
++                                "%s failed to queue mount startup job: %s",
++                                UNIT(a)->id, bus_error_message(&error, r));
++                goto fail;
+         }
+ 
+         r = automount_start_expire(a);
+@@ -979,7 +983,7 @@ static int automount_dispatch_io(sd_event_source *s, int fd, uint32_t events, vo
+                         goto fail;
+                 }
+ 
+-                automount_enter_runnning(a);
++                automount_enter_running(a);
+                 break;
+ 
+         case autofs_ptype_expire_direct:

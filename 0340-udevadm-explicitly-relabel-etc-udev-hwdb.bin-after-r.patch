@@ -1,0 +1,55 @@
+From 0860805a09ce6c2c2136306bdf64d58621368291 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Fri, 8 Jul 2016 15:54:55 +0200
+Subject: [PATCH] udevadm: explicitly relabel /etc/udev/hwdb.bin after rename
+
+This is basically the same change as ea68351.
+
+Cherry-picked from: 4f43161e909cb420aafbc4bebce4361b17b80fdd
+Related: #1350756
+---
+ src/udev/udevadm-hwdb.c | 5 ++++-
+ src/udev/udevadm.c      | 2 +-
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/src/udev/udevadm-hwdb.c b/src/udev/udevadm-hwdb.c
+index d65e40c01..201e2a0cd 100644
+--- a/src/udev/udevadm-hwdb.c
++++ b/src/udev/udevadm-hwdb.c
+@@ -26,6 +26,8 @@
+ #include "util.h"
+ #include "strbuf.h"
+ #include "conf-files.h"
++#include "label.h"
++#include "mkdir.h"
+ 
+ #include "udev.h"
+ #include "hwdb-internal.h"
+@@ -654,12 +656,13 @@ static int adm_hwdb(struct udev *udev, int argc, char *argv[]) {
+                         rc = EXIT_FAILURE;
+                         goto out;
+                 }
+-                mkdir_parents(hwdb_bin, 0755);
++                mkdir_parents_label(hwdb_bin, 0755);
+                 err = trie_store(trie, hwdb_bin);
+                 if (err < 0) {
+                         log_error_errno(err, "Failure writing database %s: %m", hwdb_bin);
+                         rc = EXIT_FAILURE;
+                 }
++                label_fix(hwdb_bin, false, false);
+         }
+ 
+         if (test) {
+diff --git a/src/udev/udevadm.c b/src/udev/udevadm.c
+index 56cd0cd4e..d05a26e78 100644
+--- a/src/udev/udevadm.c
++++ b/src/udev/udevadm.c
+@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
+ 
+         log_parse_environment();
+         log_open();
+-        mac_selinux_init("/dev");
++        mac_selinux_init(NULL);
+ 
+         while ((c = getopt_long(argc, argv, "+dhV", options, NULL)) >= 0)
+                 switch (c) {

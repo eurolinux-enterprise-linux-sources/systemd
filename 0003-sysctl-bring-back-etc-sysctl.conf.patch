@@ -1,0 +1,25 @@
+From d2deeea1d5aa1d13139b9e9f70c6655abb589530 Mon Sep 17 00:00:00 2001
+From: Harald Hoyer <harald@redhat.com>
+Date: Mon, 11 Nov 2013 11:17:57 +0100
+Subject: [PATCH] sysctl: bring back /etc/sysctl.conf
+
+Read /etc/sysctl.conf as the last file, overwriting everything.
+---
+ src/sysctl/sysctl.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/sysctl/sysctl.c b/src/sysctl/sysctl.c
+index 275a5b74a..d007c932c 100644
+--- a/src/sysctl/sysctl.c
++++ b/src/sysctl/sysctl.c
+@@ -320,6 +320,10 @@ int main(int argc, char *argv[]) {
+                         if (k < 0 && r == 0)
+                                 r = k;
+                 }
++
++                k = parse_file(sysctl_options, "/etc/sysctl.conf", true);
++                if (k < 0 && r == 0)
++                        r = k;
+         }
+ 
+         k = apply_all(sysctl_options);

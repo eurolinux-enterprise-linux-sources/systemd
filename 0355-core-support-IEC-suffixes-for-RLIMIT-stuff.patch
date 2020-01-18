@@ -1,0 +1,191 @@
+From 99074eebc911728a41167c1962231e11b5e3cddd Mon Sep 17 00:00:00 2001
+From: Karel Zak <kzak@redhat.com>
+Date: Fri, 6 Nov 2015 11:06:52 +0100
+Subject: [PATCH] core: support IEC suffixes for RLIMIT stuff
+
+Let's make things more user-friendly and support for example
+
+  LimitAS=16G
+
+rather than force users to always use LimitAS=16106127360.
+
+The change is relevant for options:
+
+  [Default]Limit{FSIZE,DATA,STACK,CORE,RSS,AS,MEMLOCK,MSGQUEUE}
+
+The patch introduces config_parse_bytes_limit(), it's the same as
+config_parse_limit() but uses parse_size() tu support the suffixes.
+
+Addresses: https://github.com/systemd/systemd/issues/1772
+
+Cherry-picked from: 412ea7a936ebaa5342a4c2abf48b9e408e6ba5dc
+Related: #1351415
+---
+ man/systemd-system.conf.xml           |  6 ++--
+ man/systemd.exec.xml                  |  4 ++-
+ src/core/load-fragment-gperf.gperf.m4 | 16 +++++-----
+ src/core/load-fragment.c              | 43 +++++++++++++++++++++++++++
+ src/core/load-fragment.h              |  1 +
+ src/core/main.c                       | 16 +++++-----
+ 6 files changed, 67 insertions(+), 19 deletions(-)
+
+diff --git a/man/systemd-system.conf.xml b/man/systemd-system.conf.xml
+index ca25c93a1..b7d9cdee0 100644
+--- a/man/systemd-system.conf.xml
++++ b/man/systemd-system.conf.xml
+@@ -327,8 +327,10 @@
+         resource limits for units. See
+         <citerefentry><refentrytitle>setrlimit</refentrytitle><manvolnum>2</manvolnum></citerefentry>
+         for details. Use the string <varname>infinity</varname> to
+-        configure no limit on a specific resource. These settings may
+-        be overridden in individual units using the corresponding
++        configure no limit on a specific resource. The multiplicative suffixes
++        K (=1024), M (=1024*1024) and so on for G, T, P and E may be used for
++        resource limits measured in bytes (e.g. DefaultLimitAS=16G). These
++        settings may be overridden in individual units using the corresponding
+         LimitXXX= directives. Note that these resource limits are only
+         defaults for units, they are not applied to PID 1
+         itself.</para></listitem>
+diff --git a/man/systemd.exec.xml b/man/systemd.exec.xml
+index 6af7c7ae5..25aea1655 100644
+--- a/man/systemd.exec.xml
++++ b/man/systemd.exec.xml
+@@ -559,7 +559,9 @@
+         of various resources for executed processes. See
+         <citerefentry><refentrytitle>setrlimit</refentrytitle><manvolnum>2</manvolnum></citerefentry>
+         for details. Use the string <varname>infinity</varname> to
+-        configure no limit on a specific resource.</para></listitem>
++        configure no limit on a specific resource. The multiplicative suffixes
++        K (=1024), M (=1024*1024) and so on for G, T, P and E may be used for
++        resource limits measured in bytes (e.g. LimitAS=16G).</para></listitem>
+ 
+         <table>
+           <title>Limit directives and their equivalent with ulimit</title>
+diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
+index 85d979751..c3461a0a6 100644
+--- a/src/core/load-fragment-gperf.gperf.m4
++++ b/src/core/load-fragment-gperf.gperf.m4
+@@ -59,18 +59,18 @@ $1.SystemCallArchitectures,      config_parse_warn_compat,           DISABLED_CO
+ $1.SystemCallErrorNumber,        config_parse_warn_compat,           DISABLED_CONFIGURATION,        0
+ $1.RestrictAddressFamilies,      config_parse_warn_compat,           DISABLED_CONFIGURATION,        0')
+ $1.LimitCPU,                     config_parse_limit,                 RLIMIT_CPU,                    offsetof($1, exec_context.rlimit)
+-$1.LimitFSIZE,                   config_parse_limit,                 RLIMIT_FSIZE,                  offsetof($1, exec_context.rlimit)
+-$1.LimitDATA,                    config_parse_limit,                 RLIMIT_DATA,                   offsetof($1, exec_context.rlimit)
+-$1.LimitSTACK,                   config_parse_limit,                 RLIMIT_STACK,                  offsetof($1, exec_context.rlimit)
+-$1.LimitCORE,                    config_parse_limit,                 RLIMIT_CORE,                   offsetof($1, exec_context.rlimit)
+-$1.LimitRSS,                     config_parse_limit,                 RLIMIT_RSS,                    offsetof($1, exec_context.rlimit)
++$1.LimitFSIZE,                   config_parse_bytes_limit,           RLIMIT_FSIZE,                  offsetof($1, exec_context.rlimit)
++$1.LimitDATA,                    config_parse_bytes_limit,           RLIMIT_DATA,                   offsetof($1, exec_context.rlimit)
++$1.LimitSTACK,                   config_parse_bytes_limit,           RLIMIT_STACK,                  offsetof($1, exec_context.rlimit)
++$1.LimitCORE,                    config_parse_bytes_limit,           RLIMIT_CORE,                   offsetof($1, exec_context.rlimit)
++$1.LimitRSS,                     config_parse_bytes_limit,           RLIMIT_RSS,                    offsetof($1, exec_context.rlimit)
+ $1.LimitNOFILE,                  config_parse_limit,                 RLIMIT_NOFILE,                 offsetof($1, exec_context.rlimit)
+-$1.LimitAS,                      config_parse_limit,                 RLIMIT_AS,                     offsetof($1, exec_context.rlimit)
++$1.LimitAS,                      config_parse_bytes_limit,           RLIMIT_AS,                     offsetof($1, exec_context.rlimit)
+ $1.LimitNPROC,                   config_parse_limit,                 RLIMIT_NPROC,                  offsetof($1, exec_context.rlimit)
+-$1.LimitMEMLOCK,                 config_parse_limit,                 RLIMIT_MEMLOCK,                offsetof($1, exec_context.rlimit)
++$1.LimitMEMLOCK,                 config_parse_bytes_limit,           RLIMIT_MEMLOCK,                offsetof($1, exec_context.rlimit)
+ $1.LimitLOCKS,                   config_parse_limit,                 RLIMIT_LOCKS,                  offsetof($1, exec_context.rlimit)
+ $1.LimitSIGPENDING,              config_parse_limit,                 RLIMIT_SIGPENDING,             offsetof($1, exec_context.rlimit)
+-$1.LimitMSGQUEUE,                config_parse_limit,                 RLIMIT_MSGQUEUE,               offsetof($1, exec_context.rlimit)
++$1.LimitMSGQUEUE,                config_parse_bytes_limit,           RLIMIT_MSGQUEUE,               offsetof($1, exec_context.rlimit)
+ $1.LimitNICE,                    config_parse_limit,                 RLIMIT_NICE,                   offsetof($1, exec_context.rlimit)
+ $1.LimitRTPRIO,                  config_parse_limit,                 RLIMIT_RTPRIO,                 offsetof($1, exec_context.rlimit)
+ $1.LimitRTTIME,                  config_parse_limit,                 RLIMIT_RTTIME,                 offsetof($1, exec_context.rlimit)
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index b188ec99d..dbb45b20f 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -1119,6 +1119,49 @@ int config_parse_limit(const char *unit,
+         return 0;
+ }
+ 
++int config_parse_bytes_limit(const char *unit,
++                       const char *filename,
++                       unsigned line,
++                       const char *section,
++                       unsigned section_line,
++                       const char *lvalue,
++                       int ltype,
++                       const char *rvalue,
++                       void *data,
++                       void *userdata) {
++
++        struct rlimit **rl = data;
++        uint64_t bytes;
++
++        assert(filename);
++        assert(lvalue);
++        assert(rvalue);
++        assert(data);
++
++        rl += ltype;
++
++        if (streq(rvalue, "infinity"))
++                bytes = (uint64_t) RLIM_INFINITY;
++        else {
++                int r;
++
++                r = parse_size(rvalue, 1024, &bytes);
++                if (r < 0) {
++                        log_syntax(unit, LOG_ERR, filename, line, r, "Failed to parse resource value, ignoring: %s", rvalue);
++                        return 0;
++                }
++        }
++
++        if (!*rl) {
++                *rl = new(struct rlimit, 1);
++                if (!*rl)
++                        return log_oom();
++        }
++
++        (*rl)->rlim_cur = (*rl)->rlim_max = (rlim_t) bytes;
++        return 0;
++}
++
+ #ifdef HAVE_SYSV_COMPAT
+ int config_parse_sysv_priority(const char *unit,
+                                const char *filename,
+diff --git a/src/core/load-fragment.h b/src/core/load-fragment.h
+index ce10d03c3..2d509d0cb 100644
+--- a/src/core/load-fragment.h
++++ b/src/core/load-fragment.h
+@@ -56,6 +56,7 @@ int config_parse_exec_capabilities(const char *unit, const char *filename, unsig
+ int config_parse_exec_secure_bits(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_bounding_set(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
++int config_parse_bytes_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_sysv_priority(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_kill_signal(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_exec_mount_flags(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+diff --git a/src/core/main.c b/src/core/main.c
+index 2aec40b0b..60ea36c3c 100644
+--- a/src/core/main.c
++++ b/src/core/main.c
+@@ -655,18 +655,18 @@ static int parse_config_file(void) {
+                 { "Manager", "DefaultStartLimitBurst",    config_parse_unsigned,         0, &arg_default_start_limit_burst         },
+                 { "Manager", "DefaultEnvironment",        config_parse_environ,          0, &arg_default_environment               },
+                 { "Manager", "DefaultLimitCPU",           config_parse_limit,            0, &arg_default_rlimit[RLIMIT_CPU]        },
+-                { "Manager", "DefaultLimitFSIZE",         config_parse_limit,            0, &arg_default_rlimit[RLIMIT_FSIZE]      },
+-                { "Manager", "DefaultLimitDATA",          config_parse_limit,            0, &arg_default_rlimit[RLIMIT_DATA]       },
+-                { "Manager", "DefaultLimitSTACK",         config_parse_limit,            0, &arg_default_rlimit[RLIMIT_STACK]      },
+-                { "Manager", "DefaultLimitCORE",          config_parse_limit,            0, &arg_default_rlimit[RLIMIT_CORE]       },
+-                { "Manager", "DefaultLimitRSS",           config_parse_limit,            0, &arg_default_rlimit[RLIMIT_RSS]        },
++                { "Manager", "DefaultLimitFSIZE",         config_parse_bytes_limit,      0, &arg_default_rlimit[RLIMIT_FSIZE]      },
++                { "Manager", "DefaultLimitDATA",          config_parse_bytes_limit,      0, &arg_default_rlimit[RLIMIT_DATA]       },
++                { "Manager", "DefaultLimitSTACK",         config_parse_bytes_limit,      0, &arg_default_rlimit[RLIMIT_STACK]      },
++                { "Manager", "DefaultLimitCORE",          config_parse_bytes_limit,      0, &arg_default_rlimit[RLIMIT_CORE]       },
++                { "Manager", "DefaultLimitRSS",           config_parse_bytes_limit,      0, &arg_default_rlimit[RLIMIT_RSS]        },
+                 { "Manager", "DefaultLimitNOFILE",        config_parse_limit,            0, &arg_default_rlimit[RLIMIT_NOFILE]     },
+-                { "Manager", "DefaultLimitAS",            config_parse_limit,            0, &arg_default_rlimit[RLIMIT_AS]         },
++                { "Manager", "DefaultLimitAS",            config_parse_bytes_limit,      0, &arg_default_rlimit[RLIMIT_AS]         },
+                 { "Manager", "DefaultLimitNPROC",         config_parse_limit,            0, &arg_default_rlimit[RLIMIT_NPROC]      },
+-                { "Manager", "DefaultLimitMEMLOCK",       config_parse_limit,            0, &arg_default_rlimit[RLIMIT_MEMLOCK]    },
++                { "Manager", "DefaultLimitMEMLOCK",       config_parse_bytes_limit,      0, &arg_default_rlimit[RLIMIT_MEMLOCK]    },
+                 { "Manager", "DefaultLimitLOCKS",         config_parse_limit,            0, &arg_default_rlimit[RLIMIT_LOCKS]      },
+                 { "Manager", "DefaultLimitSIGPENDING",    config_parse_limit,            0, &arg_default_rlimit[RLIMIT_SIGPENDING] },
+-                { "Manager", "DefaultLimitMSGQUEUE",      config_parse_limit,            0, &arg_default_rlimit[RLIMIT_MSGQUEUE]   },
++                { "Manager", "DefaultLimitMSGQUEUE",      config_parse_bytes_limit,      0, &arg_default_rlimit[RLIMIT_MSGQUEUE]   },
+                 { "Manager", "DefaultLimitNICE",          config_parse_limit,            0, &arg_default_rlimit[RLIMIT_NICE]       },
+                 { "Manager", "DefaultLimitRTPRIO",        config_parse_limit,            0, &arg_default_rlimit[RLIMIT_RTPRIO]     },
+                 { "Manager", "DefaultLimitRTTIME",        config_parse_limit,            0, &arg_default_rlimit[RLIMIT_RTTIME]     },

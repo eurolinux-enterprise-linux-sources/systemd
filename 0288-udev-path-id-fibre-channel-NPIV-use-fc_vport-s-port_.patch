@@ -1,0 +1,125 @@
+From 05004e584a76645dcbcaaa4d5c2d3d3255900770 Mon Sep 17 00:00:00 2001
+From: Mauricio Faria de Oliveira <mauricfo@linux.vnet.ibm.com>
+Date: Tue, 23 Feb 2016 15:02:02 -0300
+Subject: [PATCH] udev: path-id: fibre channel NPIV - use fc_vport's port_name
+
+With the Fibre Channel NPIV (N_Port ID Virtualization) feature,
+a single physical N_Port (e.g., PCI address) can have multiple
+N_Port IDs (e.g., different fc_host nodes) - which can connect
+to the same target LUN (e.g., fc_remote_port's port_name and
+LUN number).
+
+Thus, in order to be unique, the device persistent path should
+include the fc_vport's port_name (only if the fc_vport is used),
+in addition to the already in use PCI address, fc_remote_port's
+port_name and LUN number.
+
+The patch merges the 2 proposals submitted upstream, addressing
+some problems with both:
+- #2500 (don't replace the fc_rport's port_name with fc_vport's)
+- #2665 (don't add a fc_host/fc_vport's port_name if not needed)
+
+Links
+- https://github.com/systemd/systemd/pull/2500/
+- https://github.com/systemd/systemd/pull/2665/
+
+Built, checked, tested on RHEL Server 7.1 with no regressions.
+
+With the patch, /dev/disk/by-path symlinks are created correctly,
+and are unique, backward-compatible with the physical port case:
+- physical port (no vport field)
+- virtual ports (w/ vport field)
+
+    # ls -l /dev/disk/by-path | grep 0001:09:00.0
+    <...> pci-0001:09:00.0-fc-0x500507680b2255fe-lun-0 -> ../../sdh
+    <...> pci-0001:09:00.0-fc-0x500507680b2255ff-lun-0 -> ../../sdi
+    <...> pci-0001:09:00.0-vport-0x5001a4aaf00a6785-fc-0x500507680b2255fe-lun-0 -> ../../sde
+    <...> pci-0001:09:00.0-vport-0x5001a4aaf00a6785-fc-0x500507680b2255ff-lun-0 -> ../../sdd
+    <...> pci-0001:09:00.0-vport-0x5001a4ad99d8c2de-fc-0x500507680b2255fe-lun-0 -> ../../sdc
+    <...> pci-0001:09:00.0-vport-0x5001a4ad99d8c2de-fc-0x500507680b2255ff-lun-0 -> ../../sdb
+
+Accordingly w/ sysfs:
+
+    # ls -ld /sys/block/sd* | grep host1
+    <...> /sys/block/sdb -> ../devices/pci0001:00/<...>/0001:09:00.0/host1/vport-1:0-0/host3/rport-3:0-1/target3:0:0/3:0:0:0/block/sdb
+    <...> /sys/block/sdc -> ../devices/pci0001:00/<...>/0001:09:00.0/host1/vport-1:0-0/host3/rport-3:0-2/target3:0:1/3:0:1:0/block/sdc
+    <...> /sys/block/sdd -> ../devices/pci0001:00/<...>/0001:09:00.0/host1/vport-1:0-2/host5/rport-5:0-1/target5:0:0/5:0:0:0/block/sdd
+    <...> /sys/block/sde -> ../devices/pci0001:00/<...>/0001:09:00.0/host1/vport-1:0-2/host5/rport-5:0-2/target5:0:1/5:0:1:0/block/sde
+    <...> /sys/block/sdh -> ../devices/pci0001:00/<...>/0001:09:00.0/host1/rport-1:0-3/target1:0:0/1:0:0:0/block/sdh
+    <...> /sys/block/sdi -> ../devices/pci0001:00/<...>/0001:09:00.0/host1/rport-1:0-4/target1:0:1/1:0:1:0/block/sdi
+
+The symlinks still include the fc_remote_port's (target) port_name:
+
+    # grep . /sys/class/fc_remote_ports/rport-{3:0-{1,2},5:0-{1,2},1:0-{3,4}}/port_name
+    /sys/class/fc_remote_ports/rport-3:0-1/port_name:0x500507680b2255ff
+    /sys/class/fc_remote_ports/rport-3:0-2/port_name:0x500507680b2255fe
+    /sys/class/fc_remote_ports/rport-5:0-1/port_name:0x500507680b2255ff
+    /sys/class/fc_remote_ports/rport-5:0-2/port_name:0x500507680b2255fe
+    /sys/class/fc_remote_ports/rport-1:0-3/port_name:0x500507680b2255fe
+    /sys/class/fc_remote_ports/rport-1:0-4/port_name:0x500507680b2255ff
+
+And now include the fc_vport's (virtual host) port_name *if* it's from a fc_vport:
+
+    # grep . /sys/class/fc_host/host1/port_name /sys/class/fc_vports/vport-1:0-{0,2}/port_name
+    /sys/class/fc_host/host1/port_name:0x10000090fa8f0ebc
+    /sys/class/fc_vports/vport-1:0-0/port_name:0x5001a4ad99d8c2de
+    /sys/class/fc_vports/vport-1:0-2/port_name:0x5001a4aaf00a6785
+
+Signed-off-by: Mauricio Faria de Oliveira <mauricfo@linux.vnet.ibm.com>
+Reported-by: Srikanth B. Aithal <bssrikanth@in.ibm.com>
+
+Cherry-picked from: 6a3d3f9e5970cf982ac37c65d0b856146b675a12
+Resolves: #1266934
+---
+ src/udev/udev-builtin-path_id.c | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+diff --git a/src/udev/udev-builtin-path_id.c b/src/udev/udev-builtin-path_id.c
+index 9ca608468..3b72922d4 100644
+--- a/src/udev/udev-builtin-path_id.c
++++ b/src/udev/udev-builtin-path_id.c
+@@ -92,7 +92,11 @@ static struct udev_device *skip_subsystem(struct udev_device *dev, const char *s
+ static struct udev_device *handle_scsi_fibre_channel(struct udev_device *parent, char **path) {
+         struct udev *udev  = udev_device_get_udev(parent);
+         struct udev_device *targetdev;
++        struct udev_device *rportdev;
++        struct udev_device *hostdev;
++        struct udev_device *vportdev;
+         struct udev_device *fcdev = NULL;
++        struct udev_device *fc_vportdev = NULL;
+         const char *port;
+         char *lun = NULL;
+ 
+@@ -113,6 +117,32 @@ static struct udev_device *handle_scsi_fibre_channel(struct udev_device *parent,
+         path_prepend(path, "fc-%s-%s", port, lun);
+         if (lun)
+                 free(lun);
++
++        /* NPIV */
++        rportdev = udev_device_get_parent(targetdev);
++        if (rportdev == NULL)
++                goto out;
++
++        hostdev = udev_device_get_parent(rportdev);
++        if (hostdev == NULL)
++                goto out;
++
++        vportdev = udev_device_get_parent(hostdev);
++        if (vportdev == NULL)
++                goto out;
++
++        fc_vportdev = udev_device_new_from_subsystem_sysname(udev, "fc_vports", udev_device_get_sysname(vportdev));
++        if (fc_vportdev == NULL)
++                goto out;
++
++        port = udev_device_get_sysattr_value(fc_vportdev, "port_name");
++        if (port == NULL)
++                goto out_npiv;
++
++        path_prepend(path, "vport-%s", port);
++
++out_npiv:
++        udev_device_unref(fc_vportdev);
+ out:
+         udev_device_unref(fcdev);
+         return parent;

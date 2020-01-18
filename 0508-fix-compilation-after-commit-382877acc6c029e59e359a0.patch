@@ -1,0 +1,26 @@
+From 4d5e724a78803ed18033f04e7ffec6c8ea3bc922 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Thu, 7 Sep 2017 14:37:06 +0200
+Subject: [PATCH] fix compilation after commit
+ 382877acc6c029e59e359a076d203ca03b4b9e9e
+
+It turns out that explicit #warning macros work as explicit errors with -Werror.
+
+Related: #1447937
+---
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index def9fe5ce..ee147e28e 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -188,7 +188,7 @@ CC_CHECK_FLAGS_APPEND([with_cflags], [CFLAGS], [\
+         -Wno-missing-field-initializers \
+         -Wno-unused-result \
+         -Werror \
+-        -Wno-error=maybe-uninitialized \
++        -Wno-error=maybe-uninitialized -Wno-error=cpp \
+         -Wdate-time \
+         -Wnested-externs \
+         -ffast-math \

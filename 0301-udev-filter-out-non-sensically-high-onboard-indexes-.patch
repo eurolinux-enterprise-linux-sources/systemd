@@ -1,0 +1,43 @@
+From 0fa424a08a31af512a698b60b497cfc0cf0554e0 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Mon, 25 Jan 2016 17:16:27 +0100
+Subject: [PATCH] udev: filter out non-sensically high onboard indexes reported
+ by the kernel
+
+Let's not accept onboard interface indexes, that are so high that they are obviously non-sensical.
+
+Fixes: #2407
+
+Cherry-picked from: 6c1e69f9456d022f14dd00737126cfa4d9cca10
+Resolves: #1230210
+---
+ src/udev/udev-builtin-net_id.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/src/udev/udev-builtin-net_id.c b/src/udev/udev-builtin-net_id.c
+index ffd6ea416..19e1f2631 100644
+--- a/src/udev/udev-builtin-net_id.c
++++ b/src/udev/udev-builtin-net_id.c
+@@ -101,6 +101,8 @@
+ #include "udev.h"
+ #include "fileio.h"
+ 
++#define ONBOARD_INDEX_MAX (16*1024-1)
++
+ enum netname_type{
+         NET_UNDEF,
+         NET_PCI,
+@@ -147,6 +149,13 @@ static int dev_pci_onboard(struct udev_device *dev, struct netnames *names) {
+         if (idx <= 0)
+                 return -EINVAL;
+ 
++        /* Some BIOSes report rubbish indexes that are excessively high (2^24-1 is an index VMware likes to report for
++         * example). Let's define a cut-off where we don't consider the index reliable anymore. We pick some arbitrary
++         * cut-off, which is somewhere beyond the realistic number of physical network interface a system might
++         * have. Ideally the kernel would already filter his crap for us, but it doesn't currently. */
++        if (idx > ONBOARD_INDEX_MAX)
++                return -ENOENT;
++
+         /* kernel provided port index for multiple ports on a single PCI function */
+         attr = udev_device_get_sysattr_value(dev, "dev_port");
+         if (attr)

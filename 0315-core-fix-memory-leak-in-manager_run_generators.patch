@@ -1,0 +1,52 @@
+From fa5a3a16e94773baf1dce3881d5cfab556b87113 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Cristian=20Rodr=C3=ADguez?= <crrodriguez@opensuse.org>
+Date: Mon, 11 May 2015 23:30:38 -0300
+Subject: [PATCH] core: fix memory leak in manager_run_generators()
+
+If systemd is built with GCC address sanitizer or leak sanitizer
+the following memory leak ocurs:
+
+May 12 02:02:46 linux.site systemd[326]: =================================================================
+May 12 02:02:46 linux.site systemd[326]: ==326==ERROR: LeakSanitizer: detected memory leaks
+May 12 02:02:46 linux.site systemd[326]: Direct leak of 101 byte(s) in 3 object(s) allocated from:
+May 12 02:02:46 linux.site systemd[326]: #0 0x7fd1f504993f in strdup (/usr/lib64/libasan.so.2+0x6293f)
+May 12 02:02:46 linux.site systemd[326]: #1 0x55d6ffac5336 in strv_new_ap src/shared/strv.c:163
+May 12 02:02:46 linux.site systemd[326]: #2 0x55d6ffac56a9 in strv_new src/shared/strv.c:185
+May 12 02:02:46 linux.site systemd[326]: #3 0x55d6ffa80272 in generator_paths src/shared/path-lookup.c:223
+May 12 02:02:46 linux.site systemd[326]: #4 0x55d6ff9bdb0f in manager_run_generators src/core/manager.c:2828
+May 12 02:02:46 linux.site systemd[326]: #5 0x55d6ff9b1a10 in manager_startup src/core/manager.c:1121
+May 12 02:02:46 linux.site systemd[326]: #6 0x55d6ff9a78e3 in main src/core/main.c:1667
+May 12 02:02:46 linux.site systemd[326]: #7 0x7fd1f394e8c4 in __libc_start_main (/lib64/libc.so.6+0x208c4)
+May 12 02:02:46 linux.site systemd[326]: Direct leak of 29 byte(s) in 1 object(s) allocated from:
+May 12 02:02:46 linux.site systemd[326]: #0 0x7fd1f504993f in strdup (/usr/lib64/libasan.so.2+0x6293f)
+May 12 02:02:46 linux.site systemd[326]: #1 0x55d6ffac5288 in strv_new_ap src/shared/strv.c:152
+May 12 02:02:46 linux.site systemd[326]: #2 0x55d6ffac56a9 in strv_new src/shared/strv.c:185
+May 12 02:02:46 linux.site systemd[326]: #3 0x55d6ffa80272 in generator_paths src/shared/path-lookup.c:223
+May 12 02:02:46 linux.site systemd[326]: #4 0x55d6ff9bdb0f in manager_run_generators src/core/manager.c:2828
+May 12 02:02:46 linux.site systemd[326]: #5 0x55d6ff9b1a10 in manager_startup src/core/manager.c:1121
+May 12 02:02:46 linux.site systemd[326]: #6 0x55d6ff9a78e3 in main src/core/main.c:1667
+May 12 02:02:46 linux.site systemd[326]: #7 0x7fd1f394e8c4 in __libc_start_main (/lib64/libc.so.6+0x208c4)
+May 12 02:02:46 linux.site systemd[326]: SUMMARY: AddressSanitizer: 130 byte(s) leaked in 4 allocation(s).
+
+There is a leak due to the the use of cleanup_free instead
+_cleanup_strv_free_
+
+Cherry-picked from: f42348ace7feb2311593b8cf6c876856eecf256a
+Related: #1331667
+---
+ src/core/manager.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/core/manager.c b/src/core/manager.c
+index bb5050303..a1504bf17 100644
+--- a/src/core/manager.c
++++ b/src/core/manager.c
+@@ -2827,7 +2827,7 @@ static void trim_generator_dir(Manager *m, char **generator) {
+ }
+ 
+ static int manager_run_generators(Manager *m) {
+-        _cleanup_free_ char **paths = NULL;
++        _cleanup_strv_free_ char **paths = NULL;
+         const char *argv[5];
+         char **path;
+         int r;

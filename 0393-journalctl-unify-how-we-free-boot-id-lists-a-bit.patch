@@ -1,0 +1,83 @@
+From 76d6062ebf93614a45f1f74be7a93a9a662c5812 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Tue, 19 May 2015 00:35:02 +0200
+Subject: [PATCH] journalctl: unify how we free boot id lists a bit
+
+Instead of use LIST_FOREACH_SAFE, just use the same, seperate destructor
+everywhere.
+
+Cherry-picked from: 9530e0d023b0e9308f19eadf6e42cdc25bc30793
+Related: #1318994
+---
+ src/journal/journalctl.c | 21 +++++++++++++++------
+ 1 file changed, 15 insertions(+), 6 deletions(-)
+
+diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
+index ba9ae05f7..5864ff50a 100644
+--- a/src/journal/journalctl.c
++++ b/src/journal/journalctl.c
+@@ -932,6 +932,15 @@ static int add_matches(sd_journal *j, char **args) {
+         return 0;
+ }
+ 
++static void boot_id_free_all(BootId *l) {
++
++        while (l) {
++                BootId *i = l;
++                LIST_REMOVE(boot_list, l, i);
++                free(i);
++        }
++}
++
+ static int discover_next_boot(
+                 sd_journal *j,
+                 BootId **boot,
+@@ -1009,6 +1018,7 @@ static int discover_next_boot(
+ 
+         *boot = next_boot;
+         next_boot = NULL;
++
+         return 0;
+ }
+ 
+@@ -1080,9 +1090,7 @@ static int get_boots(
+ 
+                 r = discover_next_boot(j, &current, advance_older, !query_ref_boot);
+                 if (r < 0) {
+-                        BootId *id, *id_next;
+-                        LIST_FOREACH_SAFE(boot_list, id, id_next, head)
+-                                free(id);
++                        boot_id_free_all(head);
+                         return r;
+                 }
+ 
+@@ -1118,7 +1126,7 @@ finish:
+ 
+ static int list_boots(sd_journal *j) {
+         int w, i, count;
+-        BootId *id, *id_next, *all_ids;
++        BootId *id, *all_ids;
+ 
+         assert(j);
+ 
+@@ -1132,7 +1140,7 @@ static int list_boots(sd_journal *j) {
+         w = DECIMAL_STR_WIDTH(count - 1) + 1;
+ 
+         i = 0;
+-        LIST_FOREACH_SAFE(boot_list, id, id_next, all_ids) {
++        LIST_FOREACH(boot_list, id, all_ids) {
+                 char a[FORMAT_TIMESTAMP_MAX], b[FORMAT_TIMESTAMP_MAX];
+ 
+                 printf("% *i " SD_ID128_FORMAT_STR " %s—%s\n",
+@@ -1141,9 +1149,10 @@ static int list_boots(sd_journal *j) {
+                        format_timestamp_maybe_utc(a, sizeof(a), id->first),
+                        format_timestamp_maybe_utc(b, sizeof(b), id->last));
+                 i++;
+-                free(id);
+         }
+ 
++        boot_id_free_all(all_ids);
++
+         return 0;
+ }
+ 

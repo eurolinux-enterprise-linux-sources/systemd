@@ -1,0 +1,26 @@
+From 1eef7cbf1ab594fe00c83044763d41a0b29be6c6 Mon Sep 17 00:00:00 2001
+From: Martin Pitt <martin.pitt@ubuntu.com>
+Date: Sat, 18 Apr 2015 22:38:13 +0100
+Subject: [PATCH] exit-status: Fix "NOTINSSTALLED" typo
+
+(cherry picked from commit 9f8f87e375175536a972feab79c2ff8901c47f8e)
+
+Cherry-picked from: 02e0056
+Resolves: #1222517
+---
+ src/shared/exit-status.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/shared/exit-status.c b/src/shared/exit-status.c
+index 5c73b4d3c..90c83a47a 100644
+--- a/src/shared/exit-status.c
++++ b/src/shared/exit-status.c
+@@ -167,7 +167,7 @@ const char* exit_status_to_string(ExitStatus status, ExitStatusLevel level) {
+                         return "NOPERMISSION";
+ 
+                 case EXIT_NOTINSTALLED:
+-                        return "NOTINSSTALLED";
++                        return "NOTINSTALLED";
+ 
+                 case EXIT_NOTCONFIGURED:
+                         return "NOTCONFIGURED";

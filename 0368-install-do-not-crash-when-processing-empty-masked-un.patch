@@ -1,0 +1,24 @@
+From 7d6f53ece9b0a397ee2f8bdaa1a52ef2f03bd81f Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Tue, 9 Aug 2016 13:02:37 +0200
+Subject: [PATCH] install: do not crash when processing empty (masked) unit
+ file
+
+Related: #1159308
+---
+ src/shared/install.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/shared/install.c b/src/shared/install.c
+index f190dbfab..f7f9866f4 100644
+--- a/src/shared/install.c
++++ b/src/shared/install.c
+@@ -996,7 +996,7 @@ static int unit_file_load(
+         if (fstat(fd, &st) < 0)
+                 return -errno;
+         if (null_or_empty(&st)) {
+-               info->type = UNIT_FILE_MASKED;
++               info->type = UNIT_FILE_TYPE_MASKED;
+                 return 0;
+         }
+         if (S_ISDIR(st.st_mode))

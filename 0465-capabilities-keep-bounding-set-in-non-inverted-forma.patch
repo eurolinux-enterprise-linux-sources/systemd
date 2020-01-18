@@ -1,0 +1,473 @@
+From 201006fa521199ebf109016c9dd22812c435dfe9 Mon Sep 17 00:00:00 2001
+From: Ismo Puustinen <ismo.puustinen@intel.com>
+Date: Fri, 8 Jan 2016 00:00:04 +0200
+Subject: [PATCH] capabilities: keep bounding set in non-inverted format.
+
+Change the capability bounding set parser and logic so that the bounding
+set is kept as a positive set internally. This means that the set
+reflects those capabilities that we want to keep instead of drop.
+
+Resolves: #1387398
+---
+ src/core/dbus-execute.c               |  4 +-
+ src/core/execute.c                    |  9 +--
+ src/core/execute.h                    |  2 +-
+ src/core/load-fragment-gperf.gperf.m4 |  2 +-
+ src/core/load-fragment.c              | 25 ++++----
+ src/core/load-fragment.h              |  2 +-
+ src/core/main.c                       | 10 +--
+ src/core/unit.c                       |  2 +-
+ src/import/import-common.c            |  2 +-
+ src/nspawn/nspawn.c                   |  2 +-
+ src/shared/capability.c               | 16 ++---
+ src/shared/capability.h               | 12 +++-
+ src/test/test-unit-file.c             | 89 +++++++++++++++------------
+ 13 files changed, 96 insertions(+), 81 deletions(-)
+
+diff --git a/src/core/dbus-execute.c b/src/core/dbus-execute.c
+index da8b10d2b..a564c53fa 100644
+--- a/src/core/dbus-execute.c
++++ b/src/core/dbus-execute.c
+@@ -324,9 +324,7 @@ static int property_get_capability_bounding_set(
+         assert(reply);
+         assert(c);
+ 
+-        /* We store this negated internally, to match the kernel, but
+-         * we expose it normalized. */
+-        return sd_bus_message_append(reply, "t", ~c->capability_bounding_set_drop);
++        return sd_bus_message_append(reply, "t", c->capability_bounding_set);
+ }
+ 
+ static int property_get_capabilities(
+diff --git a/src/core/execute.c b/src/core/execute.c
+index f72b20966..40db11e28 100644
+--- a/src/core/execute.c
++++ b/src/core/execute.c
+@@ -1733,8 +1733,8 @@ static int exec_child(
+                         }
+                 }
+ 
+-                if (context->capability_bounding_set_drop) {
+-                        r = capability_bounding_set_drop(context->capability_bounding_set_drop, false);
++                if (!cap_test_all(context->capability_bounding_set)) {
++                        r = capability_bounding_set_drop(context->capability_bounding_set, false);
+                         if (r < 0) {
+                                 *exit_status = EXIT_CAPABILITIES;
+                                 return r;
+@@ -1988,6 +1988,7 @@ void exec_context_init(ExecContext *c) {
+         c->timer_slack_nsec = NSEC_INFINITY;
+         c->personality = 0xffffffffUL;
+         c->runtime_directory_mode = 0755;
++        c->capability_bounding_set = CAP_ALL;
+ }
+ 
+ void exec_context_done(ExecContext *c) {
+@@ -2419,12 +2420,12 @@ void exec_context_dump(ExecContext *c, FILE* f, const char *prefix) {
+                         (c->secure_bits & 1<<SECURE_NOROOT) ? " noroot" : "",
+                         (c->secure_bits & 1<<SECURE_NOROOT_LOCKED) ? "noroot-locked" : "");
+ 
+-        if (c->capability_bounding_set_drop) {
++        if (c->capability_bounding_set != CAP_ALL) {
+                 unsigned long l;
+                 fprintf(f, "%sCapabilityBoundingSet:", prefix);
+ 
+                 for (l = 0; l <= cap_last_cap(); l++)
+-                        if (!(c->capability_bounding_set_drop & ((uint64_t) 1ULL << (uint64_t) l)))
++                        if (c->capability_bounding_set & (UINT64_C(1) << l))
+                                 fprintf(f, " %s", strna(capability_to_name(l)));
+ 
+                 fputs("\n", f);
+diff --git a/src/core/execute.h b/src/core/execute.h
+index cadd0e6b4..40f7b794c 100644
+--- a/src/core/execute.h
++++ b/src/core/execute.h
+@@ -150,7 +150,7 @@ struct ExecContext {
+         char **read_write_dirs, **read_only_dirs, **inaccessible_dirs;
+         unsigned long mount_flags;
+ 
+-        uint64_t capability_bounding_set_drop;
++        uint64_t capability_bounding_set;
+ 
+         cap_t capabilities;
+         int secure_bits;
+diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
+index b50fe45b4..e4ce29210 100644
+--- a/src/core/load-fragment-gperf.gperf.m4
++++ b/src/core/load-fragment-gperf.gperf.m4
+@@ -47,7 +47,7 @@ $1.SyslogLevel,                  config_parse_log_level,             0,
+ $1.SyslogLevelPrefix,            config_parse_bool,                  0,                             offsetof($1, exec_context.syslog_level_prefix)
+ $1.Capabilities,                 config_parse_exec_capabilities,     0,                             offsetof($1, exec_context)
+ $1.SecureBits,                   config_parse_exec_secure_bits,      0,                             offsetof($1, exec_context)
+-$1.CapabilityBoundingSet,        config_parse_bounding_set,          0,                             offsetof($1, exec_context.capability_bounding_set_drop)
++$1.CapabilityBoundingSet,        config_parse_capability_set,        0,                             offsetof($1, exec_context.capability_bounding_set)
+ $1.TimerSlackNSec,               config_parse_nsec,                  0,                             offsetof($1, exec_context.timer_slack_nsec)
+ $1.NoNewPrivileges,              config_parse_no_new_privileges,     0,                             offsetof($1, exec_context)
+ m4_ifdef(`HAVE_SECCOMP',
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index ab3b0c2e9..dbaaf2fee 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -1015,7 +1015,7 @@ int config_parse_exec_secure_bits(const char *unit,
+         return 0;
+ }
+ 
+-int config_parse_bounding_set(
++int config_parse_capability_set(
+                 const char *unit,
+                 const char *filename,
+                 unsigned line,
+@@ -1027,8 +1027,8 @@ int config_parse_bounding_set(
+                 void *data,
+                 void *userdata) {
+ 
+-        uint64_t *capability_bounding_set_drop = data;
+-        uint64_t capability_bounding_set, sum = 0;
++        uint64_t *capability_set = data;
++        uint64_t sum = 0, initial = 0;
+         bool invert = false;
+         const char *p;
+ 
+@@ -1042,10 +1042,8 @@ int config_parse_bounding_set(
+                 rvalue++;
+         }
+ 
+-        /* Note that we store this inverted internally, since the
+-         * kernel wants it like this. But we actually expose it
+-         * non-inverted everywhere to have a fully normalized
+-         * interface. */
++        if (strcmp(lvalue, "CapabilityBoundingSet") == 0)
++                initial = CAP_ALL; /* initialized to all bits on */
+ 
+         p = rvalue;
+         for (;;) {
+@@ -1071,11 +1069,14 @@ int config_parse_bounding_set(
+                 sum |= ((uint64_t) UINT64_C(1)) << (uint64_t) cap;
+         }
+ 
+-        capability_bounding_set = invert ? ~sum : sum;
+-        if (*capability_bounding_set_drop != 0 && capability_bounding_set != 0)
+-                *capability_bounding_set_drop = ~(~*capability_bounding_set_drop | capability_bounding_set);
++        sum = invert ? ~sum : sum;
++
++        if (sum == 0 || *capability_set == initial)
++                /* "" or uninitialized data -> replace */
++                *capability_set = sum;
+         else
+-                *capability_bounding_set_drop = ~capability_bounding_set;
++                /* previous data -> merge */
++                *capability_set |= sum;
+ 
+         return 0;
+ }
+@@ -4050,7 +4051,7 @@ void unit_dump_config_items(FILE *f) {
+                 { config_parse_log_level,             "LEVEL" },
+                 { config_parse_exec_capabilities,     "CAPABILITIES" },
+                 { config_parse_exec_secure_bits,      "SECUREBITS" },
+-                { config_parse_bounding_set,          "BOUNDINGSET" },
++                { config_parse_capability_set,        "BOUNDINGSET" },
+                 { config_parse_limit,                 "LIMIT" },
+                 { config_parse_unit_deps,             "UNIT [...]" },
+                 { config_parse_exec,                  "PATH [ARGUMENT [...]]" },
+diff --git a/src/core/load-fragment.h b/src/core/load-fragment.h
+index 9dd7d1bda..2059353d3 100644
+--- a/src/core/load-fragment.h
++++ b/src/core/load-fragment.h
+@@ -54,7 +54,7 @@ int config_parse_exec_cpu_sched_prio(const char *unit, const char *filename, uns
+ int config_parse_exec_cpu_affinity(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_exec_capabilities(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_exec_secure_bits(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+-int config_parse_bounding_set(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
++int config_parse_capability_set(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_bytes_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+ int config_parse_sec_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
+diff --git a/src/core/main.c b/src/core/main.c
+index a0df1e5ce..cba992cea 100644
+--- a/src/core/main.c
++++ b/src/core/main.c
+@@ -108,7 +108,7 @@ static usec_t arg_runtime_watchdog = 0;
+ static usec_t arg_shutdown_watchdog = 10 * USEC_PER_MINUTE;
+ static char **arg_default_environment = NULL;
+ static struct rlimit *arg_default_rlimit[_RLIMIT_MAX] = {};
+-static uint64_t arg_capability_bounding_set_drop = 0;
++static uint64_t arg_capability_bounding_set = CAP_ALL;
+ static nsec_t arg_timer_slack_nsec = NSEC_INFINITY;
+ static usec_t arg_default_timer_accuracy_usec = 1 * USEC_PER_MINUTE;
+ static Set* arg_syscall_archs = NULL;
+@@ -642,7 +642,7 @@ static int parse_config_file(void) {
+                 { "Manager", "JoinControllers",           config_parse_join_controllers, 0, &arg_join_controllers                  },
+                 { "Manager", "RuntimeWatchdogSec",        config_parse_sec,              0, &arg_runtime_watchdog                  },
+                 { "Manager", "ShutdownWatchdogSec",       config_parse_sec,              0, &arg_shutdown_watchdog                 },
+-                { "Manager", "CapabilityBoundingSet",     config_parse_bounding_set,     0, &arg_capability_bounding_set_drop      },
++                { "Manager", "CapabilityBoundingSet",     config_parse_capability_set,   0, &arg_capability_bounding_set           },
+ #ifdef HAVE_SECCOMP
+                 { "Manager", "SystemCallArchitectures",   config_parse_syscall_archs,    0, &arg_syscall_archs                     },
+ #endif
+@@ -1622,14 +1622,14 @@ int main(int argc, char *argv[]) {
+                 if (prctl(PR_SET_TIMERSLACK, arg_timer_slack_nsec) < 0)
+                         log_error_errno(errno, "Failed to adjust timer slack: %m");
+ 
+-        if (arg_capability_bounding_set_drop) {
+-                r = capability_bounding_set_drop_usermode(arg_capability_bounding_set_drop);
++        if (!cap_test_all(arg_capability_bounding_set)) {
++                r = capability_bounding_set_drop_usermode(arg_capability_bounding_set);
+                 if (r < 0) {
+                         log_emergency_errno(r, "Failed to drop capability bounding set of usermode helpers: %m");
+                         error_message = "Failed to drop capability bounding set of usermode helpers";
+                         goto finish;
+                 }
+-                r = capability_bounding_set_drop(arg_capability_bounding_set_drop, true);
++                r = capability_bounding_set_drop(arg_capability_bounding_set, true);
+                 if (r < 0) {
+                         log_emergency_errno(r, "Failed to drop capability bounding set: %m");
+                         error_message = "Failed to drop capability bounding set";
+diff --git a/src/core/unit.c b/src/core/unit.c
+index 4eb0d78f4..103f92084 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -3213,7 +3213,7 @@ int unit_patch_contexts(Unit *u) {
+                         ec->no_new_privileges = true;
+ 
+                 if (ec->private_devices)
+-                        ec->capability_bounding_set_drop |= (uint64_t) 1ULL << (uint64_t) CAP_MKNOD;
++                        ec->capability_bounding_set &= ~(UINT64_C(1) << CAP_MKNOD);
+         }
+ 
+         cc = unit_get_cgroup_context(u);
+diff --git a/src/import/import-common.c b/src/import/import-common.c
+index f10a453ee..243e657c5 100644
+--- a/src/import/import-common.c
++++ b/src/import/import-common.c
+@@ -526,7 +526,7 @@ int import_fork_tar(const char *path, pid_t *ret) {
+                 if (unshare(CLONE_NEWNET) < 0)
+                         log_error_errno(errno, "Failed to lock tar into network namespace, ignoring: %m");
+ 
+-                r = capability_bounding_set_drop(~retain, true);
++                r = capability_bounding_set_drop(retain, true);
+                 if (r < 0)
+                         log_error_errno(r, "Failed to drop capabilities, ignoring: %m");
+ 
+diff --git a/src/nspawn/nspawn.c b/src/nspawn/nspawn.c
+index a37b64094..d0003d379 100644
+--- a/src/nspawn/nspawn.c
++++ b/src/nspawn/nspawn.c
+@@ -1863,7 +1863,7 @@ static int setup_journal(const char *directory) {
+ }
+ 
+ static int drop_capabilities(void) {
+-        return capability_bounding_set_drop(~arg_retain, false);
++        return capability_bounding_set_drop(arg_retain, false);
+ }
+ 
+ static int register_machine(pid_t pid, int local_ifindex) {
+diff --git a/src/shared/capability.c b/src/shared/capability.c
+index 2b963fde3..3ed31df5a 100644
+--- a/src/shared/capability.c
++++ b/src/shared/capability.c
+@@ -98,7 +98,7 @@ unsigned long cap_last_cap(void) {
+         return p;
+ }
+ 
+-int capability_bounding_set_drop(uint64_t drop, bool right_now) {
++int capability_bounding_set_drop(uint64_t keep, bool right_now) {
+         _cleanup_cap_free_ cap_t after_cap = NULL;
+         cap_flag_value_t fv;
+         unsigned long i;
+@@ -139,7 +139,7 @@ int capability_bounding_set_drop(uint64_t drop, bool right_now) {
+ 
+         for (i = 0; i <= cap_last_cap(); i++) {
+ 
+-                if (drop & ((uint64_t) 1ULL << (uint64_t) i)) {
++                if (!(keep & (UINT64_C(1) << i))) {
+                         cap_value_t v;
+ 
+                         /* Drop it from the bounding set */
+@@ -178,7 +178,7 @@ finish:
+         return r;
+ }
+ 
+-static int drop_from_file(const char *fn, uint64_t drop) {
++static int drop_from_file(const char *fn, uint64_t keep) {
+         int r, k;
+         uint32_t hi, lo;
+         uint64_t current, after;
+@@ -198,7 +198,7 @@ static int drop_from_file(const char *fn, uint64_t drop) {
+                 return -EIO;
+ 
+         current = (uint64_t) lo | ((uint64_t) hi << 32ULL);
+-        after = current & ~drop;
++        after = current & keep;
+ 
+         if (current == after)
+                 return 0;
+@@ -215,14 +215,14 @@ static int drop_from_file(const char *fn, uint64_t drop) {
+         return r;
+ }
+ 
+-int capability_bounding_set_drop_usermode(uint64_t drop) {
++int capability_bounding_set_drop_usermode(uint64_t keep) {
+         int r;
+ 
+-        r = drop_from_file("/proc/sys/kernel/usermodehelper/inheritable", drop);
++        r = drop_from_file("/proc/sys/kernel/usermodehelper/inheritable", keep);
+         if (r < 0)
+                 return r;
+ 
+-        r = drop_from_file("/proc/sys/kernel/usermodehelper/bset", drop);
++        r = drop_from_file("/proc/sys/kernel/usermodehelper/bset", keep);
+         if (r < 0)
+                 return r;
+ 
+@@ -259,7 +259,7 @@ int drop_privileges(uid_t uid, gid_t gid, uint64_t keep_capabilities) {
+                 return log_error_errno(errno, "Failed to disable keep capabilities flag: %m");
+ 
+         /* Drop all caps from the bounding set, except the ones we want */
+-        r = capability_bounding_set_drop(~keep_capabilities, true);
++        r = capability_bounding_set_drop(keep_capabilities, true);
+         if (r < 0)
+                 return log_error_errno(r, "Failed to drop capabilities: %m");
+ 
+diff --git a/src/shared/capability.h b/src/shared/capability.h
+index 6f2f6f997..04cd6e54e 100644
+--- a/src/shared/capability.h
++++ b/src/shared/capability.h
+@@ -27,10 +27,12 @@
+ 
+ #include "util.h"
+ 
++#define CAP_ALL (uint64_t) -1
++
+ unsigned long cap_last_cap(void);
+ int have_effective_cap(int value);
+-int capability_bounding_set_drop(uint64_t drop, bool right_now);
+-int capability_bounding_set_drop_usermode(uint64_t drop);
++int capability_bounding_set_drop(uint64_t keep, bool right_now);
++int capability_bounding_set_drop_usermode(uint64_t keep);
+ 
+ int drop_privileges(uid_t uid, gid_t gid, uint64_t keep_capabilites);
+ 
+@@ -44,3 +46,9 @@ static inline void cap_free_charpp(char **p) {
+                 cap_free(*p);
+ }
+ #define _cleanup_cap_free_charp_ _cleanup_(cap_free_charpp)
++
++static inline bool cap_test_all(uint64_t caps) {
++        uint64_t m;
++        m = (UINT64_C(1) << (cap_last_cap() + 1)) - 1;
++        return (caps & m) == m;
++}
+diff --git a/src/test/test-unit-file.c b/src/test/test-unit-file.c
+index 0f00a8fff..38ecfe972 100644
+--- a/src/test/test-unit-file.c
++++ b/src/test/test-unit-file.c
+@@ -550,6 +550,53 @@ static uint64_t make_cap(int cap) {
+         return ((uint64_t) 1ULL << (uint64_t) cap);
+ }
+ 
++static void test_config_parse_capability_set(void) {
++        /* int config_parse_capability_set(
++                 const char *unit,
++                 const char *filename,
++                 unsigned line,
++                 const char *section,
++                 unsigned section_line,
++                 const char *lvalue,
++                 int ltype,
++                 const char *rvalue,
++                 void *data,
++                 void *userdata) */
++        int r;
++        uint64_t capability_bounding_set = 0;
++
++        r = config_parse_capability_set(NULL, "fake", 1, "section", 1,
++                              "CapabilityBoundingSet", 0, "CAP_NET_RAW",
++                              &capability_bounding_set, NULL);
++        assert_se(r >= 0);
++        assert_se(capability_bounding_set == make_cap(CAP_NET_RAW));
++
++        r = config_parse_capability_set(NULL, "fake", 1, "section", 1,
++                              "CapabilityBoundingSet", 0, "CAP_NET_ADMIN",
++                              &capability_bounding_set, NULL);
++        assert_se(r >= 0);
++        assert_se(capability_bounding_set == (make_cap(CAP_NET_RAW) | make_cap(CAP_NET_ADMIN)));
++
++        r = config_parse_capability_set(NULL, "fake", 1, "section", 1,
++                              "CapabilityBoundingSet", 0, "",
++                              &capability_bounding_set, NULL);
++        assert_se(r >= 0);
++        assert_se(capability_bounding_set == UINT64_C(0));
++
++        r = config_parse_capability_set(NULL, "fake", 1, "section", 1,
++                              "CapabilityBoundingSet", 0, "~",
++                              &capability_bounding_set, NULL);
++        assert_se(r >= 0);
++        assert_se(cap_test_all(capability_bounding_set));
++
++        capability_bounding_set = 0;
++        r = config_parse_capability_set(NULL, "fake", 1, "section", 1,
++                              "CapabilityBoundingSet", 0, "  'CAP_NET_RAW' WAT_CAP??? CAP_NET_ADMIN CAP'_trailing_garbage",
++                              &capability_bounding_set, NULL);
++        assert_se(r >= 0);
++        assert_se(capability_bounding_set == (make_cap(CAP_NET_RAW) | make_cap(CAP_NET_ADMIN)));
++}
++
+ static void test_config_parse_rlimit(void) {
+         struct rlimit * rl[_RLIMIT_MAX] = {};
+ 
+@@ -665,46 +712,6 @@ static void test_config_parse_rlimit(void) {
+         free(rl[RLIMIT_RTTIME]);
+ }
+ 
+-static void test_config_parse_bounding_set(void) {
+-        /* int config_parse_bounding_set(
+-                 const char *unit,
+-                 const char *filename,
+-                 unsigned line,
+-                 const char *section,
+-                 unsigned section_line,
+-                 const char *lvalue,
+-                 int ltype,
+-                 const char *rvalue,
+-                 void *data,
+-                 void *userdata) */
+-        int r;
+-        uint64_t capability_bounding_set_drop = 0;
+-
+-        r = config_parse_bounding_set(NULL, "fake", 1, "section", 1,
+-                              "CapabilityBoundingSet", 0, "CAP_NET_RAW",
+-                              &capability_bounding_set_drop, NULL);
+-        assert_se(r >= 0);
+-        assert_se(capability_bounding_set_drop == ~make_cap(CAP_NET_RAW));
+-
+-        r = config_parse_bounding_set(NULL, "fake", 1, "section", 1,
+-                              "CapabilityBoundingSet", 0, "CAP_NET_ADMIN",
+-                              &capability_bounding_set_drop, NULL);
+-        assert_se(r >= 0);
+-        assert_se(capability_bounding_set_drop == ~(make_cap(CAP_NET_RAW) | make_cap(CAP_NET_ADMIN)));
+-
+-        r = config_parse_bounding_set(NULL, "fake", 1, "section", 1,
+-                              "CapabilityBoundingSet", 0, "",
+-                              &capability_bounding_set_drop, NULL);
+-        assert_se(r >= 0);
+-        assert_se(capability_bounding_set_drop == ~((uint64_t) 0ULL));
+-
+-        r = config_parse_bounding_set(NULL, "fake", 1, "section", 1,
+-                              "CapabilityBoundingSet", 0, "~",
+-                              &capability_bounding_set_drop, NULL);
+-        assert_se(r >= 0);
+-        assert_se(capability_bounding_set_drop == (uint64_t) 0ULL);
+-}
+-
+ int main(int argc, char *argv[]) {
+         int r;
+ 
+@@ -713,8 +720,8 @@ int main(int argc, char *argv[]) {
+ 
+         r = test_unit_file_get_set();
+         test_config_parse_exec();
++        test_config_parse_capability_set();
+         test_config_parse_rlimit();
+-        test_config_parse_bounding_set();
+         test_load_env_file_1();
+         test_load_env_file_2();
+         test_load_env_file_3();

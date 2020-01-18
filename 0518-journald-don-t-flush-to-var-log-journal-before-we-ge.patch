@@ -1,0 +1,142 @@
+From 6032a92b8fb27a7c65a1853e62a142fd9a062b73 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Thu, 17 Aug 2017 10:21:23 +0200
+Subject: [PATCH] journald: don't flush to /var/log/journal before we get asked
+ to
+
+This changes journald to not write to /var/log/journal until it received
+SIGUSR1 for the first time, thus having been requested to flush the runtime
+journal to disk.
+
+This makes the journal work nicer with systems which have the root file system
+writable early, but still need to rearrange /var before journald should start
+writing and creating files to it, for example because ACLs need to be applied
+first, or because /var is to be mounted from another file system, NFS or tmpfs
+(as is the case for systemd.volatile=state).
+
+Before this change we required setupts with /var split out to mount the root
+disk read-only early on, and ship an /etc/fstab that remounted it writable only
+after having placed /var at the right place. But even that was racy for various
+preparations as journald might end up accessing the file system before it was
+entirely set up, as soon as it was writable.
+
+With this change we make scheduling when to start writing to /var/log/journal
+explicit. This means persistent mode now requires
+systemd-journal-flush.service in the mix to work, as otherwise journald would
+never write to the directory.
+
+See: #1397
+
+(cherry-picked from commit f78273c8dacf678cc8fd7387f678e6344a99405c)
+
+Resolves: #1364092
+---
+ src/journal/journald-server.c | 21 +++++++++++----------
+ src/journal/journald-server.h |  2 +-
+ src/journal/journald.c        |  2 +-
+ 3 files changed, 13 insertions(+), 12 deletions(-)
+
+diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
+index 96ffda4ec..07426b41e 100644
+--- a/src/journal/journald-server.c
++++ b/src/journal/journald-server.c
+@@ -918,7 +918,7 @@ finish:
+ }
+ 
+ static bool flushed_flag_is_set(void) {
+-        return (access("/run/systemd/journal/flushed", F_OK) >= 0);
++        return access("/run/systemd/journal/flushed", F_OK) >= 0;
+ }
+ 
+ static int system_journal_open(Server *s, bool flush_requested) {
+@@ -926,7 +926,6 @@ static int system_journal_open(Server *s, bool flush_requested) {
+         char *fn;
+         sd_id128_t machine;
+         char ids[33];
+-        bool flushed = false;
+ 
+         r = sd_id128_get_machine(&machine);
+         if (r < 0)
+@@ -935,8 +934,8 @@ static int system_journal_open(Server *s, bool flush_requested) {
+         sd_id128_to_string(machine, ids);
+ 
+         if (!s->system_journal &&
+-            (s->storage == STORAGE_PERSISTENT || s->storage == STORAGE_AUTO) &&
+-            (flush_requested || (flushed = flushed_flag_is_set()))) {
++            IN_SET(s->storage, STORAGE_PERSISTENT, STORAGE_AUTO) &&
++            (flush_requested || flushed_flag_is_set())) {
+ 
+                 /* If in auto mode: first try to create the machine
+                  * path, but not the prefix.
+@@ -969,8 +968,8 @@ static int system_journal_open(Server *s, bool flush_requested) {
+                  * Perform an implicit flush to var, leaving the runtime
+                  * journal closed, now that the system journal is back.
+                  */
+-                if (s->runtime_journal && flushed)
+-                        (void) server_flush_to_var(s);
++                if (!flush_requested)
++                        (void) server_flush_to_var(s, true);
+         }
+ 
+         if (!s->runtime_journal &&
+@@ -1021,7 +1020,7 @@ static int system_journal_open(Server *s, bool flush_requested) {
+         return r;
+ }
+ 
+-int server_flush_to_var(Server *s) {
++int server_flush_to_var(Server *s, bool require_flag_file) {
+         sd_id128_t machine;
+         sd_journal *j = NULL;
+         char ts[FORMAT_TIMESPAN_MAX];
+@@ -1031,13 +1030,15 @@ int server_flush_to_var(Server *s) {
+ 
+         assert(s);
+ 
+-        if (s->storage != STORAGE_AUTO &&
+-            s->storage != STORAGE_PERSISTENT)
++        if (!IN_SET(s->storage, STORAGE_AUTO, STORAGE_PERSISTENT))
+                 return 0;
+ 
+         if (!s->runtime_journal)
+                 return 0;
+ 
++        if (require_flag_file && !flushed_flag_is_set())
++                return 0;
++
+         system_journal_open(s, true);
+ 
+         if (!s->system_journal)
+@@ -1243,7 +1244,7 @@ static int dispatch_sigusr1(sd_event_source *es, const struct signalfd_siginfo *
+ 
+         log_info("Received request to flush runtime journal from PID %"PRIu32, si->ssi_pid);
+ 
+-        (void) server_flush_to_var(s);
++        (void) server_flush_to_var(s, false);
+         server_sync(s);
+         server_vacuum(s);
+ 
+diff --git a/src/journal/journald-server.h b/src/journal/journald-server.h
+index b1263a758..7a456c2d5 100644
+--- a/src/journal/journald-server.h
++++ b/src/journal/journald-server.h
+@@ -173,6 +173,6 @@ void server_sync(Server *s);
+ void server_vacuum(Server *s);
+ void server_rotate(Server *s);
+ int server_schedule_sync(Server *s, int priority);
+-int server_flush_to_var(Server *s);
++int server_flush_to_var(Server *s, bool require_flag_file);
+ void server_maybe_append_tags(Server *s);
+ int server_process_datagram(sd_event_source *es, int fd, uint32_t revents, void *userdata);
+diff --git a/src/journal/journald.c b/src/journal/journald.c
+index 80f4634f6..15bbcbe3d 100644
+--- a/src/journal/journald.c
++++ b/src/journal/journald.c
+@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
+                 goto finish;
+ 
+         server_vacuum(&server);
+-        server_flush_to_var(&server);
++        server_flush_to_var(&server, true);
+         server_flush_dev_kmsg(&server);
+ 
+         log_debug("systemd-journald running as pid "PID_FMT, getpid());

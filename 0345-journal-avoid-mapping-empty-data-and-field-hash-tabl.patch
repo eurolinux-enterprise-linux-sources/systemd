@@ -1,0 +1,162 @@
+From 283df68dbc1d90cad21beec6563215c26c69ec2c Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 24 Jul 2015 01:55:45 +0200
+Subject: [PATCH] journal: avoid mapping empty data and field hash tables
+
+When a new journal file is created we write the header first, then sync
+and only then create the data and field hash tables in them. That means
+to other processes it might appear that the files have a valid header
+but not data and field hash tables. Our reader code should be able to
+deal with this.
+
+With this change we'll not map the two hash tables right-away after
+opening a file for reading anymore (because that will of course fail if
+the objects are missing), but delay this until the first time we access
+them. On top of that, when we want to look something up in the hash
+tables and we notice they aren't initialized yet, we consider them
+empty.
+
+This improves handling of some journal files reported in #487.
+
+Cherry-picked from: dade37d403f1b8c1d7bb2efbe2361f2a3e999613
+Related: #1350232
+---
+ src/journal/journal-file.c   | 37 +++++++++++++++++++++++++-----------
+ src/journal/journal-file.h   |  3 +++
+ src/journal/journal-verify.c | 14 ++++++++++++++
+ 3 files changed, 43 insertions(+), 11 deletions(-)
+
+diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
+index 892fe4734..ef1849787 100644
+--- a/src/journal/journal-file.c
++++ b/src/journal/journal-file.c
+@@ -656,13 +656,16 @@ static int journal_file_setup_field_hash_table(JournalFile *f) {
+         return 0;
+ }
+ 
+-static int journal_file_map_data_hash_table(JournalFile *f) {
++int journal_file_map_data_hash_table(JournalFile *f) {
+         uint64_t s, p;
+         void *t;
+         int r;
+ 
+         assert(f);
+ 
++        if (f->data_hash_table)
++                return 0;
++
+         p = le64toh(f->header->data_hash_table_offset);
+         s = le64toh(f->header->data_hash_table_size);
+ 
+@@ -678,13 +681,16 @@ static int journal_file_map_data_hash_table(JournalFile *f) {
+         return 0;
+ }
+ 
+-static int journal_file_map_field_hash_table(JournalFile *f) {
++int journal_file_map_field_hash_table(JournalFile *f) {
+         uint64_t s, p;
+         void *t;
+         int r;
+ 
+         assert(f);
+ 
++        if (f->field_hash_table)
++                return 0;
++
+         p = le64toh(f->header->field_hash_table_offset);
+         s = le64toh(f->header->field_hash_table_size);
+ 
+@@ -803,10 +809,18 @@ int journal_file_find_field_object_with_hash(
+         assert(f);
+         assert(field && size > 0);
+ 
++        /* If the field hash table is empty, we can't find anything */
++        if (le64toh(f->header->field_hash_table_size) <= 0)
++                return 0;
++
++        /* Map the field hash table, if it isn't mapped yet. */
++        r = journal_file_map_field_hash_table(f);
++        if (r < 0)
++                return r;
++
+         osize = offsetof(Object, field.payload) + size;
+ 
+         m = le64toh(f->header->field_hash_table_size) / sizeof(HashItem);
+-
+         if (m <= 0)
+                 return -EBADMSG;
+ 
+@@ -866,6 +880,15 @@ int journal_file_find_data_object_with_hash(
+         assert(f);
+         assert(data || size == 0);
+ 
++        /* If there's no data hash table, then there's no entry. */
++        if (le64toh(f->header->data_hash_table_size) <= 0)
++                return 0;
++
++        /* Map the data hash table, if it isn't mapped yet. */
++        r = journal_file_map_data_hash_table(f);
++        if (r < 0)
++                return r;
++
+         osize = offsetof(Object, data.payload) + size;
+ 
+         m = le64toh(f->header->data_hash_table_size) / sizeof(HashItem);
+@@ -2707,14 +2730,6 @@ int journal_file_open(
+ #endif
+         }
+ 
+-        r = journal_file_map_field_hash_table(f);
+-        if (r < 0)
+-                goto fail;
+-
+-        r = journal_file_map_data_hash_table(f);
+-        if (r < 0)
+-                goto fail;
+-
+         if (mmap_cache_got_sigbus(f->mmap, f->fd)) {
+                 r = -EIO;
+                 goto fail;
+diff --git a/src/journal/journal-file.h b/src/journal/journal-file.h
+index 0f29b092b..c74ad5fc5 100644
+--- a/src/journal/journal-file.h
++++ b/src/journal/journal-file.h
+@@ -234,3 +234,6 @@ static inline bool JOURNAL_FILE_COMPRESS(JournalFile *f) {
+         assert(f);
+         return f->compress_xz || f->compress_lz4;
+ }
++
++int journal_file_map_data_hash_table(JournalFile *f);
++int journal_file_map_field_hash_table(JournalFile *f);
+diff --git a/src/journal/journal-verify.c b/src/journal/journal-verify.c
+index 983217c1b..d2d5c400c 100644
+--- a/src/journal/journal-verify.c
++++ b/src/journal/journal-verify.c
+@@ -590,6 +590,13 @@ static int verify_hash_table(
+         assert(last_usec);
+ 
+         n = le64toh(f->header->data_hash_table_size) / sizeof(HashItem);
++        if (n <= 0)
++                return 0;
++
++        r = journal_file_map_data_hash_table(f);
++        if (r < 0)
++                return log_error_errno(r, "Failed to map data hash table: %m");
++
+         for (i = 0; i < n; i++) {
+                 uint64_t last = 0, p;
+ 
+@@ -647,6 +654,13 @@ static int data_object_in_hash_table(JournalFile *f, uint64_t hash, uint64_t p)
+         assert(f);
+ 
+         n = le64toh(f->header->data_hash_table_size) / sizeof(HashItem);
++        if (n <= 0)
++                return 0;
++
++        r = journal_file_map_data_hash_table(f);
++        if (r < 0)
++                return log_error_errno(r, "Failed to map data hash table: %m");
++
+         h = hash % n;
+ 
+         q = le64toh(f->data_hash_table[h].head_hash_offset);

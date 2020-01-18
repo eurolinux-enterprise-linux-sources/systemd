@@ -1,0 +1,32 @@
+From 6f755a0934a1806a187076f9757064d3e973d1d2 Mon Sep 17 00:00:00 2001
+From: Benjamin Robin <dev@benjarobin.fr>
+Date: Sat, 19 Sep 2015 21:57:51 +0200
+Subject: [PATCH] systemd-notify: Always pass a valid pid to sd_pid_notify
+
+If the option --pid was used, take the pid from this option, unless take
+the parend pid. Using 0 as pid (ucred of systemd-notify) will result 99% of the
+time in a failure with this error: "Cannot find unit for notify message of PID"
+
+Shouldn't we use always the ppid, since the MAINPID is something else ?
+
+Signed-off-by: Benjamin Robin <dev@benjarobin.fr>
+
+Cherry-picked from: 9de009a9
+Resolves: #1381743
+---
+ src/notify/notify.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/notify/notify.c b/src/notify/notify.c
+index c89a6cc06..0d382992a 100644
+--- a/src/notify/notify.c
++++ b/src/notify/notify.c
+@@ -209,7 +209,7 @@ int main(int argc, char* argv[]) {
+                 goto finish;
+         }
+ 
+-        r = sd_pid_notify(arg_pid, false, n);
++        r = sd_pid_notify(arg_pid ? arg_pid : getppid(), false, n);
+         if (r < 0) {
+                 log_error_errno(r, "Failed to notify init system: %m");
+                 goto finish;

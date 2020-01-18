@@ -1,0 +1,74 @@
+From b53ec8d7dca8eba189c45ae29e4d5ff03e5e5556 Mon Sep 17 00:00:00 2001
+From: Evgeny Vereshchagin <evvers@ya.ru>
+Date: Fri, 27 Nov 2015 08:54:42 +0000
+Subject: [PATCH] core: fix rlimit parsing
+
+* refuse limits if soft > hard
+* print an actual value instead of (null)
+
+see https://github.com/systemd/systemd/pull/1994#issuecomment-159999123
+
+Cherry-picked from: 0316f2aeebde7569d24a93ab788ac4bc1657b11b
+Related: #1351415
+---
+ src/core/load-fragment.c  |  5 ++++-
+ src/test/test-unit-file.c | 21 +++++++++++++++++++++
+ 2 files changed, 25 insertions(+), 1 deletion(-)
+
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index d307f1c74..2f6209e05 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -1160,6 +1160,7 @@ static int parse_rlimit_range(
+                 struct rlimit **rl,
+                 int (*rlim_parser)(const char *, rlim_t *)) {
+ 
++        const char *whole_value = value;
+         rlim_t soft, hard;
+         _cleanup_free_ char *sword = NULL, *hword = NULL;
+         int nwords, r;
+@@ -1175,9 +1176,11 @@ static int parse_rlimit_range(
+         if (r == 0 && nwords == 2)
+                 r = rlim_parser(hword, &hard);
+         if (r < 0) {
+-                log_syntax(unit, LOG_ERR, filename, line, r, "Failed to parse resource value, ignoring: %s", value);
++                log_syntax(unit, LOG_ERR, filename, line, r, "Failed to parse resource value, ignoring: %s", whole_value);
+                 return 0;
+         }
++        if (nwords == 2 && soft > hard)
++                return log_syntax(unit, LOG_WARNING, filename, line, 0, "Invalid resource value ("RLIM_FMT" > "RLIM_FMT"), ignoring: %s", soft, hard, whole_value);
+ 
+         if (!*rl) {
+                 *rl = new(struct rlimit, 1);
+diff --git a/src/test/test-unit-file.c b/src/test/test-unit-file.c
+index 931dfeda8..8acf071ff 100644
+--- a/src/test/test-unit-file.c
++++ b/src/test/test-unit-file.c
+@@ -570,6 +570,27 @@ static void test_config_parse_rlimit(void) {
+         assert_se(rl[RLIMIT_NOFILE]->rlim_cur == RLIM_INFINITY);
+         assert_se(rl[RLIMIT_NOFILE]->rlim_cur == rl[RLIMIT_NOFILE]->rlim_max);
+ 
++        assert_se(config_parse_limit(NULL, "fake", 1, "section", 1, "LimitNOFILE", RLIMIT_NOFILE, "10:20:30", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_NOFILE]);
++        assert_se(rl[RLIMIT_NOFILE]->rlim_cur == 10);
++        assert_se(rl[RLIMIT_NOFILE]->rlim_max == 20);
++
++        /* Invalid values don't change rl */
++        assert_se(config_parse_limit(NULL, "fake", 1, "section", 1, "LimitNOFILE", RLIMIT_NOFILE, "wat:wat", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_NOFILE]);
++        assert_se(rl[RLIMIT_NOFILE]->rlim_cur == 10);
++        assert_se(rl[RLIMIT_NOFILE]->rlim_max == 20);
++
++        assert_se(config_parse_limit(NULL, "fake", 1, "section", 1, "LimitNOFILE", RLIMIT_NOFILE, "66:wat", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_NOFILE]);
++        assert_se(rl[RLIMIT_NOFILE]->rlim_cur == 10);
++        assert_se(rl[RLIMIT_NOFILE]->rlim_max == 20);
++
++        assert_se(config_parse_limit(NULL, "fake", 1, "section", 1, "LimitNOFILE", RLIMIT_NOFILE, "200:100", rl, NULL) >= 0);
++        assert_se(rl[RLIMIT_NOFILE]);
++        assert_se(rl[RLIMIT_NOFILE]->rlim_cur == 10);
++        assert_se(rl[RLIMIT_NOFILE]->rlim_max == 20);
++
+         free(rl[RLIMIT_NOFILE]);
+         assert_se(config_parse_sec_limit(NULL, "fake", 1, "section", 1, "LimitCPU", RLIMIT_CPU, "56", rl, NULL) >= 0);
+         assert_se(rl[RLIMIT_CPU]);

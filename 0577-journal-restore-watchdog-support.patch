@@ -1,0 +1,184 @@
+From 652a44f9a9948a023fd7b26f72044fea0b13c25d Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Tue, 3 Nov 2015 12:28:19 +0100
+Subject: [PATCH] journal: restore watchdog support
+
+(cherry picked from commit 119e9655dc36f18ed74f9a256d5c693b5aeb43ab)
+
+Conflicts:
+	src/journal/journald-server.h
+	units/systemd-journald.service.in
+
+Related: #1511565
+---
+ src/journal/journald-server.c     | 62 ++++++++++++++++++++++++++++---
+ src/journal/journald-server.h     | 13 ++++---
+ units/systemd-journald.service.in |  1 +
+ 3 files changed, 66 insertions(+), 10 deletions(-)
+
+diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
+index a810829b2..6e7568b60 100644
+--- a/src/journal/journald-server.c
++++ b/src/journal/journald-server.c
+@@ -1572,10 +1572,10 @@ static int dispatch_notify_event(sd_event_source *es, int fd, uint32_t revents,
+         }
+ 
+         /* The $NOTIFY_SOCKET is writable again, now send exactly one
+-         * message on it. Either it's the initial READY=1 event or an
+-         * stdout stream event. If there's nothing to write anymore,
+-         * turn our event source off. The next time there's something
+-         * to send it will be turned on again. */
++         * message on it. Either it's the wtachdog event, the initial
++         * READY=1 event or an stdout stream event. If there's nothing
++         * to write anymore, turn our event source off. The next time
++         * there's something to send it will be turned on again. */
+ 
+         if (!s->sent_notify_ready) {
+                 static const char p[] =
+@@ -1594,12 +1594,30 @@ static int dispatch_notify_event(sd_event_source *es, int fd, uint32_t revents,
+                 s->sent_notify_ready = true;
+                 log_debug("Sent READY=1 notification.");
+ 
++        } else if (s->send_watchdog) {
++
++                static const char p[] =
++                        "WATCHDOG=1";
++
++                ssize_t l;
++
++                l = send(s->notify_fd, p, strlen(p), MSG_DONTWAIT);
++                if (l < 0) {
++                        if (errno == EAGAIN)
++                                return 0;
++
++                        return log_error_errno(errno, "Failed to send WATCHDOG=1 notification message: %m");
++                }
++
++                s->send_watchdog = false;
++                log_debug("Sent WATCHDOG=1 notification.");
++
+         } else if (s->stdout_streams_notify_queue)
+                 /* Dispatch one stream notification event */
+                 stdout_stream_send_notify(s->stdout_streams_notify_queue);
+ 
+         /* Leave us enabled if there's still more to to do. */
+-        if (s->stdout_streams_notify_queue)
++        if (s->send_watchdog || s->stdout_streams_notify_queue)
+                 return 0;
+ 
+         /* There was nothing to do anymore, let's turn ourselves off. */
+@@ -1610,6 +1628,29 @@ static int dispatch_notify_event(sd_event_source *es, int fd, uint32_t revents,
+         return 0;
+ }
+ 
++static int dispatch_watchdog(sd_event_source *es, uint64_t usec, void *userdata) {
++        Server *s = userdata;
++        int r;
++
++        assert(s);
++
++        s->send_watchdog = true;
++
++        r = sd_event_source_set_enabled(s->notify_event_source, SD_EVENT_ON);
++        if (r < 0)
++                log_warning_errno(r, "Failed to turn on notify event source: %m");
++
++        r = sd_event_source_set_time(s->watchdog_event_source, usec + s->watchdog_usec / 2);
++        if (r < 0)
++                return log_error_errno(r, "Failed to restart watchdog event source: %m");
++
++        r = sd_event_source_set_enabled(s->watchdog_event_source, SD_EVENT_ON);
++        if (r < 0)
++                return log_error_errno(r, "Failed to enable watchdog event source: %m");
++
++        return 0;
++}
++
+ static int server_connect_notify(Server *s) {
+         union sockaddr_union sa = {
+                 .un.sun_family = AF_UNIX,
+@@ -1672,6 +1713,14 @@ static int server_connect_notify(Server *s) {
+         if (r < 0)
+                 return log_error_errno(r, "Failed to watch notification socket: %m");
+ 
++        if (sd_watchdog_enabled(false, &s->watchdog_usec) > 0) {
++                s->send_watchdog = true;
++
++                r = sd_event_add_time(s->event, &s->watchdog_event_source, CLOCK_MONOTONIC, now(CLOCK_MONOTONIC) + s->watchdog_usec/2, s->watchdog_usec*3/4, dispatch_watchdog, s);
++                if (r < 0)
++                        return log_error_errno(r, "Failed to add watchdog time event: %m");
++        }
++
+         /* This should fire pretty soon, which we'll use to send the
+          * READY=1 event. */
+ 
+@@ -1689,6 +1738,8 @@ int server_init(Server *s) {
+         s->compress = true;
+         s->seal = true;
+ 
++        s->watchdog_usec = USEC_INFINITY;
++
+         s->sync_interval_usec = DEFAULT_SYNC_INTERVAL_USEC;
+         s->sync_scheduled = false;
+ 
+@@ -1893,6 +1944,7 @@ void server_done(Server *s) {
+         sd_event_source_unref(s->sigint_event_source);
+         sd_event_source_unref(s->hostname_event_source);
+         sd_event_source_unref(s->notify_event_source);
++        sd_event_source_unref(s->watchdog_event_source);
+         sd_event_unref(s->event);
+ 
+         safe_close(s->syslog_fd);
+diff --git a/src/journal/journald-server.h b/src/journal/journald-server.h
+index e59ff35e2..f046fde83 100644
+--- a/src/journal/journald-server.h
++++ b/src/journal/journald-server.h
+@@ -78,6 +78,7 @@ struct Server {
+         sd_event_source *sigint_event_source;
+         sd_event_source *hostname_event_source;
+         sd_event_source *notify_event_source;
++        sd_event_source *watchdog_event_source;
+ 
+         JournalFile *runtime_journal;
+         JournalFile *system_journal;
+@@ -133,14 +134,14 @@ struct Server {
+ 
+         MMapCache *mmap;
+ 
+-        bool dev_kmsg_readable;
++        struct udev *udev;
+ 
+         uint64_t *kernel_seqnum;
++        bool dev_kmsg_readable:1;
+ 
+-        struct udev *udev;
+-
+-        bool sent_notify_ready;
+-        bool sync_scheduled;
++        bool send_watchdog:1;
++        bool sent_notify_ready:1;
++        bool sync_scheduled:1;
+ 
+         char machine_id_field[sizeof("_MACHINE_ID=") + 32];
+         char boot_id_field[sizeof("_BOOT_ID=") + 32];
+@@ -149,6 +150,8 @@ struct Server {
+         /* Cached cgroup root, so that we don't have to query that all the time */
+         char *cgroup_root;
+ 
++        usec_t watchdog_usec;
++
+         size_t line_max;
+ };
+ 
+diff --git a/units/systemd-journald.service.in b/units/systemd-journald.service.in
+index c94c0bfba..0d1ea61fe 100644
+--- a/units/systemd-journald.service.in
++++ b/units/systemd-journald.service.in
+@@ -22,6 +22,7 @@ RestartSec=0
+ StandardOutput=null
+ FileDescriptorStoreMax=4224
+ CapabilityBoundingSet=CAP_SYS_ADMIN CAP_DAC_OVERRIDE CAP_SYS_PTRACE CAP_SYSLOG CAP_AUDIT_CONTROL CAP_AUDIT_READ CAP_CHOWN CAP_DAC_READ_SEARCH CAP_FOWNER CAP_SETUID CAP_SETGID CAP_MAC_OVERRIDE
++WatchdogSec=3min
+ 
+ # Increase the default a bit in order to allow many simultaneous
+ # services being run since we keep one fd open per service. Also, when

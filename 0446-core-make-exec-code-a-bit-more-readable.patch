@@ -1,0 +1,73 @@
+From ccf46ebc548054f876a418fc2e949a05a74a9c2a Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Wed, 13 May 2015 16:34:02 +0200
+Subject: [PATCH] core: make exec code a bit more readable
+
+Let's add a function that checks whether we need fs namespacing, to make
+things easier to read, instead of using a humungous if expression...
+
+Cherry-picked from: 8b44a3d22c1fdfc5ce5fcb77e38a90ec02ba8019
+Related: #1421181
+---
+ src/core/execute.c | 41 +++++++++++++++++++++++++++++++----------
+ 1 file changed, 31 insertions(+), 10 deletions(-)
+
+diff --git a/src/core/execute.c b/src/core/execute.c
+index e9b4359a7..59340ec05 100644
+--- a/src/core/execute.c
++++ b/src/core/execute.c
+@@ -1256,6 +1256,36 @@ static int build_environment(
+         return 0;
+ }
+ 
++static bool exec_needs_mount_namespace(
++                const ExecContext *context,
++                const ExecParameters *params,
++                ExecRuntime *runtime) {
++
++        assert(context);
++        assert(params);
++
++        if (!strv_isempty(context->read_write_dirs) ||
++            !strv_isempty(context->read_only_dirs) ||
++            !strv_isempty(context->inaccessible_dirs))
++                return true;
++
++        if (context->mount_flags != 0)
++                return true;
++
++        if (context->private_tmp && runtime && (runtime->tmp_dir || runtime->var_tmp_dir))
++                return true;
++
++        if (params->bus_endpoint_path)
++                return true;
++
++        if (context->private_devices ||
++            context->protect_system != PROTECT_SYSTEM_NO ||
++            context->protect_home != PROTECT_HOME_NO)
++                return true;
++
++        return false;
++}
++
+ static int exec_child(
+                 ExecCommand *command,
+                 const ExecContext *context,
+@@ -1563,16 +1593,7 @@ static int exec_child(
+                 }
+         }
+ 
+-        if (!strv_isempty(context->read_write_dirs) ||
+-            !strv_isempty(context->read_only_dirs) ||
+-            !strv_isempty(context->inaccessible_dirs) ||
+-            context->mount_flags != 0 ||
+-            (context->private_tmp && runtime && (runtime->tmp_dir || runtime->var_tmp_dir)) ||
+-            params->bus_endpoint_path ||
+-            context->private_devices ||
+-            context->protect_system != PROTECT_SYSTEM_NO ||
+-            context->protect_home != PROTECT_HOME_NO) {
+-
++        if (exec_needs_mount_namespace(context, params, runtime)) {
+                 char *tmp = NULL, *var = NULL;
+ 
+                 /* The runtime struct only contains the parent

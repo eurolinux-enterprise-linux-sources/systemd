@@ -1,0 +1,24 @@
+From 80476a1b99601168536e4543124d0532c895c498 Mon Sep 17 00:00:00 2001
+From: Vito Caputo <vito.caputo@coreos.com>
+Date: Fri, 23 Oct 2015 16:12:31 -0700
+Subject: [PATCH] journal: s/Envalid/Invalid/
+
+Cherry-picked from: 0c4a83a259c2ff87df83f48cd7ceef37b8746f4f
+Related: #1318994
+---
+ src/journal/journal-verify.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/journal/journal-verify.c b/src/journal/journal-verify.c
+index 8a66ac7f0..250d4c758 100644
+--- a/src/journal/journal-verify.c
++++ b/src/journal/journal-verify.c
+@@ -899,7 +899,7 @@ int journal_file_verify(
+ 
+                 r = journal_file_object_verify(f, p, o);
+                 if (r < 0) {
+-                        error(p, "Envalid object contents: %s", strerror(-r));
++                        error(p, "Invalid object contents: %s", strerror(-r));
+                         goto fail;
+                 }
+ 

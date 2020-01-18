@@ -1,0 +1,27 @@
+From 7da662710420fdcbf2691f4a82644332d18d4605 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Thu, 10 Dec 2015 11:08:19 +0100
+Subject: [PATCH] makefile: disable udev tests
+
+RHEL-only
+---
+ Makefile.am | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index 887e70a95..2645f66bc 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -3785,9 +3785,9 @@ hwdb-remove-hook:
+ endif
+ 
+ # ------------------------------------------------------------------------------
+-TESTS += \
+-	test/udev-test.pl \
+-	$(NULL)
++#TESTS += \
++#	test/udev-test.pl \
++#	$(NULL)
+ 
+ if HAVE_PYTHON
+ TESTS += \

@@ -1,0 +1,210 @@
+From 4a1723115afea68db4cbe4f7f2d97c4f5663403d Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Thu, 6 Aug 2015 11:30:19 +0200
+Subject: [PATCH] Revert "journald: move /dev/log socket to /run"
+
+This reverts commit 03ee5c38cb0da193dd08733fb4c0c2809cee6a99.
+
+rhel-only
+
+Resolves: #1249968
+---
+ Makefile-man.am                       |  5 -----
+ Makefile.am                           |  7 ++----
+ man/systemd-journald.service.xml      |  2 --
+ src/core/namespace.c                  |  3 ++-
+ src/journal/journald-server.c         |  3 +--
+ src/journal/journald-syslog.c         |  2 +-
+ units/systemd-journald-dev-log.socket | 32 ---------------------------
+ units/systemd-journald.service.in     |  4 ++--
+ units/systemd-journald.socket         |  2 +-
+ 9 files changed, 9 insertions(+), 51 deletions(-)
+ delete mode 100644 units/systemd-journald-dev-log.socket
+
+diff --git a/Makefile-man.am b/Makefile-man.am
+index 084df754a..497be6612 100644
+--- a/Makefile-man.am
++++ b/Makefile-man.am
+@@ -214,7 +214,6 @@ MANPAGES_ALIAS += \
+ 	man/systemd-hybrid-sleep.service.8 \
+ 	man/systemd-initctl.8 \
+ 	man/systemd-initctl.socket.8 \
+-	man/systemd-journald-dev-log.socket.8 \
+ 	man/systemd-journald.8 \
+ 	man/systemd-journald.socket.8 \
+ 	man/systemd-kexec.service.8 \
+@@ -326,7 +325,6 @@ man/systemd-hibernate.service.8: man/systemd-suspend.service.8
+ man/systemd-hybrid-sleep.service.8: man/systemd-suspend.service.8
+ man/systemd-initctl.8: man/systemd-initctl.service.8
+ man/systemd-initctl.socket.8: man/systemd-initctl.service.8
+-man/systemd-journald-dev-log.socket.8: man/systemd-journald.service.8
+ man/systemd-journald.8: man/systemd-journald.service.8
+ man/systemd-journald.socket.8: man/systemd-journald.service.8
+ man/systemd-kexec.service.8: man/systemd-halt.service.8
+@@ -616,9 +614,6 @@ man/systemd-initctl.html: man/systemd-initctl.service.html
+ man/systemd-initctl.socket.html: man/systemd-initctl.service.html
+ 	$(html-alias)
+ 
+-man/systemd-journald-dev-log.socket.html: man/systemd-journald.service.html
+-	$(html-alias)
+-
+ man/systemd-journald.html: man/systemd-journald.service.html
+ 	$(html-alias)
+ 
+diff --git a/Makefile.am b/Makefile.am
+index a81d3c131..58bcc2c42 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -4518,8 +4518,7 @@ bin_PROGRAMS += \
+ 	systemd-cat
+ 
+ dist_systemunit_DATA += \
+-	units/systemd-journald.socket \
+-	units/systemd-journald-dev-log.socket
++	units/systemd-journald.socket
+ 
+ nodist_systemunit_DATA += \
+ 	units/systemd-journald.service \
+@@ -4538,9 +4537,7 @@ dist_catalog_DATA = \
+ 	catalog/systemd.catalog
+ 
+ SOCKETS_TARGET_WANTS += \
+-	systemd-journald.socket \
+-	systemd-journald-dev-log.socket
+-
++	systemd-journald.socket
+ SYSINIT_TARGET_WANTS += \
+ 	systemd-journald.service \
+ 	systemd-journal-flush.service \
+diff --git a/man/systemd-journald.service.xml b/man/systemd-journald.service.xml
+index 8280d6c87..fe99ce9bc 100644
+--- a/man/systemd-journald.service.xml
++++ b/man/systemd-journald.service.xml
+@@ -45,7 +45,6 @@
+   <refnamediv>
+     <refname>systemd-journald.service</refname>
+     <refname>systemd-journald.socket</refname>
+-    <refname>systemd-journald-dev-log.socket</refname>
+     <refname>systemd-journald</refname>
+     <refpurpose>Journal service</refpurpose>
+   </refnamediv>
+@@ -53,7 +52,6 @@
+   <refsynopsisdiv>
+     <para><filename>systemd-journald.service</filename></para>
+     <para><filename>systemd-journald.socket</filename></para>
+-    <para><filename>systemd-journald-dev-log.socket</filename></para>
+     <para><filename>/usr/lib/systemd/systemd-journald</filename></para>
+   </refsynopsisdiv>
+ 
+diff --git a/src/core/namespace.c b/src/core/namespace.c
+index d4f1c8621..ebd5fb334 100644
+--- a/src/core/namespace.c
++++ b/src/core/namespace.c
+@@ -187,7 +187,8 @@ static int mount_dev(BindMount *m) {
+         mount("/dev/hugepages", devhugepages, NULL, MS_BIND, NULL);
+ 
+         devlog = strjoina(temporary_mount, "/dev/log");
+-        symlink("/run/systemd/journal/dev-log", devlog);
++        (void)touch(devlog);
++        mount("/dev/log", devlog, NULL, MS_BIND, NULL);
+ 
+         NULSTR_FOREACH(d, devnodes) {
+                 _cleanup_free_ char *dn = NULL;
+diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
+index d692c06ef..fb7aae309 100644
+--- a/src/journal/journald-server.c
++++ b/src/journal/journald-server.c
+@@ -1531,8 +1531,7 @@ int server_init(Server *s) {
+ 
+                         s->stdout_fd = fd;
+ 
+-                } else if (sd_is_socket_unix(fd, SOCK_DGRAM, -1, "/dev/log", 0) > 0 ||
+-                           sd_is_socket_unix(fd, SOCK_DGRAM, -1, "/run/systemd/journal/dev-log", 0) > 0) {
++                } else if (sd_is_socket_unix(fd, SOCK_DGRAM, -1, "/dev/log", 0) > 0) {
+ 
+                         if (s->syslog_fd >= 0) {
+                                 log_error("Too many /dev/log sockets passed.");
+diff --git a/src/journal/journald-syslog.c b/src/journal/journald-syslog.c
+index ba80941d7..4e118aabc 100644
+--- a/src/journal/journald-syslog.c
++++ b/src/journal/journald-syslog.c
+@@ -384,7 +384,7 @@ int server_open_syslog_socket(Server *s) {
+         if (s->syslog_fd < 0) {
+                 static const union sockaddr_union sa = {
+                         .un.sun_family = AF_UNIX,
+-                        .un.sun_path = "/run/systemd/journal/dev-log",
++                        .un.sun_path = "/dev/log",
+                 };
+ 
+                 s->syslog_fd = socket(AF_UNIX, SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
+diff --git a/units/systemd-journald-dev-log.socket b/units/systemd-journald-dev-log.socket
+deleted file mode 100644
+index ffd44bb50..000000000
+--- a/units/systemd-journald-dev-log.socket
++++ /dev/null
+@@ -1,32 +0,0 @@
+-#  This file is part of systemd.
+-#
+-#  systemd is free software; you can redistribute it and/or modify it
+-#  under the terms of the GNU Lesser General Public License as published by
+-#  the Free Software Foundation; either version 2.1 of the License, or
+-#  (at your option) any later version.
+-
+-[Unit]
+-Description=Journal Socket (/dev/log)
+-Documentation=man:systemd-journald.service(8) man:journald.conf(5)
+-DefaultDependencies=no
+-Before=sockets.target
+-
+-# Mount and swap units need this. If this socket unit is removed by an
+-# isolate request the mount and swap units would be removed too,
+-# hence let's exclude this from isolate requests.
+-IgnoreOnIsolate=yes
+-
+-[Socket]
+-Service=systemd-journald.service
+-ListenDatagram=/run/systemd/journal/dev-log
+-Symlinks=/dev/log
+-SocketMode=0666
+-PassCredentials=yes
+-PassSecurity=yes
+-
+-# Increase both the send and receive buffer, so that things don't
+-# block early. Note that journald internally uses the this socket both
+-# for receiving syslog messages, and for forwarding them to any other
+-# syslog, hence we bump both values.
+-ReceiveBuffer=8M
+-SendBuffer=8M
+diff --git a/units/systemd-journald.service.in b/units/systemd-journald.service.in
+index 1bcc290ec..9d4462283 100644
+--- a/units/systemd-journald.service.in
++++ b/units/systemd-journald.service.in
+@@ -10,12 +10,12 @@ Description=Journal Service
+ Documentation=man:systemd-journald.service(8) man:journald.conf(5)
+ DefaultDependencies=no
+ Requires=systemd-journald.socket
+-After=systemd-journald.socket systemd-journald-dev-log.socket syslog.socket
++After=systemd-journald.socket syslog.socket
+ Before=sysinit.target
+ 
+ [Service]
+ Type=notify
+-Sockets=systemd-journald.socket systemd-journald-dev-log.socket
++Sockets=systemd-journald.socket
+ ExecStart=@rootlibexecdir@/systemd-journald
+ Restart=always
+ RestartSec=0
+diff --git a/units/systemd-journald.socket b/units/systemd-journald.socket
+index 71737014c..fbeb10baa 100644
+--- a/units/systemd-journald.socket
++++ b/units/systemd-journald.socket
+@@ -19,8 +19,8 @@ IgnoreOnIsolate=yes
+ [Socket]
+ ListenStream=/run/systemd/journal/stdout
+ ListenDatagram=/run/systemd/journal/socket
++ListenDatagram=/dev/log
+ SocketMode=0666
+ PassCredentials=yes
+ PassSecurity=yes
+ ReceiveBuffer=8M
+-Service=systemd-journald.service

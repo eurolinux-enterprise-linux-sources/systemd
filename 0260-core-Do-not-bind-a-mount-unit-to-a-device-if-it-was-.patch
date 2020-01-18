@@ -1,0 +1,127 @@
+From 75b183700853e616362cf2f22831e1e9dc8a5515 Mon Sep 17 00:00:00 2001
+From: Harald Hoyer <harald@redhat.com>
+Date: Tue, 24 Nov 2015 09:41:26 +0100
+Subject: [PATCH] core: Do not bind a mount unit to a device, if it was from
+ mountinfo
+
+If a mount unit is bound to a device, systemd tries to umount the
+mount point, if it thinks the device has gone away.
+
+Due to the uevent queue and inotify of /proc/self/mountinfo being two
+different sources, systemd can never get the ordering reliably correct.
+
+It can happen, that in the uevent queue ADD,REMOVE,ADD is queued
+and an inotify of mountinfo (or libmount event) happend with the
+device in question.
+
+systemd cannot know, at which point of time the mount happend in the
+ADD,REMOVE,ADD sequence.
+
+The real ordering might have been ADD,REMOVE,ADD,mount
+and systemd might think ADD,mount,REMOVE,ADD and would umount the
+mountpoint.
+
+A test script which triggered this behaviour is:
+rm -f test-efi-disk.img
+dd if=/dev/null of=test-efi-disk.img bs=1M seek=512 count=1
+parted --script test-efi-disk.img \
+  "mklabel gpt" \
+  "mkpart ESP fat32 1MiB 511MiB" \
+  "set 1 boot on"
+LOOP=$(losetup --show -f -P test-efi-disk.img)
+udevadm settle
+mkfs.vfat -F32 ${LOOP}p1
+mkdir -p mnt
+mount ${LOOP}p1 mnt
+... <dostuffwith mnt>
+
+Without the "udevadm settle" systemd unmounted mnt while the script was
+operating on mnt.
+
+Of course the question is, why there was a REMOVE in the first place,
+but this is not part of this patch.
+
+Cherry-picked from: 9d06297e262966de71095debd1537fc223f940a3
+Resolves: #1283579
+---
+ src/core/mount.c  | 2 +-
+ src/core/socket.c | 2 +-
+ src/core/swap.c   | 2 +-
+ src/core/unit.c   | 4 ++--
+ src/core/unit.h   | 2 +-
+ 5 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/src/core/mount.c b/src/core/mount.c
+index 1f1a41ab6..23f63ce32 100644
+--- a/src/core/mount.c
++++ b/src/core/mount.c
+@@ -321,7 +321,7 @@ static int mount_add_device_links(Mount *m) {
+         if (mount_is_auto(p) && UNIT(m)->manager->running_as == SYSTEMD_SYSTEM)
+                 device_wants_mount = true;
+ 
+-        r = unit_add_node_link(UNIT(m), p->what, device_wants_mount);
++        r = unit_add_node_link(UNIT(m), p->what, device_wants_mount, m->from_fragment ? UNIT_BINDS_TO : UNIT_REQUIRES);
+         if (r < 0)
+                 return r;
+ 
+diff --git a/src/core/socket.c b/src/core/socket.c
+index 7022e77b5..bc677a20f 100644
+--- a/src/core/socket.c
++++ b/src/core/socket.c
+@@ -267,7 +267,7 @@ static int socket_add_device_link(Socket *s) {
+                 return 0;
+ 
+         t = strjoina("/sys/subsystem/net/devices/", s->bind_to_device);
+-        return unit_add_node_link(UNIT(s), t, false);
++        return unit_add_node_link(UNIT(s), t, false, UNIT_BINDS_TO);
+ }
+ 
+ static int socket_add_default_dependencies(Socket *s) {
+diff --git a/src/core/swap.c b/src/core/swap.c
+index 369abf0f5..34a2c406d 100644
+--- a/src/core/swap.c
++++ b/src/core/swap.c
+@@ -201,7 +201,7 @@ static int swap_add_device_links(Swap *s) {
+                 return 0;
+ 
+         if (is_device_path(s->what))
+-                return unit_add_node_link(UNIT(s), s->what, UNIT(s)->manager->running_as == SYSTEMD_SYSTEM);
++                return unit_add_node_link(UNIT(s), s->what, UNIT(s)->manager->running_as == SYSTEMD_SYSTEM, UNIT_BINDS_TO);
+         else
+                 /* File based swap devices need to be ordered after
+                  * systemd-remount-fs.service, since they might need a
+diff --git a/src/core/unit.c b/src/core/unit.c
+index fa17567dd..ae47a2876 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -2823,7 +2823,7 @@ int unit_deserialize(Unit *u, FILE *f, FDSet *fds) {
+         }
+ }
+ 
+-int unit_add_node_link(Unit *u, const char *what, bool wants) {
++int unit_add_node_link(Unit *u, const char *what, bool wants, UnitDependency dep) {
+         Unit *device;
+         _cleanup_free_ char *e = NULL;
+         int r;
+@@ -2850,7 +2850,7 @@ int unit_add_node_link(Unit *u, const char *what, bool wants) {
+         if (r < 0)
+                 return r;
+ 
+-        r = unit_add_two_dependencies(u, UNIT_AFTER, u->manager->running_as == SYSTEMD_SYSTEM ? UNIT_BINDS_TO : UNIT_WANTS, device, true);
++        r = unit_add_two_dependencies(u, UNIT_AFTER, u->manager->running_as == SYSTEMD_SYSTEM ? dep : UNIT_WANTS, device, true);
+         if (r < 0)
+                 return r;
+ 
+diff --git a/src/core/unit.h b/src/core/unit.h
+index 7ebc489c8..0eebc0b89 100644
+--- a/src/core/unit.h
++++ b/src/core/unit.h
+@@ -548,7 +548,7 @@ void unit_serialize_item_format(Unit *u, FILE *f, const char *key, const char *v
+ void unit_serialize_item(Unit *u, FILE *f, const char *key, const char *value);
+ int unit_deserialize(Unit *u, FILE *f, FDSet *fds);
+ 
+-int unit_add_node_link(Unit *u, const char *what, bool wants);
++int unit_add_node_link(Unit *u, const char *what, bool wants, UnitDependency d);
+ 
+ int unit_coldplug(Unit *u, Hashmap *deferred_work);
+ 

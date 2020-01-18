@@ -1,0 +1,44 @@
+From 4e78db7126779a9f6432ead9a73cdab1087405bc Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Fri, 17 Apr 2015 15:12:00 +0200
+Subject: [PATCH] machine: do not rely on asprintf setting arg on error
+
+Strictly speaking, the output variable is undefined if asprintf fails.
+We use the return value not the arg everywhere, and should we do here.
+
+(Based on 2c07315225bef6be4830bce25a74da7f0ba4fcdc)
+---
+ src/machine/machine-dbus.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/src/machine/machine-dbus.c b/src/machine/machine-dbus.c
+index b0f0f66e0..624a99f4e 100644
+--- a/src/machine/machine-dbus.c
++++ b/src/machine/machine-dbus.c
+@@ -438,6 +438,7 @@ int bus_machine_method_open_login(sd_bus *bus, sd_bus_message *message, void *us
+         _cleanup_close_ int master = -1;
+         Machine *m = userdata;
+         const char *p;
++        char *address;
+         int r;
+ 
+         if (m->class != MACHINE_CONTAINER)
+@@ -475,13 +476,14 @@ int bus_machine_method_open_login(sd_bus *bus, sd_bus_message *message, void *us
+                 return r;
+ 
+ #ifdef ENABLE_KDBUS
+-        asprintf(&container_bus->address, "x-machine-kernel:pid=" PID_FMT ";x-machine-unix:pid=" PID_FMT, m->leader, m->leader);
++#  define ADDRESS_FMT "x-machine-kernel:pid=%1$" PID_PRI ";x-machine-unix:pid=%1$" PID_PRI
+ #else
+-        asprintf(&container_bus->address, "x-machine-unix:pid=" PID_FMT, m->leader);
++#  define ADDRESS_FMT "x-machine-unix:pid=%1$" PID_PRI
+ #endif
+-        if (!container_bus->address)
+-                return -ENOMEM;
++        if (asprintf(&address, ADDRESS_FMT, m->leader) < 0)
++                return log_oom();
+ 
++        container_bus->address = address;
+         container_bus->bus_client = true;
+         container_bus->trusted = false;
+         container_bus->is_system = true;

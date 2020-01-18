@@ -1,0 +1,62 @@
+From 33ca0f1f0d4b9a91588c84067d2fb30968e41235 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Luk=C3=A1=C5=A1=20Nykr=C3=BDn?= <lnykryn@redhat.com>
+Date: Tue, 14 Jun 2016 14:20:56 +0200
+Subject: [PATCH] manager: reduce complexity of unit_gc_sweep (#3507)
+
+When unit is marked as UNSURE, we are trying to find if it state was
+changed over and over again. So lets not go through the UNSURE states
+again. Also when we find a GOOD unit lets propagate the GOOD state to
+all units that this unit reference.
+
+This is a problem on machines with a lot of initscripts with different
+starting priority, since those units will reference each other and the
+original algorithm might get to n! complexity.
+
+Thanks HATAYAMA Daisuke for the expand_good_state code.
+Cherry-picked from: 4892084f096c19da0e83f28f250ca187b58c22b2
+Resolves: #1344556
+---
+ src/core/manager.c | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/src/core/manager.c b/src/core/manager.c
+index 370c8cbbe..e5226a8a6 100644
+--- a/src/core/manager.c
++++ b/src/core/manager.c
+@@ -838,6 +838,19 @@ enum {
+         _GC_OFFSET_MAX
+ };
+ 
++static void unit_gc_mark_good(Unit *u, unsigned gc_marker)
++{
++        Iterator i;
++        Unit *other;
++
++        u->gc_marker = gc_marker + GC_OFFSET_GOOD;
++
++        /* Recursively mark referenced units as GOOD as well */
++        SET_FOREACH(other, u->dependencies[UNIT_REFERENCES], i)
++                if (other->gc_marker == gc_marker + GC_OFFSET_UNSURE)
++                        unit_gc_mark_good(other, gc_marker);
++}
++
+ static void unit_gc_sweep(Unit *u, unsigned gc_marker) {
+         Iterator i;
+         Unit *other;
+@@ -847,6 +860,7 @@ static void unit_gc_sweep(Unit *u, unsigned gc_marker) {
+ 
+         if (u->gc_marker == gc_marker + GC_OFFSET_GOOD ||
+             u->gc_marker == gc_marker + GC_OFFSET_BAD ||
++            u->gc_marker == gc_marker + GC_OFFSET_UNSURE ||
+             u->gc_marker == gc_marker + GC_OFFSET_IN_PATH)
+                 return;
+ 
+@@ -887,7 +901,7 @@ bad:
+         return;
+ 
+ good:
+-        u->gc_marker = gc_marker + GC_OFFSET_GOOD;
++        unit_gc_mark_good(u, gc_marker);
+ }
+ 
+ static unsigned manager_dispatch_gc_queue(Manager *m) {

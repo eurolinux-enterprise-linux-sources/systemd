@@ -1,0 +1,28 @@
+From b0edbac36cd75bfd5624f20884043553da14ced2 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Wed, 13 Jan 2016 08:41:54 +0100
+Subject: [PATCH] man/tmpfiles.d: add note about permissions and ownership of
+ symlinks
+
+...because this is might not be obvious.
+
+Cherry-picked from: b908bb63c41eaf3c44004b6b737d105c39df2075
+Resolves: #1296288
+---
+ man/tmpfiles.d.xml | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/man/tmpfiles.d.xml b/man/tmpfiles.d.xml
+index 9b4e11c1b..fc1fe13ac 100644
+--- a/man/tmpfiles.d.xml
++++ b/man/tmpfiles.d.xml
+@@ -187,7 +187,8 @@
+           be removed and be replaced by the symlink. If the argument
+           is omitted, symlinks to files with the same name residing in
+           the directory <filename>/usr/share/factory/</filename> are
+-          created.</para></listitem>
++          created. Note that permissions and ownership on symlinks
++          are ignored.</para></listitem>
+         </varlistentry>
+ 
+         <varlistentry>

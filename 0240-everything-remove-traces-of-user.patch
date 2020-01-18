@@ -1,0 +1,833 @@
+From d550b42ed66ea7e3de9d04b3d472c6c1721a2978 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Tue, 11 Aug 2015 13:53:47 +0200
+Subject: [PATCH] everything: remove traces of --user
+
+Resolves: #1071363
+---
+ man/busctl.xml                        |  6 +--
+ man/journalctl.xml                    | 14 ------
+ man/pam_systemd.xml                   |  7 +--
+ man/systemctl.xml                     | 55 ++++------------------
+ man/systemd-analyze.xml               |  6 ---
+ man/systemd-run.xml                   |  1 -
+ man/systemd-system.conf.xml           |  5 +-
+ man/systemd.device.xml                |  4 +-
+ man/systemd.exec.xml                  | 17 ++-----
+ man/systemd.special.xml               | 46 +------------------
+ man/systemd.unit.xml                  | 66 +--------------------------
+ man/systemd.xml                       | 63 ++++---------------------
+ man/user-system-options.xml           |  9 ----
+ shell-completion/bash/busctl          |  2 +-
+ shell-completion/bash/journalctl      |  5 +-
+ shell-completion/bash/systemctl.in    |  2 +-
+ shell-completion/bash/systemd-analyze | 12 ++---
+ shell-completion/bash/systemd-run     |  4 +-
+ src/analyze/analyze.c                 |  1 -
+ src/core/main.c                       |  1 -
+ src/journal/journalctl.c              |  1 -
+ src/libsystemd/sd-bus/busctl.c        |  1 -
+ src/run/run.c                         |  1 -
+ src/systemctl/systemctl.c             |  1 -
+ 24 files changed, 40 insertions(+), 290 deletions(-)
+
+diff --git a/man/busctl.xml b/man/busctl.xml
+index 807fc78e8..0635280ea 100644
+--- a/man/busctl.xml
++++ b/man/busctl.xml
+@@ -75,9 +75,8 @@
+ 
+           <listitem><para>Connect to the bus specified by
+           <replaceable>ADDRESS</replaceable> instead of using suitable
+-          defaults for either the system or user bus (see
+-          <option>--system</option> and <option>--user</option>
+-          options).</para></listitem>
++          defaults for the system bus (see
++          <option>--system</option> option).</para></listitem>
+       </varlistentry>
+ 
+       <varlistentry>
+@@ -236,7 +235,6 @@
+         </listitem>
+       </varlistentry>
+ 
+-      <xi:include href="user-system-options.xml" xpointer="user" />
+       <xi:include href="user-system-options.xml" xpointer="system" />
+       <xi:include href="user-system-options.xml" xpointer="host" />
+       <xi:include href="user-system-options.xml" xpointer="machine" />
+diff --git a/man/journalctl.xml b/man/journalctl.xml
+index 08de0ff06..2764f66ed 100644
+--- a/man/journalctl.xml
++++ b/man/journalctl.xml
+@@ -469,20 +469,6 @@
+         </listitem>
+       </varlistentry>
+ 
+-      <varlistentry>
+-        <term><option>--user-unit=</option></term>
+-
+-        <listitem><para>Show messages for the specified user session
+-        unit. This will add a match for messages from the unit
+-        (<literal>_SYSTEMD_USER_UNIT=</literal> and
+-        <literal>_UID=</literal>) and additional matches for messages
+-        from session systemd and messages about coredumps for the
+-        specified unit.</para>
+-
+-        <para>This parameter can be specified multiple times.</para>
+-        </listitem>
+-      </varlistentry>
+-
+       <varlistentry>
+         <term><option>-p</option></term>
+         <term><option>--priority=</option></term>
+diff --git a/man/pam_systemd.xml b/man/pam_systemd.xml
+index b4a3f502b..a448aed02 100644
+--- a/man/pam_systemd.xml
++++ b/man/pam_systemd.xml
+@@ -78,9 +78,7 @@
+       <listitem><para>A new systemd scope unit is created for the
+       session. If this is the first concurrent session of the user, an
+       implicit slice below <filename>user.slice</filename> is
+-      automatically created and the scope placed into it. An instance
+-      of the system service <filename>user@.service</filename>, which
+-      runs the systemd user manager instance, is started.
++      automatically created and the scope placed into it.
+       </para></listitem>
+     </orderedlist>
+ 
+@@ -91,8 +89,7 @@
+       <citerefentry><refentrytitle>logind.conf</refentrytitle>
+       <manvolnum>5</manvolnum></citerefentry>, all processes of the
+       session are terminated. If the last concurrent session of a user
+-      ends, the user's systemd instance will be terminated too, and so
+-      will the user's slice unit.</para></listitem>
++      ends, the user's slice unit will be terminated too.</para></listitem>
+ 
+       <listitem><para>If the last concurrent session of a user ends,
+       the <varname>$XDG_RUNTIME_DIR</varname> directory and all its
+diff --git a/man/systemctl.xml b/man/systemctl.xml
+index 6b29b8cd0..c6f584278 100644
+--- a/man/systemctl.xml
++++ b/man/systemctl.xml
+@@ -339,7 +339,6 @@
+         </listitem>
+       </varlistentry>
+ 
+-      <xi:include href="user-system-options.xml" xpointer="user" />
+       <xi:include href="user-system-options.xml" xpointer="system" />
+ 
+       <!-- we do not document -failed here, as it has been made
+@@ -356,17 +355,6 @@
+         </listitem>
+       </varlistentry>
+ 
+-      <varlistentry>
+-        <term><option>--global</option></term>
+-
+-        <listitem>
+-          <para>When used with <command>enable</command> and
+-          <command>disable</command>, operate on the global user
+-          configuration directory, thus enabling or disabling a unit
+-          file globally for all future logins of all users.</para>
+-        </listitem>
+-      </varlistentry>
+-
+       <varlistentry>
+         <term><option>--no-reload</option></term>
+ 
+@@ -795,9 +783,7 @@ kobject-uevent 1 systemd-udevd-kernel.socket systemd-udevd.service
+             lines to fit in the terminal window. This can be changes
+             with <option>--lines</option> and <option>--full</option>,
+             see above. In addition, <command>journalctl
+-            --unit=<replaceable>NAME</replaceable></command> or
+-            <command>journalctl
+-            --user-unit=<replaceable>NAME</replaceable></command> use
++            --unit=<replaceable>NAME</replaceable></command> use
+             a similar filter for messages and might be more
+             convenient.
+             </para>
+@@ -973,13 +959,8 @@ kobject-uevent 1 systemd-udevd-kernel.socket systemd-udevd.service
+             process (in case of service units), or binds the socket (in
+             case of socket units), and so on.</para>
+ 
+-            <para>Depending on whether <option>--system</option>,
+-            <option>--user</option>, <option>--runtime</option>,
+-            or <option>--global</option> is specified, this enables the unit
+-            for the system, for the calling user only, for only this boot of
+-            the system, or for all future logins of all users, or only this
+-            boot.  Note that in the last case, no systemd daemon
+-            configuration is reloaded.</para>
++            <para> If <option>--runtime</option> is specified, then
++            this enables the unit only this boot. </para>
+ 
+             <para>Using <command>enable</command> on masked units
+             results in an error.</para>
+@@ -1008,10 +989,8 @@ kobject-uevent 1 systemd-udevd-kernel.socket systemd-udevd.service
+             output may be suppressed by passing <option>--quiet</option>.
+             </para>
+ 
+-            <para>This command honors <option>--system</option>,
+-            <option>--user</option>, <option>--runtime</option> and
+-            <option>--global</option> in a similar way as
+-            <command>enable</command>.</para>
++            <para>This command honors <option>--runtime</option>
++            in a similar way as <command>enable</command>.</para>
+           </listitem>
+         </varlistentry>
+ 
+@@ -1188,10 +1167,8 @@ kobject-uevent 1 systemd-udevd-kernel.socket systemd-udevd.service
+             dependency to the specified <replaceable>TARGET</replaceable> for
+             one or more units. </para>
+ 
+-            <para>This command honors <option>--system</option>,
+-            <option>--user</option>, <option>--runtime</option> and
+-            <option>--global</option> in a similar way as
+-            <command>enable</command>.</para>
++            <para>This command honors <option>--runtime</option>
++            in a similar way as <command>enable</command>.</para>
+ 
+           </listitem>
+         </varlistentry>
+@@ -1204,11 +1181,8 @@ kobject-uevent 1 systemd-udevd-kernel.socket systemd-udevd.service
+             <option>--full</option> is specified, to extend or override the
+             specified unit.</para>
+ 
+-            <para>Depending on whether <option>--system</option> (the default),
+-            <option>--user</option>, or <option>--global</option> is specified,
+-            this creates a drop-in file for each unit either for the system,
+-            for the calling user or for all futures logins of all users. Then,
+-            the editor (see the "Environment" section below) is invoked on
++            <para>This creates a drop-in file for a unit.
++            Then, the editor (see the "Environment" section below) is invoked on
+             temporary files which will be written to the real location if the
+             editor exits successfully.</para>
+ 
+@@ -1596,17 +1570,6 @@ kobject-uevent 1 systemd-udevd-kernel.socket systemd-udevd.service
+           </listitem>
+         </varlistentry>
+ 
+-        <varlistentry>
+-          <term><command>exit</command></term>
+-
+-          <listitem>
+-            <para>Ask the systemd manager to quit. This is only
+-            supported for user service managers (i.e. in conjunction
+-            with the <option>--user</option> option) and will fail
+-            otherwise.</para>
+-          </listitem>
+-        </varlistentry>
+-
+         <varlistentry>
+           <term><command>switch-root <replaceable>ROOT</replaceable> <optional><replaceable>INIT</replaceable></optional></command></term>
+ 
+diff --git a/man/systemd-analyze.xml b/man/systemd-analyze.xml
+index 198315052..b2e0f42d5 100644
+--- a/man/systemd-analyze.xml
++++ b/man/systemd-analyze.xml
+@@ -188,12 +188,6 @@
+     <para>The following options are understood:</para>
+ 
+     <variablelist>
+-      <varlistentry>
+-        <term><option>--user</option></term>
+-
+-        <listitem><para>Operates on the user systemd
+-        instance.</para></listitem>
+-      </varlistentry>
+ 
+       <varlistentry>
+         <term><option>--system</option></term>
+diff --git a/man/systemd-run.xml b/man/systemd-run.xml
+index febcdb026..f46fc3abf 100644
+--- a/man/systemd-run.xml
++++ b/man/systemd-run.xml
+@@ -294,7 +294,6 @@
+         <command>set-property</command> command.</para> </listitem>
+       </varlistentry>
+ 
+-      <xi:include href="user-system-options.xml" xpointer="user" />
+       <xi:include href="user-system-options.xml" xpointer="system" />
+       <xi:include href="user-system-options.xml" xpointer="host" />
+       <xi:include href="user-system-options.xml" xpointer="machine" />
+diff --git a/man/systemd-system.conf.xml b/man/systemd-system.conf.xml
+index 1b74ed38f..ca25c93a1 100644
+--- a/man/systemd-system.conf.xml
++++ b/man/systemd-system.conf.xml
+@@ -66,10 +66,7 @@
+ 
+     <para>When run as a system instance, systemd interprets the
+     configuration file <filename>system.conf</filename> and the files
+-    in <filename>system.conf.d</filename> directories; when run as a
+-    user instance, systemd interprets the configuration file
+-    <filename>user.conf</filename> and the files in
+-    <filename>user.conf.d</filename> directories. These configuration
++    in <filename>system.conf.d</filename> directories.  These configuration
+     files contain a few settings controlling basic manager
+     operations.</para>
+   </refsect1>
+diff --git a/man/systemd.device.xml b/man/systemd.device.xml
+index ac6deafb1..d6b6a7ce4 100644
+--- a/man/systemd.device.xml
++++ b/man/systemd.device.xml
+@@ -97,11 +97,9 @@
+     <variablelist class='udev-directives'>
+       <varlistentry>
+         <term><varname>SYSTEMD_WANTS=</varname></term>
+-        <term><varname>SYSTEMD_USER_WANTS=</varname></term>
+         <listitem><para>Adds dependencies of type
+         <varname>Wants</varname> from the device unit to all listed
+-        units. The first form is used by the system systemd instance,
+-        the second by user systemd instances. Those settings may be
++        units. This settings may be
+         used to activate arbitrary units when a specific device
+         becomes available.</para>
+ 
+diff --git a/man/systemd.exec.xml b/man/systemd.exec.xml
+index 5b93aa71e..6af7c7ae5 100644
+--- a/man/systemd.exec.xml
++++ b/man/systemd.exec.xml
+@@ -1148,9 +1148,7 @@
+ 
+     <para>Processes started by the system are executed in a clean
+     environment in which select variables listed below are set. System
+-    processes started by systemd do not inherit variables from PID 1,
+-    but processes started by user systemd instances inherit all
+-    environment variables from the user systemd instance.
++    processes started by systemd do not inherit variables from PID 1.
+     </para>
+ 
+     <variablelist class='environment-variables'>
+@@ -1183,8 +1181,7 @@
+ 
+         <listitem><para>User name (twice), home directory, and the
+         login shell. The variables are set for the units that have
+-        <varname>User=</varname> set, which includes user
+-        <command>systemd</command> instances. See
++        <varname>User=</varname> set. See
+         <citerefentry project='die-net'><refentrytitle>passwd</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+         </para></listitem>
+       </varlistentry>
+@@ -1192,8 +1189,7 @@
+       <varlistentry>
+         <term><varname>$XDG_RUNTIME_DIR</varname></term>
+ 
+-        <listitem><para>The directory for volatile state. Set for the
+-        user <command>systemd</command> instance, and also in user
++        <listitem><para>The directory for volatile state. Set  in user
+         sessions. See
+         <citerefentry><refentrytitle>pam_systemd</refentrytitle><manvolnum>8</manvolnum></citerefentry>.
+         </para></listitem>
+@@ -1220,13 +1216,6 @@
+         <varname>ExecReload=</varname> and similar. </para></listitem>
+       </varlistentry>
+ 
+-      <varlistentry>
+-        <term><varname>$MANAGERPID</varname></term>
+-
+-        <listitem><para>The PID of the user <command>systemd</command>
+-        instance, set for processes spawned by it. </para></listitem>
+-      </varlistentry>
+-
+       <varlistentry>
+         <term><varname>$LISTEN_FDS</varname></term>
+         <term><varname>$LISTEN_PID</varname></term>
+diff --git a/man/systemd.special.xml b/man/systemd.special.xml
+index cf76aaf60..553197d66 100644
+--- a/man/systemd.special.xml
++++ b/man/systemd.special.xml
+@@ -772,47 +772,6 @@
+     </variablelist>
+   </refsect1>
+ 
+-  <refsect1>
+-    <title>Special User Units</title>
+-
+-    <para>When systemd runs as a user instance, the following special
+-    units are available, which have similar definitions as their
+-    system counterparts:
+-    <filename>default.target</filename>,
+-    <filename>shutdown.target</filename>,
+-    <filename>sockets.target</filename>,
+-    <filename>timers.target</filename>,
+-    <filename>paths.target</filename>,
+-    <filename>bluetooth.target</filename>,
+-    <filename>printer.target</filename>,
+-    <filename>smartcard.target</filename>,
+-    <filename>sound.target</filename>.</para>
+-
+-    <para>In addition, the following special unit is understood only
+-    when systemd runs as service instance:</para>
+-
+-    <variablelist>
+-      <varlistentry>
+-        <term><filename>exit.target</filename></term>
+-        <listitem>
+-          <para>A special service unit for shutting down the user
+-          service manager.</para>
+-
+-          <para>Applications wanting to terminate the user service
+-          manager should start this unit. If systemd receives
+-          <constant>SIGTERM</constant> or <constant>SIGINT</constant>
+-          when running as user service daemon, it will start this
+-          unit.</para>
+-
+-          <para>Normally, this pulls in
+-          <filename>shutdown.target</filename> which in turn should be
+-          conflicted by all units that want to be shut down on user
+-          service manager exit.</para>
+-        </listitem>
+-      </varlistentry>
+-    </variablelist>
+-  </refsect1>
+-
+   <refsect1>
+     <title>Special Slice Units</title>
+ 
+@@ -841,9 +800,8 @@
+       <varlistentry>
+         <term><filename>user.slice</filename></term>
+         <listitem>
+-          <para>By default, all user processes and services started on
+-          behalf of the user, including the per-user systemd instance
+-          are found in this slice.</para>
++          <para>By default, all user processes started on
++          behalf of the user are found in this slice.</para>
+         </listitem>
+       </varlistentry>
+ 
+diff --git a/man/systemd.unit.xml b/man/systemd.unit.xml
+index c2e374a94..414749bae 100644
+--- a/man/systemd.unit.xml
++++ b/man/systemd.unit.xml
+@@ -263,14 +263,6 @@
+     in directories listed earlier override files with the same name in
+     directories lower in the list.</para>
+ 
+-    <para>When systemd is running in user mode
+-    (<option>--user</option>) and the variable
+-    <varname>$SYSTEMD_UNIT_PATH</varname> is set, the contents of this
+-    variable overrides the unit load path. If
+-    <varname>$SYSTEMD_UNIT_PATH</varname> ends with an empty component
+-    (<literal>:</literal>), the usual unit load path will be appended
+-    to the contents of the variable.</para>
+-
+     <table>
+       <title>
+         Load path when running in system mode (<option>--system</option>).
+@@ -302,57 +294,6 @@
+       </tgroup>
+     </table>
+ 
+-    <table>
+-      <title>
+-        Load path when running in user mode (<option>--user</option>).
+-      </title>
+-
+-      <tgroup cols='2'>
+-        <colspec colname='path' />
+-        <colspec colname='expl' />
+-        <thead>
+-          <row>
+-      <entry>Path</entry>
+-      <entry>Description</entry>
+-          </row>
+-        </thead>
+-        <tbody>
+-          <row>
+-      <entry><filename>$XDG_CONFIG_HOME/systemd/user</filename></entry>
+-      <entry>User configuration (only used when $XDG_CONFIG_HOME is set)</entry>
+-          </row>
+-          <row>
+-      <entry><filename>$HOME/.config/systemd/user</filename></entry>
+-      <entry>User configuration (only used when $XDG_CONFIG_HOME is not set)</entry>
+-          </row>
+-          <row>
+-      <entry><filename>/etc/systemd/user</filename></entry>
+-      <entry>Local configuration</entry>
+-          </row>
+-          <row>
+-      <entry><filename>$XDG_RUNTIME_DIR/systemd/user</filename></entry>
+-      <entry>Runtime units (only used when $XDG_RUNTIME_DIR is set)</entry>
+-          </row>
+-          <row>
+-      <entry><filename>/run/systemd/user</filename></entry>
+-      <entry>Runtime units</entry>
+-          </row>
+-          <row>
+-      <entry><filename>$XDG_DATA_HOME/systemd/user</filename></entry>
+-      <entry>Units of packages that have been installed in the home directory (only used when $XDG_DATA_HOME is set)</entry>
+-          </row>
+-          <row>
+-      <entry><filename>$HOME/.local/share/systemd/user</filename></entry>
+-      <entry>Units of packages that have been installed in the home directory (only used when $XDG_DATA_HOME is not set)</entry>
+-          </row>
+-          <row>
+-      <entry><filename>/usr/lib/systemd/user</filename></entry>
+-      <entry>Units of packages that have been installed system-wide</entry>
+-          </row>
+-        </tbody>
+-      </tgroup>
+-    </table>
+-
+     <para>Additional units might be loaded into systemd ("linked")
+     from directories not on the unit load path. See the
+     <command>link</command> command for
+@@ -1271,8 +1212,7 @@
+     when systemd is running in system mode. PID 1 cannot query the
+     user account database for information, so the specifiers only work
+     as shortcuts for things which are already specified in a different
+-    way in the unit file. They are fully functional when systemd is
+-    running in <option>--user</option> mode.</para>
++    way in the unit file.</para>
+   </refsect1>
+ 
+   <refsect1>
+@@ -1338,10 +1278,6 @@ ExecStart=/usr/sbin/foo-daemon
+       to first clear the list before re-adding all entries except the
+       one that is to be removed. See below for an example.</para>
+ 
+-      <para>This also applies for user instances of systemd, but with
+-      different locations for the unit files. See the section on unit
+-      load paths for further details.</para>
+-
+       <para>Suppose there is a vendor-supplied unit
+       <filename>/usr/lib/systemd/system/httpd.service</filename> with
+       the following contents:</para>
+diff --git a/man/systemd.xml b/man/systemd.xml
+index d006b0bb9..eb289f03b 100644
+--- a/man/systemd.xml
++++ b/man/systemd.xml
+@@ -77,10 +77,7 @@
+ 
+     <para>When run as a system instance, systemd interprets the
+     configuration file <filename>system.conf</filename> and the files
+-    in <filename>system.conf.d</filename> directories; when run as a
+-    user instance, systemd interprets the configuration file
+-    <filename>user.conf</filename> and the files in
+-    <filename>user.conf.d</filename> directories. See
++    in <filename>system.conf.d</filename> directories. See
+     <citerefentry><refentrytitle>systemd-system.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+     for more information.</para>
+   </refsect1>
+@@ -113,15 +110,12 @@
+       </varlistentry>
+       <varlistentry>
+         <term><option>--system</option></term>
+-        <term><option>--user</option></term>
+ 
+-        <listitem><para>For <option>--system</option>, tell systemd to
++        <listitem><para><option>--system</option>, tell systemd to
+         run a system instance, even if the process ID is not 1, i.e.
+-        systemd is not run as init process. <option>--user</option>
+-        does the opposite, running a user instance even if the process
+-        ID is 1. Normally it should not be necessary to pass these
++        systemd is not run as init process. Normally it should not be necessary to pass this
+         options, as systemd automatically detects the mode it is
+-        started in. These options are hence of little use except for
++        started in. This option is hence of little use except for
+         debugging. Note that it is not supported booting and
+         maintaining a full system with systemd running in
+         <option>--system</option> mode, but PID not 1. In practice,
+@@ -131,29 +125,25 @@
+       <varlistentry>
+         <term><option>--dump-core</option></term>
+ 
+-        <listitem><para>Dump core on crash. This switch has no effect
+-        when run as user instance.</para></listitem>
++        <listitem><para>Dump core on crash.</para></listitem>
+       </varlistentry>
+       <varlistentry>
+         <term><option>--crash-shell</option></term>
+ 
+         <listitem><para>Run shell on
+-        crash. This switch has no effect when
+-        run as user
+-        instance.</para></listitem>
++        crash.</para></listitem>
+       </varlistentry>
+       <varlistentry>
+         <term><option>--confirm-spawn</option></term>
+ 
+         <listitem><para>Ask for confirmation when spawning processes.
+-        This switch has no effect when run as user
+-        instance.</para></listitem>
++        </para></listitem>
+       </varlistentry>
+       <varlistentry>
+         <term><option>--show-status=</option></term>
+ 
+         <listitem><para>Show terse service status information while
+-        booting. This switch has no effect when run as user instance.
++        booting.
+         Takes a boolean argument which may be omitted which is
+         interpreted as <option>true</option>.</para></listitem>
+       </varlistentry>
+@@ -452,30 +442,6 @@
+       </varlistentry>
+     </variablelist>
+ 
+-    <variablelist>
+-      <varlistentry>
+-        <term>User unit directories</term>
+-
+-        <listitem><para>Similar rules apply for the user unit
+-        directories. However, here the
+-        <ulink url="http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html">XDG
+-        Base Directory specification</ulink> is followed to find
+-        units. Applications should place their unit files in the
+-        directory returned by <command>pkg-config systemd
+-        --variable=systemduserunitdir</command>. Global configuration
+-        is done in the directory reported by <command>pkg-config
+-        systemd --variable=systemduserconfdir</command>. The
+-        <command>enable</command> and <command>disable</command>
+-        commands of the
+-        <citerefentry><refentrytitle>systemctl</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+-        tool can handle both global (i.e. for all users) and private
+-        (for one user) enabling/disabling of units. Full list of
+-        directories is provided in
+-        <citerefentry><refentrytitle>systemd.unit</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+-        </para></listitem>
+-      </varlistentry>
+-    </variablelist>
+-
+     <variablelist>
+       <varlistentry>
+         <term>SysV init scripts directory</term>
+@@ -514,11 +480,7 @@
+         manager serializes its state, reexecutes itself and
+         deserializes the saved state again. This is mostly equivalent
+         to <command>systemctl daemon-reexec</command>.</para>
+-
+-        <para>systemd user managers will start the
+-        <filename>exit.target</filename> unit when this signal is
+-        received. This is mostly equivalent to <command>systemctl
+-        --user start exit.target</command>.</para></listitem>
++        </listitem>
+       </varlistentry>
+ 
+       <varlistentry>
+@@ -706,13 +668,6 @@
+         line.</para></listitem>
+       </varlistentry>
+ 
+-      <varlistentry>
+-        <term><constant>SIGRTMIN+24</constant></term>
+-
+-        <listitem><para>Immediately exits the manager (only available
+-        for --user instances).</para></listitem>
+-      </varlistentry>
+-
+       <varlistentry>
+         <term><constant>SIGRTMIN+26</constant></term>
+         <term><constant>SIGRTMIN+27</constant></term>
+diff --git a/man/user-system-options.xml b/man/user-system-options.xml
+index 8616c5424..ae911a975 100644
+--- a/man/user-system-options.xml
++++ b/man/user-system-options.xml
+@@ -3,15 +3,6 @@
+           "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+ 
+ <variablelist>
+-  <varlistentry id='user'>
+-    <term><option>--user</option></term>
+-
+-    <listitem id='user-text'>
+-      <para>Talk to the service manager of the calling user,
+-      rather than the service manager of the system.</para>
+-    </listitem>
+-  </varlistentry>
+-
+   <varlistentry id='system'>
+     <term><option>--system</option></term>
+ 
+diff --git a/shell-completion/bash/busctl b/shell-completion/bash/busctl
+index 6a770b1b8..027dfdf67 100644
+--- a/shell-completion/bash/busctl
++++ b/shell-completion/bash/busctl
+@@ -75,7 +75,7 @@ _busctl() {
+         local i verb comps mode
+         local cur=${COMP_WORDS[COMP_CWORD]} prev=${COMP_WORDS[COMP_CWORD-1]}
+         local -A OPTS=(
+-               [STANDALONE]='-h --help --version --no-pager --no-legend --system --user
++               [STANDALONE]='-h --help --version --no-pager --no-legend --system
+                              --show-machine --unique --acquired --activatable --list
+                              --quiet --verbose --expect-reply=no --auto-start=no
+                              --allow-interactive-authorization=yes --augment-creds=no'
+diff --git a/shell-completion/bash/journalctl b/shell-completion/bash/journalctl
+index 1387524a8..91cb369ec 100644
+--- a/shell-completion/bash/journalctl
++++ b/shell-completion/bash/journalctl
+@@ -49,7 +49,7 @@ _journalctl() {
+                               --utc -x --catalog --no-full --force --dump-catalog
+                               --flush'
+                        [ARG]='-b --boot --this-boot -D --directory --file -F --field
+-                              -o --output -u --unit --user-unit -p --priority'
++                              -o --output -u --unit -p --priority'
+                 [ARGUNKNOWN]='-c --cursor --interval -n --lines --since --until
+                               --after-cursor --verify-key --identifier
+                               --root --machine'
+@@ -80,9 +80,6 @@ _journalctl() {
+                         --unit|-u)
+                                 comps=$(journalctl -F '_SYSTEMD_UNIT' 2>/dev/null)
+                         ;;
+-                        --user-unit)
+-                                comps=$(journalctl -F '_SYSTEMD_USER_UNIT' 2>/dev/null)
+-                        ;;
+                         *)
+                                 return 0
+                         ;;
+diff --git a/shell-completion/bash/systemctl.in b/shell-completion/bash/systemctl.in
+index 496c756a4..0a022c4cf 100644
+--- a/shell-completion/bash/systemctl.in
++++ b/shell-completion/bash/systemctl.in
+@@ -92,7 +92,7 @@ _systemctl () {
+         local -A OPTS=(
+                [STANDALONE]='--all -a --reverse --after --before --defaults --fail --ignore-dependencies --failed --force -f --full -l --global
+                              --help -h --no-ask-password --no-block --no-legend --no-pager --no-reload --no-wall
+-                             --quiet -q --privileged -P --system --user --version --runtime --recursive -r'
++                             --quiet -q --privileged -P --system --version --runtime --recursive -r'
+                       [ARG]='--host -H --kill-who --property -p --signal -s --type -t --state --root'
+         )
+ 
+diff --git a/shell-completion/bash/systemd-analyze b/shell-completion/bash/systemd-analyze
+index 00947029c..1c4fe4017 100644
+--- a/shell-completion/bash/systemd-analyze
++++ b/shell-completion/bash/systemd-analyze
+@@ -35,7 +35,7 @@ _systemd_analyze() {
+         local cur=${COMP_WORDS[COMP_CWORD]} prev=${COMP_WORDS[COMP_CWORD-1]}
+ 
+         local -A OPTS=(
+-               [STANDALONE]='--help --version --system --user --from-pattern --to-pattern --order --require --no-pager'
++               [STANDALONE]='--help --version --system --from-pattern --to-pattern --order --require --no-pager'
+                       [ARG]='-H --host -M --machine --fuzz --man'
+         )
+ 
+@@ -80,29 +80,29 @@ _systemd_analyze() {
+ 
+         elif __contains_word "$verb" ${VERBS[STANDALONE]}; then
+                 if [[ $cur = -* ]]; then
+-                        comps='--help --version --system --user'
++                        comps='--help --version --system '
+                 fi
+ 
+         elif __contains_word "$verb" ${VERBS[CRITICAL_CHAIN]}; then
+                 if [[ $cur = -* ]]; then
+-                        comps='--help --version --system --user --fuzz'
++                        comps='--help --version --system --fuzz'
+                 fi
+ 
+         elif __contains_word "$verb" ${VERBS[DOT]}; then
+                 if [[ $cur = -* ]]; then
+-                        comps='--help --version --system --user --from-pattern --to-pattern --order --require'
++                        comps='--help --version --system --from-pattern --to-pattern --order --require'
+                 fi
+ 
+         elif __contains_word "$verb" ${VERBS[LOG_LEVEL]}; then
+                 if [[ $cur = -* ]]; then
+-                        comps='--help --version --system --user'
++                        comps='--help --version --system'
+                 else
+                         comps='debug info notice warning err crit alert emerg'
+                 fi
+ 
+         elif __contains_word "$verb" ${VERBS[VERIFY]}; then
+                 if [[ $cur = -* ]]; then
+-                        comps='--help --version --system --user --no-man'
++                        comps='--help --version --system --no-man'
+                 else
+                         comps=$( compgen -A file -- "$cur" )
+                         compopt -o filenames
+diff --git a/shell-completion/bash/systemd-run b/shell-completion/bash/systemd-run
+index 712655caf..5145cd3f2 100644
+--- a/shell-completion/bash/systemd-run
++++ b/shell-completion/bash/systemd-run
+@@ -32,7 +32,7 @@ __get_machines() {
+ 
+ _systemd_run() {
+     local cur=${COMP_WORDS[COMP_CWORD]} prev=${COMP_WORDS[COMP_CWORD-1]}
+-    local OPTS='-h --help --version --user --system --scope --unit --description --slice
++    local OPTS='-h --help --version --system --scope --unit --description --slice
+                 -r --remain-after-exit --send-sighup -H --host -M --machine --service-type
+                 --uid --gid --nice --setenv -p --property'
+ 
+@@ -45,8 +45,6 @@ _systemd_run() {
+             return
+         fi
+ 
+-        [[ ${COMP_WORDS[i]} == "--user" ]] && mode=--user
+-
+         [[ $i -lt $COMP_CWORD && ${COMP_WORDS[i]} == @(--unit|--description|--slice|--service-type|-H|--host|-M|--machine|-p|--property) ]] && ((i++))
+     done
+ 
+diff --git a/src/analyze/analyze.c b/src/analyze/analyze.c
+index 591b4ab14..ff84f6894 100644
+--- a/src/analyze/analyze.c
++++ b/src/analyze/analyze.c
+@@ -1170,7 +1170,6 @@ static void help(void) {
+                "     --version            Show package version\n"
+                "     --no-pager           Do not pipe output into a pager\n"
+                "     --system             Operate on system systemd instance\n"
+-               "     --user               Operate on user systemd instance\n"
+                "  -H --host=[USER@]HOST   Operate on remote host\n"
+                "  -M --machine=CONTAINER  Operate on local container\n"
+                "     --order              Show only order in the graph\n"
+diff --git a/src/core/main.c b/src/core/main.c
+index 1c8d67dac..2aec40b0b 100644
+--- a/src/core/main.c
++++ b/src/core/main.c
+@@ -956,7 +956,6 @@ static int help(void) {
+                "     --dump-configuration-items  Dump understood unit configuration items\n"
+                "     --unit=UNIT                 Set default unit\n"
+                "     --system                    Run a system instance, even if PID != 1\n"
+-               "     --user                      Run a user instance\n"
+                "     --dump-core[=0|1]           Dump core on crash\n"
+                "     --crash-shell[=0|1]         Run shell on crash\n"
+                "     --confirm-spawn[=0|1]       Ask for confirmation when spawning processes\n"
+diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
+index c26cc00f5..8236d0810 100644
+--- a/src/journal/journalctl.c
++++ b/src/journal/journalctl.c
+@@ -204,7 +204,6 @@ static void help(void) {
+                "     --list-boots          Show terse information about recorded boots\n"
+                "  -k --dmesg               Show kernel message log from the current boot\n"
+                "  -u --unit=UNIT           Show logs from the specified unit\n"
+-               "     --user-unit=UNIT      Show logs from the specified user unit\n"
+                "  -t --identifier=STRING   Show entries with the specified syslog identifier\n"
+                "  -p --priority=RANGE      Show entries with the specified priority\n"
+                "  -e --pager-end           Immediately jump to the end in the pager\n"
+diff --git a/src/libsystemd/sd-bus/busctl.c b/src/libsystemd/sd-bus/busctl.c
+index d3c177201..bffbf4a0e 100644
+--- a/src/libsystemd/sd-bus/busctl.c
++++ b/src/libsystemd/sd-bus/busctl.c
+@@ -1688,7 +1688,6 @@ static int help(void) {
+                "     --no-pager           Do not pipe output into a pager\n"
+                "     --no-legend          Do not show the headers and footers\n"
+                "     --system             Connect to system bus\n"
+-               "     --user               Connect to user bus\n"
+                "  -H --host=[USER@]HOST   Operate on remote host\n"
+                "  -M --machine=CONTAINER  Operate on local container\n"
+                "     --address=ADDRESS    Connect to bus specified by address\n"
+diff --git a/src/run/run.c b/src/run/run.c
+index 0661b3bee..0e5bde23d 100644
+--- a/src/run/run.c
++++ b/src/run/run.c
+@@ -68,7 +68,6 @@ static void help(void) {
+                "specified with --unit option then command can be ommited.\n\n"
+                "  -h --help                       Show this help\n"
+                "     --version                    Show package version\n"
+-               "     --user                       Run as user unit\n"
+                "  -H --host=[USER@]HOST           Operate on remote host\n"
+                "  -M --machine=CONTAINER          Operate on local container\n"
+                "     --scope                      Run this as scope rather than service\n"
+diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
+index 9898694d7..89d0b3b39 100644
+--- a/src/systemctl/systemctl.c
++++ b/src/systemctl/systemctl.c
+@@ -6050,7 +6050,6 @@ static void systemctl_help(void) {
+                "  -h --help           Show this help\n"
+                "     --version        Show package version\n"
+                "     --system         Connect to system manager\n"
+-               "     --user           Connect to user service manager\n"
+                "  -H --host=[USER@]HOST\n"
+                "                      Operate on remote host\n"
+                "  -M --machine=CONTAINER\n"

@@ -1,0 +1,25 @@
+From e8507d683bce9dd61adc3fa5d19ec35e3caadff9 Mon Sep 17 00:00:00 2001
+From: Franck Bui <fbui@suse.com>
+Date: Wed, 30 Nov 2016 18:27:42 +0100
+Subject: [PATCH] systemctl: fix 'is-enabled' exit status on failure when
+ executed in chroot (#4773)
+
+(cherry picked from commit c5024cd05c194b93ae960bf38e567d3d998f2a03)
+Resolves: #1413964
+---
+ src/systemctl/systemctl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
+index a578897d9..1e1009f38 100644
+--- a/src/systemctl/systemctl.c
++++ b/src/systemctl/systemctl.c
+@@ -5739,7 +5739,7 @@ static int unit_is_enabled(sd_bus *bus, char **args) {
+ 
+                         r = unit_file_get_state(arg_scope, arg_root, *name, &state);
+                         if (r < 0)
+-                                return log_error_errno(state, "Failed to get unit file state for %s: %m", *name);
++                                return log_error_errno(r, "Failed to get unit file state for %s: %m", *name);
+ 
+                         if (state == UNIT_FILE_ENABLED ||
+                             state == UNIT_FILE_ENABLED_RUNTIME ||

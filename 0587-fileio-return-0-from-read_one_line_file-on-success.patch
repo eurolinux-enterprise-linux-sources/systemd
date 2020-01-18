@@ -1,0 +1,36 @@
+From 29d296bbe3ce769d64f90a08ba0e091725140704 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Sun, 24 Sep 2017 14:27:21 +0200
+Subject: [PATCH] fileio: return 0 from read_one_line_file on success
+
+Fixup for f4b51a2d09. Suggested by Evgeny Vereshchagin.
+
+(cherry picked from commit 2e33df93dee35af986683d1226f93e0f9659de5d)
+
+Resolves: #1503106
+---
+ src/shared/fileio.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/shared/fileio.c b/src/shared/fileio.c
+index 4880a4941..65a0753c2 100644
+--- a/src/shared/fileio.c
++++ b/src/shared/fileio.c
+@@ -109,6 +109,7 @@ int write_string_file_atomic(const char *fn, const char *line) {
+ 
+ int read_one_line_file(const char *fn, char **line) {
+         _cleanup_fclose_ FILE *f = NULL;
++        int r;
+ 
+         assert(fn);
+         assert(line);
+@@ -117,7 +118,8 @@ int read_one_line_file(const char *fn, char **line) {
+         if (!f)
+                 return -errno;
+ 
+-        return read_line(f, LONG_LINE_MAX, line);
++        r = read_line(f, LONG_LINE_MAX, line);
++        return r < 0 ? r : 0;
+ }
+ 
+ int read_full_stream(FILE *f, char **contents, size_t *size) {

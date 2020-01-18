@@ -1,0 +1,29 @@
+From 436a001a5a28b9e3dd0988cc5a88bd3d7ec0acc8 Mon Sep 17 00:00:00 2001
+From: Andrew Jones <drjones@redhat.com>
+Date: Tue, 31 Mar 2015 11:08:11 +0200
+Subject: [PATCH] detect-virt: use /proc/device-tree
+
+Kernel doc Documentation/ABI/testing/sysfs-firmware-ofw says that
+the /proc/device-tree symlink should be used, as opposed to
+directly accessing /sys/firmware/devicetree/base. The former is
+ABI, but not the later.
+
+Cherry-picked from: b8f1df82646d2
+Resolves: #1207773
+---
+ src/shared/virt.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/shared/virt.c b/src/shared/virt.c
+index 7c1381f4b..aa3501f42 100644
+--- a/src/shared/virt.c
++++ b/src/shared/virt.c
+@@ -106,7 +106,7 @@ static int detect_vm_devicetree(const char **_id) {
+         _cleanup_free_ char *hvtype = NULL;
+         int r;
+ 
+-        r = read_one_line_file("/sys/firmware/devicetree/base/hypervisor/compatible", &hvtype);
++        r = read_one_line_file("/proc/device-tree/hypervisor/compatible", &hvtype);
+         if (r >= 0) {
+                 if (streq(hvtype, "linux,kvm")) {
+                         *_id = "kvm";

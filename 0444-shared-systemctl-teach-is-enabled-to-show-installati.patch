@@ -1,0 +1,363 @@
+From fef4e6a045ae703de12ec271b0c8fd02d0bac0fc Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Thu, 20 Oct 2016 15:20:11 +0200
+Subject: [PATCH] shared, systemctl: teach is-enabled to show installation
+ targets
+
+It may be desired by users to know what targets a particular service is
+installed into. Improve user friendliness by teaching the is-enabled
+command to show such information when used with --full.
+
+This patch makes use of the newly added UnitFileFlags and adds
+UNIT_FILE_DRY_RUN flag into it. Since the API had already been modified,
+it's now easy to add the new dry-run feature for other commands as
+well. As a next step, --dry-run could be added to systemctl, which in
+turn might pave the way for a long requested dry-run feature when
+running systemctl start.
+
+(cherry picked from commit 3b3557c410c7910fae0990599dcb82711cf5fbb7)
+Resolves: #1413041
+---
+ man/systemctl.xml                      |  3 ++
+ src/core/dbus-manager.c                | 44 ++++++++++++++++
+ src/core/org.freedesktop.systemd1.conf |  4 ++
+ src/shared/install.c                   | 35 +++++++-----
+ src/shared/install.h                   |  3 +-
+ src/systemctl/systemctl.c              | 73 +++++++++++++++++++++++++-
+ 6 files changed, 145 insertions(+), 17 deletions(-)
+
+diff --git a/man/systemctl.xml b/man/systemctl.xml
+index bb21f3a88..4a1aff227 100644
+--- a/man/systemctl.xml
++++ b/man/systemctl.xml
+@@ -223,6 +223,8 @@
+           of <command>status</command>, <command>list-units</command>,
+           <command>list-jobs</command>, and
+           <command>list-timers</command>.</para>
++          <para>Also, show installation targets in the output of
++          <command>is-enabled</command>.</para>
+         </listitem>
+       </varlistentry>
+ 
+@@ -1054,6 +1056,7 @@ kobject-uevent 1 systemd-udevd-kernel.socket systemd-udevd.service
+             exit code of 0 if at least one is enabled, non-zero
+             otherwise. Prints the current enable status (see table).
+             To suppress this output, use <option>--quiet</option>.
++            To show installation targets, use <option>--full</option>.
+             </para>
+ 
+             <table>
+diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
+index 5b40aa20f..7ba1b519e 100644
+--- a/src/core/dbus-manager.c
++++ b/src/core/dbus-manager.c
+@@ -1958,6 +1958,49 @@ static int method_add_dependency_unit_files(sd_bus *bus, sd_bus_message *message
+         return reply_unit_file_changes_and_free(m, bus, message, -1, changes, n_changes);
+ }
+ 
++static int method_get_unit_file_links(sd_bus *bus, sd_bus_message *message, void *userdata, sd_bus_error *error) {
++        _cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
++        UnitFileChange *changes = NULL;
++        unsigned n_changes = 0, i;
++        UnitFileFlags flags;
++        const char *name;
++        char **p;
++        int runtime, r;
++
++        r = sd_bus_message_read(message, "sb", &name, &runtime);
++        if (r < 0)
++                return r;
++
++        r = sd_bus_message_new_method_return(message, &reply);
++        if (r < 0)
++                return r;
++
++        r = sd_bus_message_open_container(reply, SD_BUS_TYPE_ARRAY, "s");
++        if (r < 0)
++                return r;
++
++        p = STRV_MAKE(name);
++        flags = UNIT_FILE_DRY_RUN |
++                (runtime ? UNIT_FILE_RUNTIME : 0);
++
++        r = unit_file_disable(UNIT_FILE_SYSTEM, flags, NULL, p, &changes, &n_changes);
++        if (r < 0)
++                return log_error_errno(r, "Failed to get file links for %s: %m", name);
++
++        for (i = 0; i < n_changes; i++)
++                if (changes[i].type == UNIT_FILE_UNLINK) {
++                        r = sd_bus_message_append(reply, "s", changes[i].path);
++                        if (r < 0)
++                                return r;
++                }
++
++        r = sd_bus_message_close_container(reply);
++        if (r < 0)
++                return r;
++
++        return sd_bus_send(bus, reply, NULL);
++}
++
+ const sd_bus_vtable bus_manager_vtable[] = {
+         SD_BUS_VTABLE_START(0),
+ 
+@@ -2049,6 +2092,7 @@ const sd_bus_vtable bus_manager_vtable[] = {
+         SD_BUS_METHOD("GetDefaultTarget", NULL, "s", method_get_default_target, SD_BUS_VTABLE_UNPRIVILEGED),
+         SD_BUS_METHOD("PresetAllUnitFiles", "sbb", "a(sss)", method_preset_all_unit_files, SD_BUS_VTABLE_UNPRIVILEGED),
+         SD_BUS_METHOD("AddDependencyUnitFiles", "asssbb", "a(sss)", method_add_dependency_unit_files, SD_BUS_VTABLE_UNPRIVILEGED),
++        SD_BUS_METHOD("GetUnitFileLinks", "sb", "as", method_get_unit_file_links, SD_BUS_VTABLE_UNPRIVILEGED),
+ 
+         SD_BUS_SIGNAL("UnitNew", "so", 0),
+         SD_BUS_SIGNAL("UnitRemoved", "so", 0),
+diff --git a/src/core/org.freedesktop.systemd1.conf b/src/core/org.freedesktop.systemd1.conf
+index 6a7a37ee9..3997dd0b4 100644
+--- a/src/core/org.freedesktop.systemd1.conf
++++ b/src/core/org.freedesktop.systemd1.conf
+@@ -76,6 +76,10 @@
+                        send_interface="org.freedesktop.systemd1.Manager"
+                        send_member="GetUnitFileState"/>
+ 
++                <allow send_destination="org.freedesktop.systemd1"
++                       send_interface="org.freedesktop.systemd1.Manager"
++                       send_member="GetUnitFileLinks"/>
++
+                 <allow send_destination="org.freedesktop.systemd1"
+                        send_interface="org.freedesktop.systemd1.Manager"
+                        send_member="ListJobs"/>
+diff --git a/src/shared/install.c b/src/shared/install.c
+index b3df6b35c..bdfd7b96a 100644
+--- a/src/shared/install.c
++++ b/src/shared/install.c
+@@ -340,6 +340,7 @@ static int remove_marked_symlinks_fd(
+                 int fd,
+                 const char *path,
+                 const char *config_path,
++                bool dry_run,
+                 bool *restart,
+                 UnitFileChange **changes,
+                 unsigned *n_changes) {
+@@ -400,7 +401,7 @@ static int remove_marked_symlinks_fd(
+                         }
+ 
+                         /* This will close nfd, regardless whether it succeeds or not */
+-                        q = remove_marked_symlinks_fd(remove_symlinks_to, nfd, p, config_path, restart, changes, n_changes);
++                        q = remove_marked_symlinks_fd(remove_symlinks_to, nfd, p, config_path, dry_run, restart, changes, n_changes);
+                         if (q < 0 && r == 0)
+                                 r = q;
+ 
+@@ -439,21 +440,23 @@ static int remove_marked_symlinks_fd(
+                         if (!found)
+                                 continue;
+ 
+-                        if (unlink(p) < 0 && errno != ENOENT) {
+-                                if (r == 0)
+-                                        r = -errno;
+-                                continue;
+-                        }
++                        if (!dry_run) {
++                                if (unlink(p) < 0 && errno != ENOENT) {
++                                        if (r == 0)
++                                                r = -errno;
++                                        continue;
++                                }
+ 
+-                        path_kill_slashes(p);
+-                        (void) rmdir_parents(p, config_path);
++                                path_kill_slashes(p);
++                                (void) rmdir_parents(p, config_path);
++                        }
+ 
+                         unit_file_changes_add(changes, n_changes, UNIT_FILE_UNLINK, p, NULL);
+ 
+                         q = mark_symlink_for_removal(&remove_symlinks_to, p);
+                         if (q < 0)
+                                 return q;
+-                        if (q > 0)
++                        if (q > 0 && !dry_run)
+                                 *restart = true;
+                 }
+         }
+@@ -464,6 +467,7 @@ static int remove_marked_symlinks_fd(
+ static int remove_marked_symlinks(
+                 Set *remove_symlinks_to,
+                 const char *config_path,
++                bool dry_run,
+                 UnitFileChange **changes,
+                 unsigned *n_changes) {
+ 
+@@ -491,7 +495,7 @@ static int remove_marked_symlinks(
+                 }
+ 
+                 /* This takes possession of cfd and closes it */
+-                q = remove_marked_symlinks_fd(remove_symlinks_to, cfd, config_path, config_path, &restart, changes, n_changes);
++                q = remove_marked_symlinks_fd(remove_symlinks_to, cfd, config_path, config_path, dry_run, &restart, changes, n_changes);
+                 if (r == 0)
+                         r = q;
+         } while (restart);
+@@ -1604,6 +1608,7 @@ int unit_file_unmask(
+         _cleanup_strv_free_ char **todo = NULL;
+         size_t n_todo = 0, n_allocated = 0;
+         char **i;
++        bool dry_run;
+         int r, q;
+ 
+         assert(scope >= 0);
+@@ -1617,6 +1622,8 @@ int unit_file_unmask(
+         if (r < 0)
+                 return r;
+ 
++        dry_run = !!(flags & UNIT_FILE_DRY_RUN);
++
+         STRV_FOREACH(i, files) {
+                 _cleanup_free_ char *path = NULL;
+ 
+@@ -1655,7 +1662,7 @@ int unit_file_unmask(
+                 if (!path)
+                         return -ENOMEM;
+ 
+-                if (unlink(path) < 0) {
++                if (!dry_run && unlink(path) < 0) {
+                         if (errno != -ENOENT && r >= 0)
+                                 r = -errno;
+                 } else {
+@@ -1667,7 +1674,7 @@ int unit_file_unmask(
+                 }
+         }
+ 
+-        q = remove_marked_symlinks(remove_symlinks_to, config_path, changes, n_changes);
++        q = remove_marked_symlinks(remove_symlinks_to, config_path, dry_run, changes, n_changes);
+         if (r >= 0)
+                 r = q;
+ 
+@@ -1931,7 +1938,7 @@ int unit_file_disable(
+         if (r < 0)
+                 return r;
+ 
+-        return remove_marked_symlinks(remove_symlinks_to, config_path, changes, n_changes);
++        return remove_marked_symlinks(remove_symlinks_to, config_path, !!(flags & UNIT_FILE_DRY_RUN), changes, n_changes);
+ }
+ 
+ int unit_file_reenable(
+@@ -2243,7 +2250,7 @@ static int execute_preset(
+                 if (r < 0)
+                         return r;
+ 
+-                r = remove_marked_symlinks(remove_symlinks_to, config_path, changes, n_changes);
++                r = remove_marked_symlinks(remove_symlinks_to, config_path, false, changes, n_changes);
+         } else
+                 r = 0;
+ 
+diff --git a/src/shared/install.h b/src/shared/install.h
+index c961b53d0..c236dcfd8 100644
+--- a/src/shared/install.h
++++ b/src/shared/install.h
+@@ -68,7 +68,8 @@ typedef enum UnitFileChangeType {
+ 
+ typedef enum UnitFileFlags {
+         UNIT_FILE_RUNTIME = 1,
+-        UNIT_FILE_FORCE = 1 << 1
++        UNIT_FILE_FORCE = 1 << 1,
++        UNIT_FILE_DRY_RUN = 1 << 2
+ } UnitFileFlags;
+ 
+ static inline bool unit_file_change_is_modification(UnitFileChangeType type) {
+diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
+index e0dbf0fda..ff8b4e978 100644
+--- a/src/systemctl/systemctl.c
++++ b/src/systemctl/systemctl.c
+@@ -5722,6 +5722,63 @@ finish:
+         return r;
+ }
+ 
++static int show_installation_targets_client_side(const char *name) {
++        UnitFileChange *changes = NULL;
++        unsigned n_changes = 0, i;
++        UnitFileFlags flags;
++        char **p;
++        int r;
++
++        p = STRV_MAKE(name);
++        flags = UNIT_FILE_DRY_RUN |
++                (arg_runtime ? UNIT_FILE_RUNTIME : 0);
++
++        r = unit_file_disable(UNIT_FILE_SYSTEM, flags, NULL, p, &changes, &n_changes);
++        if (r < 0)
++                return log_error_errno(r, "Failed to get file links for %s: %m", name);
++
++        for (i = 0; i < n_changes; i++)
++                if (changes[i].type == UNIT_FILE_UNLINK)
++                        printf("  %s\n", changes[i].path);
++
++        return 0;
++}
++
++static int show_installation_targets(sd_bus *bus, const char *name) {
++        _cleanup_(sd_bus_message_unrefp) sd_bus_message *reply = NULL;
++        _cleanup_(sd_bus_error_free) sd_bus_error error = SD_BUS_ERROR_NULL;
++        const char *link;
++        int r;
++
++        r = sd_bus_call_method(
++                        bus,
++                        "org.freedesktop.systemd1",
++                        "/org/freedesktop/systemd1",
++                        "org.freedesktop.systemd1.Manager",
++                        "GetUnitFileLinks",
++                        &error,
++                        &reply,
++                        "sb", name, arg_runtime);
++        if (r < 0)
++                return log_error_errno(r, "Failed to get unit file links for %s: %s", name, bus_error_message(&error, r));
++
++        r = sd_bus_message_enter_container(reply, SD_BUS_TYPE_ARRAY, "s");
++        if (r < 0)
++                return bus_log_parse_error(r);
++
++        while ((r = sd_bus_message_read(reply, "s", &link)) > 0)
++                printf("  %s\n", link);
++
++        if (r < 0)
++                return bus_log_parse_error(r);
++
++        r = sd_bus_message_exit_container(reply);
++        if (r < 0)
++                return bus_log_parse_error(r);
++
++        return 0;
++}
++
+ static int unit_is_enabled(sd_bus *bus, char **args) {
+ 
+         _cleanup_bus_error_free_ sd_bus_error error = SD_BUS_ERROR_NULL;
+@@ -5755,8 +5812,14 @@ static int unit_is_enabled(sd_bus *bus, char **args) {
+                             state == UNIT_FILE_INDIRECT)
+                                 enabled = true;
+ 
+-                        if (!arg_quiet)
++                        if (!arg_quiet) {
+                                 puts(unit_file_state_to_string(state));
++                                if (arg_full) {
++                                        r = show_installation_targets_client_side(*name);
++                                        if (r < 0)
++                                                return r;
++                                }
++                        }
+                 }
+ 
+         } else {
+@@ -5785,8 +5848,14 @@ static int unit_is_enabled(sd_bus *bus, char **args) {
+                         if (STR_IN_SET(s, "enabled", "enabled-runtime", "static", "indirect"))
+                                 enabled = true;
+ 
+-                        if (!arg_quiet)
++                        if (!arg_quiet) {
+                                 puts(s);
++                                if (arg_full) {
++                                        r = show_installation_targets(bus, *name);
++                                        if (r < 0)
++                                                return r;
++                                }
++                        }
+                 }
+         }
+ 

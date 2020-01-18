@@ -1,0 +1,84 @@
+From f2300a5c3226d3a66d77c34ae811401c638f430f Mon Sep 17 00:00:00 2001
+From: Ronny Chevalier <chevalier.ronny@gmail.com>
+Date: Mon, 21 Sep 2015 15:45:51 +0200
+Subject: [PATCH] core: fix group ownership when Group is set
+
+When Group is set in the unit, the runtime directories are owned by
+this group and not the default group of the user (same for cgroup paths
+and standard outputs)
+
+Fix #1231
+
+Cherry-picked from: 5bc7452b3219456e07f931e40da30bb94a884293
+Resolves: #1324826
+---
+ src/core/execute.c                       | 19 +++++++++++--------
+ src/test/test-execute.c                  |  1 +
+ test/exec-runtimedirectory-owner.service |  9 +++++++++
+ 3 files changed, 21 insertions(+), 8 deletions(-)
+ create mode 100644 test/exec-runtimedirectory-owner.service
+
+diff --git a/src/core/execute.c b/src/core/execute.c
+index 1815e3de2..8172c8b44 100644
+--- a/src/core/execute.c
++++ b/src/core/execute.c
+@@ -629,14 +629,6 @@ static int enforce_groups(const ExecContext *context, const char *username, gid_
+          * we avoid NSS lookups for gid=0. */
+ 
+         if (context->group || username) {
+-
+-                if (context->group) {
+-                        const char *g = context->group;
+-
+-                        if ((r = get_group_creds(&g, &gid)) < 0)
+-                                return r;
+-                }
+-
+                 /* First step, initialize groups from /etc/groups */
+                 if (username && gid != 0) {
+                         if (initgroups(username, gid) < 0)
+@@ -1374,6 +1366,17 @@ static int exec_child(
+                 }
+         }
+ 
++        if (context->group) {
++                const char *g = context->group;
++
++                r = get_group_creds(&g, &gid);
++                if (r < 0) {
++                        *exit_status = EXIT_GROUP;
++                        return r;
++                }
++        }
++
++
+         /* If a socket is connected to STDIN/STDOUT/STDERR, we
+          * must sure to drop O_NONBLOCK */
+         if (socket_fd >= 0)
+diff --git a/src/test/test-execute.c b/src/test/test-execute.c
+index 90b1c871c..38522a168 100644
+--- a/src/test/test-execute.c
++++ b/src/test/test-execute.c
+@@ -144,6 +144,7 @@ static void test_exec_umask(Manager *m) {
+ static void test_exec_runtimedirectory(Manager *m) {
+         test(m, "exec-runtimedirectory.service", 0, CLD_EXITED);
+         test(m, "exec-runtimedirectory-mode.service", 0, CLD_EXITED);
++        test(m, "exec-runtimedirectory-owner.service", 0, CLD_EXITED);
+ }
+ 
+ int main(int argc, char *argv[]) {
+diff --git a/test/exec-runtimedirectory-owner.service b/test/exec-runtimedirectory-owner.service
+new file mode 100644
+index 000000000..077e08d1c
+--- /dev/null
++++ b/test/exec-runtimedirectory-owner.service
+@@ -0,0 +1,9 @@
++[Unit]
++Description=Test for RuntimeDirectory owner (must not be the default group of the user if Group is set)
++
++[Service]
++ExecStart=/bin/sh -c 'f=/tmp/test-exec_runtimedirectory-owner;g=$(stat -c %G $f); echo "$g"; exit $(test $g = "nobody")'
++Type=oneshot
++Group=nobody
++User=root
++RuntimeDirectory=test-exec_runtimedirectory-owner

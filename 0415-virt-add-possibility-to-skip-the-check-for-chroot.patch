@@ -1,0 +1,55 @@
+From f3750cbfd21b2e5f6f46077082f60e3a74ee4807 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Mon, 17 Oct 2016 08:09:58 +0200
+Subject: [PATCH] virt: add possibility to skip the check for chroot
+
+Cherry-picked from: 08a28eeca70eeefb55af61191b63e4c938daca73
+Resolves: #1379852
+---
+ src/shared/env-util.c | 10 ++++++++++
+ src/shared/env-util.h |  2 ++
+ src/shared/util.c     |  3 +++
+ 3 files changed, 15 insertions(+)
+
+diff --git a/src/shared/env-util.c b/src/shared/env-util.c
+index 038246d21..e8da4c978 100644
+--- a/src/shared/env-util.c
++++ b/src/shared/env-util.c
+@@ -449,3 +449,13 @@ char **strv_env_clean_with_callback(char **e, void (*invalid_callback)(const cha
+ 
+         return e;
+ }
++
++int getenv_bool(const char *p) {
++        const char *e;
++
++        e = getenv(p);
++        if (!e)
++                return -ENXIO;
++
++        return parse_boolean(e);
++}
+diff --git a/src/shared/env-util.h b/src/shared/env-util.h
+index 618441a65..252d87be1 100644
+--- a/src/shared/env-util.h
++++ b/src/shared/env-util.h
+@@ -45,3 +45,5 @@ char **strv_env_unset_many(char **l, ...) _sentinel_;
+ 
+ char *strv_env_get_n(char **l, const char *name, size_t k) _pure_;
+ char *strv_env_get(char **x, const char *n) _pure_;
++
++int getenv_bool(const char *p);
+diff --git a/src/shared/util.c b/src/shared/util.c
+index 357fbfe7d..eab5ab816 100644
+--- a/src/shared/util.c
++++ b/src/shared/util.c
+@@ -3776,6 +3776,9 @@ int files_same(const char *filea, const char *fileb) {
+ int running_in_chroot(void) {
+         int ret;
+ 
++        if (getenv_bool("SYSTEMD_IGNORE_CHROOT") > 0)
++                return 0;
++
+         ret = files_same("/proc/1/root", "/");
+         if (ret < 0)
+                 return ret;

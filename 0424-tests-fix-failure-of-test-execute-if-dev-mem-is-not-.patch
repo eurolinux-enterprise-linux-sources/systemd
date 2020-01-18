@@ -1,0 +1,41 @@
+From 0f3a67a0e4d243952e9ae4965a30e704885f03ef Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekletar@users.noreply.github.com>
+Date: Fri, 6 Jan 2017 10:27:35 +0100
+Subject: [PATCH] tests: fix failure of test-execute if /dev/mem is not
+ available (#5028)
+
+/dev/mem isn't necessarily available. Recently, I've encountered arm64
+systems that didn't provide raw memory access via /dev/mem. Instead,
+let's use /dev/kmsg since we don't support systems w/o it anyway.
+
+Cherry-picked from: 01349f5d01e0b59168722403b0c1c2325b15512c
+Resolves: #1410056
+---
+ test/exec-privatedevices-no.service  | 2 +-
+ test/exec-privatedevices-yes.service | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/test/exec-privatedevices-no.service b/test/exec-privatedevices-no.service
+index cf4f275fb..af1daf78f 100644
+--- a/test/exec-privatedevices-no.service
++++ b/test/exec-privatedevices-no.service
+@@ -2,6 +2,6 @@
+ Description=Test for PrivateDev=no
+ 
+ [Service]
+-ExecStart=/bin/sh -c 'exit $(test -c /dev/mem)'
++ExecStart=/bin/sh -c 'exit $(test -c /dev/kmsg)'
+ Type=oneshot
+ PrivateDevices=no
+diff --git a/test/exec-privatedevices-yes.service b/test/exec-privatedevices-yes.service
+index 85b3f4f98..384a7b01a 100644
+--- a/test/exec-privatedevices-yes.service
++++ b/test/exec-privatedevices-yes.service
+@@ -2,6 +2,6 @@
+ Description=Test for PrivateDev=yes
+ 
+ [Service]
+-ExecStart=/bin/sh -c 'exit $(test ! -c /dev/mem)'
++ExecStart=/bin/sh -c 'exit $(test ! -c /dev/kmsg)'
+ Type=oneshot
+ PrivateDevices=yes

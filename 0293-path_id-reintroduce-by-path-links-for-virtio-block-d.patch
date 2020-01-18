@@ -1,0 +1,48 @@
+From b6fea1a0e0fd830e1aa82accf389cb8bfd0f0f37 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Tue, 9 Feb 2016 09:57:45 +0100
+Subject: [PATCH] path_id: reintroduce by-path links for virtio block devices
+
+Enumeration of virtio buses is global and hence
+non-deterministic. However, we are guaranteed there is never going to be
+more than one virtio bus per parent PCI device. While populating
+ID_PATH we simply skip virtio part of the syspath and we extend the path
+using the sysname of the parent PCI device.
+
+With this patch udev creates following by-path links for virtio-blk
+device /dev/vda which contains two partitions.
+
+ls -l /dev/disk/by-path/
+total 0
+lrwxrwxrwx 1 root root  9 Feb  9 10:47 virtio-pci-0000:00:05.0 -> ../../vda
+lrwxrwxrwx 1 root root 10 Feb  9 10:47 virtio-pci-0000:00:05.0-part1 -> ../../vda1
+lrwxrwxrwx 1 root root 10 Feb  9 10:47 virtio-pci-0000:00:05.0-part2 -> ../../vda2
+
+See:
+http://lists.linuxfoundation.org/pipermail/virtualization/2015-August/030328.html
+
+Fixes #2501
+
+Cherry-picked from: f073b1b3c0f4f0df1b0bd61042ce85fb5d27d407
+Resolves: #952567
+---
+ src/udev/udev-builtin-path_id.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/udev/udev-builtin-path_id.c b/src/udev/udev-builtin-path_id.c
+index 3b72922d4..8359e236a 100644
+--- a/src/udev/udev-builtin-path_id.c
++++ b/src/udev/udev-builtin-path_id.c
+@@ -698,6 +698,12 @@ restart:
+                         path_prepend(&path, "xen-%s", udev_device_get_sysname(parent));
+                         parent = skip_subsystem(parent, "xen");
+                         supported_parent = true;
++                } else if (streq(subsys, "virtio")) {
++                        while (parent && streq_ptr("virtio", udev_device_get_subsystem(parent)))
++                                parent = udev_device_get_parent(parent);
++                        path_prepend(&path, "virtio-pci-%s", udev_device_get_sysname(parent));
++                        supported_transport = true;
++                        supported_parent = true;
+                 } else if (streq(subsys, "scm")) {
+                         path_prepend(&path, "scm-%s", udev_device_get_sysname(parent));
+                         parent = skip_subsystem(parent, "scm");

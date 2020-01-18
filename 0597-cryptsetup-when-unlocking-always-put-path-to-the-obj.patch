@@ -1,0 +1,52 @@
+From ec71ee722b573560c14840214adab862b09280c3 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Tue, 12 Dec 2017 17:49:14 +0100
+Subject: [PATCH] cryptsetup: when unlocking always put path to the object into
+ Id
+
+Some ask-password agents (e.g. clevis-luks-askpass) use Id option from
+/run/systemd/ask-password/ask* file in order to obtain the password for
+the device.
+
+Id option should be in the following format,
+e.g. Id=subsystem:data. Where data part is supposed to identify object
+that ask-password query is done for. Since
+e51b9486d1b59e72c293028fed1384f4e4ef09aa this field has format
+Id=cryptsetup:/dev/block/major:minor when systemd-cryptsetup is
+unlocking encrypted block device. However, crypttab also supports
+encrypted image files in which case we usually set data part of Id to
+"vol on mountpoint". This is unexpected and actually breaks network
+based device encryption as implemented by clevis.
+
+Example:
+$ cat /etc/crypttab
+clevis-unlocked /clevis-test-disk-image none luks,_netdev
+$ systemctl start 'systemd-cryptsetup@clevis\x2dunlocked.service'
+$ grep Id /run/systemd/ask-password/ask*
+
+Before:
+$ Id=cryptsetup:clevis-unlocked on /clevis-test-disk-image-mnt
+
+After:
+$ Id=cryptsetup:/clevis-test-disk-image
+
+(cherry-picked from commit 5a9f1b05ed6dad48958097fb37811668e69447fb)
+
+Resolves: #1511043
+---
+ src/cryptsetup/cryptsetup.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/cryptsetup/cryptsetup.c b/src/cryptsetup/cryptsetup.c
+index 5dedb073e..c57d2b294 100644
+--- a/src/cryptsetup/cryptsetup.c
++++ b/src/cryptsetup/cryptsetup.c
+@@ -342,7 +342,7 @@ static int get_password(const char *vol, const char *src, usec_t until, bool acc
+                 escaped_name = maj_min;
+                 maj_min = NULL;
+         } else
+-                escaped_name = cescape(name);
++                escaped_name = cescape(src);
+ 
+         if (!escaped_name)
+                 return log_oom();

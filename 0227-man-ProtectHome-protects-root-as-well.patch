@@ -1,0 +1,30 @@
+From 421fa6e97928bca5a55414ad38bd9659d0e99a15 Mon Sep 17 00:00:00 2001
+From: Christian Hesse <mail@eworm.de>
+Date: Tue, 30 Jun 2015 19:12:20 +0200
+Subject: [PATCH] man: ProtectHome= protects /root as well
+
+(cherry picked from commit 5833143708733a3fc9e6935922bf11d7d27cb768)
+
+Cherry-picked from: 5833143
+Resolves: #1222517
+---
+ man/systemd.exec.xml | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/man/systemd.exec.xml b/man/systemd.exec.xml
+index 56b53e601..5b93aa71e 100644
+--- a/man/systemd.exec.xml
++++ b/man/systemd.exec.xml
+@@ -858,9 +858,10 @@
+ 
+         <listitem><para>Takes a boolean argument or
+         <literal>read-only</literal>. If true, the directories
+-        <filename>/home</filename> and <filename>/run/user</filename>
++        <filename>/home</filename>, <filename>/root</filename> and
++        <filename>/run/user</filename>
+         are made inaccessible and empty for processes invoked by this
+-        unit. If set to <literal>read-only</literal>, the two
++        unit. If set to <literal>read-only</literal>, the three
+         directories are made read-only instead. It is recommended to
+         enable this setting for all long-running services (in
+         particular network-facing ones), to ensure they cannot get

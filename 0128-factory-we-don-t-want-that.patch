@@ -1,0 +1,47 @@
+From c5177fff7f87e08175f6a5c9dba204ea31bfd13a Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Thu, 16 Apr 2015 11:53:05 +0200
+Subject: [PATCH] factory: we don't want that
+
+---
+ Makefile.am            | 16 ++++++++--------
+ tmpfiles.d/etc.conf.m4 |  2 --
+ 2 files changed, 8 insertions(+), 10 deletions(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index 6d6b650f2..8474b2912 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -2288,14 +2288,14 @@ INSTALL_DIRS += \
+ endif
+ 
+ # ------------------------------------------------------------------------------
+-dist_factory_etc_DATA = \
+-	factory/etc/nsswitch.conf
+-
+-if HAVE_PAM
+-dist_factory_pam_DATA = \
+-	factory/etc/pam.d/system-auth \
+-	factory/etc/pam.d/other
+-endif
++#dist_factory_etc_DATA = \
++#	factory/etc/nsswitch.conf
++#
++#if HAVE_PAM
++#dist_factory_pam_DATA = \
++#	factory/etc/pam.d/system-auth \
++#	factory/etc/pam.d/other
++#endif
+ 
+ # ------------------------------------------------------------------------------
+ if ENABLE_FIRSTBOOT
+diff --git a/tmpfiles.d/etc.conf.m4 b/tmpfiles.d/etc.conf.m4
+index 125d6e0a1..4937719bd 100644
+--- a/tmpfiles.d/etc.conf.m4
++++ b/tmpfiles.d/etc.conf.m4
+@@ -10,5 +10,3 @@
+ L /etc/os-release - - - - ../usr/lib/os-release
+ L /etc/localtime - - - - ../usr/share/zoneinfo/UTC
+ L+ /etc/mtab - - - - ../proc/self/mounts
+-C /etc/nsswitch.conf - - - -
+-C /etc/pam.d - - - -

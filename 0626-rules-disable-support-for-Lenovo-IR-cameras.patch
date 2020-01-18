@@ -1,0 +1,37 @@
+From 647615bfa4015336eb88f6cb44dc111f1d713df7 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Wed, 13 Jun 2018 14:33:18 +0200
+Subject: [PATCH] rules: disable support for Lenovo IR cameras
+
+Resolves: #1540418
+---
+ Makefile.am                                    | 1 +
+ rules/40-redhat-disable-lenovo-ir-camera.rules | 6 ++++++
+ 2 files changed, 7 insertions(+)
+ create mode 100644 rules/40-redhat-disable-lenovo-ir-camera.rules
+
+diff --git a/Makefile.am b/Makefile.am
+index 8c73326fa..cbc120dad 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -3522,6 +3522,7 @@ dist_udevrules_DATA += \
+ 	rules/80-net-setup-link.rules \
+ 	rules/95-udev-late.rules \
+ 	rules/40-redhat.rules \
++	rules/40-redhat-disable-lenovo-ir-camera.rules \
+ 	rules/73-idrac.rules \
+         rules/80-net-name-slot.rules
+ 
+diff --git a/rules/40-redhat-disable-lenovo-ir-camera.rules b/rules/40-redhat-disable-lenovo-ir-camera.rules
+new file mode 100644
+index 000000000..ea326d4ab
+--- /dev/null
++++ b/rules/40-redhat-disable-lenovo-ir-camera.rules
+@@ -0,0 +1,6 @@
++# Disable known IR cameras in Lenovo Notebooks
++SUBSYSTEM=="usb", ATTRS{idVendor}=="5986", ATTRS{idProduct}=="211a", ATTR{authorized}="0"
++SUBSYSTEM=="usb", ATTRS{idVendor}=="5986", ATTRS{idProduct}=="1141", ATTR{authorized}="0"
++SUBSYSTEM=="usb", ATTRS{idVendor}=="04f2", ATTRS{idProduct}=="b605", ATTR{authorized}="0"
++SUBSYSTEM=="usb", ATTRS{idVendor}=="04f2", ATTRS{idProduct}=="b613", ATTR{authorized}="0"
++SUBSYSTEM=="usb", ATTRS{idVendor}=="04f2", ATTRS{idProduct}=="b615", ATTR{authorized}="0"
+\ No newline at end of file

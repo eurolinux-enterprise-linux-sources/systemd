@@ -1,0 +1,30 @@
+From 9b33863a2cfa31bbe57bab685776b64731f528f1 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Wed, 30 Mar 2016 13:49:50 +0200
+Subject: [PATCH] core: improve error message when starting template without
+ instance
+
+Cherry-picked from: 5d512d54429aa9d2f4a0ca215bb2e982db720d6b
+Resolves: #1142369
+---
+ src/core/manager.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/core/manager.c b/src/core/manager.c
+index bde17ce0b..bb5050303 100644
+--- a/src/core/manager.c
++++ b/src/core/manager.c
+@@ -1328,8 +1328,12 @@ int manager_load_unit_prepare(
+ 
+         t = unit_name_to_type(name);
+ 
+-        if (t == _UNIT_TYPE_INVALID || !unit_name_is_valid(name, UNIT_NAME_PLAIN|UNIT_NAME_INSTANCE))
++        if (t == _UNIT_TYPE_INVALID || !unit_name_is_valid(name, UNIT_NAME_PLAIN|UNIT_NAME_INSTANCE)) {
++                if (unit_name_is_valid(name, UNIT_NAME_TEMPLATE))
++                        return sd_bus_error_setf(e, SD_BUS_ERROR_INVALID_ARGS, "Unit name %s is missing the instance name.", name);
++
+                 return sd_bus_error_setf(e, SD_BUS_ERROR_INVALID_ARGS, "Unit name %s is not valid.", name);
++        }
+ 
+         ret = manager_get_unit(m, name);
+         if (ret) {

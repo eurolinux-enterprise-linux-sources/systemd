@@ -1,0 +1,191 @@
+From 32b4631e74262e02094c6402d39d1e4264442037 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Thu, 9 Apr 2015 18:32:21 +0200
+Subject: [PATCH] util: add shell_maybe_quote() call for preparing a string for
+ shell cmdline inclusion
+
+If necessary the passed string is enclosed in "", and all special
+characters escapes.
+
+This also ports over usage in bus-util.c and job.c to use this, instead
+of a incorrect local implementation that forgets to properly escape.
+
+Conflicts:
+	src/shared/util.c
+	src/shared/util.h
+
+Cherry-picked from: 019c7fba
+Resolves: #1016680
+---
+ src/core/job.c                   |  8 +++---
+ src/libsystemd/sd-bus/bus-util.c | 15 +++++------
+ src/shared/util.c                | 45 ++++++++++++++++++++++++++++++--
+ src/shared/util.h                |  2 ++
+ src/test/test-util.c             | 19 ++++++++++++++
+ 5 files changed, 74 insertions(+), 15 deletions(-)
+
+diff --git a/src/core/job.c b/src/core/job.c
+index 4740ff18c..7416386a1 100644
+--- a/src/core/job.c
++++ b/src/core/job.c
+@@ -679,15 +679,13 @@ static void job_print_status_message(Unit *u, JobType t, JobResult result) {
+                         break;
+ 
+                 case JOB_FAILED: {
+-                        bool quotes;
++                        _cleanup_free_ char *quoted = NULL;
+ 
+-                        quotes = chars_intersect(u->id, SHELL_NEED_QUOTES);
++                        quoted = shell_maybe_quote(u->id);
+ 
+                         manager_flip_auto_status(u->manager, true);
+                         unit_status_printf(u, ANSI_HIGHLIGHT_RED_ON "FAILED" ANSI_HIGHLIGHT_OFF, format);
+-                        manager_status_printf(u->manager, STATUS_TYPE_NORMAL, NULL,
+-                                              "See \"systemctl status %s%s%s\" for details.",
+-                                              quotes ? "'" : "", u->id, quotes ? "'" : "");
++                        manager_status_printf(u->manager, STATUS_TYPE_NORMAL, NULL, "See 'systemctl status %s' for details.", strna(quoted));
+                         break;
+                 }
+ 
+diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
+index 52d4ebe61..b0a5a7592 100644
+--- a/src/libsystemd/sd-bus/bus-util.c
++++ b/src/libsystemd/sd-bus/bus-util.c
+@@ -1709,16 +1709,15 @@ static int check_wait_response(BusWaitForJobs *d, bool quiet) {
+                 else if (streq(d->result, "unsupported"))
+                         log_error("Operation on or unit type of %s not supported on this system.", strna(d->name));
+                 else if (!streq(d->result, "done") && !streq(d->result, "skipped")) {
+-                        if (d->name) {
+-                                bool quotes;
++                        _cleanup_free_ char *quoted = NULL;
+ 
+-                                quotes = chars_intersect(d->name, SHELL_NEED_QUOTES);
++                        if (d->name)
++                                quoted = shell_maybe_quote(d->name);
+ 
+-                                log_error("Job for %s failed. See \"systemctl status %s%s%s\" and \"journalctl -xe\" for details.",
+-                                          d->name,
+-                                          quotes ? "'" : "", d->name, quotes ? "'" : "");
+-                        } else
+-                                log_error("Job failed. See \"journalctl -xe\" for details.");
++                        if (quoted)
++                                log_error("Job for %s failed. See 'systemctl status %s' and 'journalctl -xe' for details.", d->name, quoted);
++                        else
++                                log_error("Job failed. See 'journalctl -xe' for details.");
+                 }
+         }
+ 
+diff --git a/src/shared/util.c b/src/shared/util.c
+index 649344d88..778c2b0e0 100644
+--- a/src/shared/util.c
++++ b/src/shared/util.c
+@@ -1329,7 +1329,8 @@ char *cescape(const char *s) {
+ 
+         assert(s);
+ 
+-        /* Does C style string escaping. */
++        /* Does C style string escaping. May be be reversed with
++         * cunescape(). */
+ 
+         r = new(char, strlen(s)*4 + 1);
+         if (!r)
+@@ -1493,7 +1494,7 @@ char *xescape(const char *s, const char *bad) {
+ 
+         /* Escapes all chars in bad, in addition to \ and all special
+          * chars, in \xFF style escaping. May be reversed with
+-         * cunescape. */
++         * cunescape(). */
+ 
+         r = new(char, strlen(s) * 4 + 1);
+         if (!r)
+@@ -8101,3 +8102,43 @@ ssize_t string_table_lookup(const char * const *table, size_t len, const char *k
+ 
+         return -1;
+ }
++
++char *shell_maybe_quote(const char *s) {
++        const char *p;
++        char *r, *t;
++
++        assert(s);
++
++        /* Encloses a string in double quotes if necessary to make it
++         * OK as shell string. */
++
++        for (p = s; *p; p++)
++                if (*p <= ' ' ||
++                    *p >= 127 ||
++                    strchr(SHELL_NEED_QUOTES, *p))
++                        break;
++
++        if (!*p)
++                return strdup(s);
++
++        r = new(char, 1+strlen(s)*2+1+1);
++        if (!r)
++                return NULL;
++
++        t = r;
++        *(t++) = '"';
++        t = mempcpy(t, s, p - s);
++
++        for (; *p; p++) {
++
++                if (strchr(SHELL_NEED_ESCAPE, *p))
++                        *(t++) = '\\';
++
++                *(t++) = *p;
++        }
++
++        *(t++)= '"';
++        *t = 0;
++
++        return r;
++}
+diff --git a/src/shared/util.h b/src/shared/util.h
+index a83b58822..7ecfd8571 100644
+--- a/src/shared/util.h
++++ b/src/shared/util.h
+@@ -1078,3 +1078,5 @@ void sigkill_wait(pid_t *pid);
+ #define _cleanup_sigkill_wait_ _cleanup_(sigkill_wait)
+ 
+ int syslog_parse_priority(const char **p, int *priority, bool with_facility);
++
++char *shell_maybe_quote(const char *s);
+diff --git a/src/test/test-util.c b/src/test/test-util.c
+index 9515a8cbf..9ae347b43 100644
+--- a/src/test/test-util.c
++++ b/src/test/test-util.c
+@@ -1512,6 +1512,24 @@ static void test_sparse_write(void) {
+         test_sparse_write_one(fd, test_e, sizeof(test_e));
+ }
+ 
++static void test_shell_maybe_quote_one(const char *s, const char *expected) {
++        _cleanup_free_ char *r;
++
++        assert_se(r = shell_maybe_quote(s));
++        assert_se(streq(r, expected));
++}
++
++static void test_shell_maybe_quote(void) {
++
++        test_shell_maybe_quote_one("", "");
++        test_shell_maybe_quote_one("\\", "\"\\\\\"");
++        test_shell_maybe_quote_one("\"", "\"\\\"\"");
++        test_shell_maybe_quote_one("foobar", "foobar");
++        test_shell_maybe_quote_one("foo bar", "\"foo bar\"");
++        test_shell_maybe_quote_one("foo \"bar\" waldo", "\"foo \\\"bar\\\" waldo\"");
++        test_shell_maybe_quote_one("foo$bar", "\"foo\\$bar\"");
++}
++
+ int main(int argc, char *argv[]) {
+         log_parse_environment();
+         log_open();
+@@ -1589,6 +1607,7 @@ int main(int argc, char *argv[]) {
+         test_same_fd();
+         test_uid_ptr();
+         test_sparse_write();
++        test_shell_maybe_quote();
+ 
+         return 0;
+ }

@@ -1,0 +1,58 @@
+From b4f506932592b991363b8be11e40b62f861bd032 Mon Sep 17 00:00:00 2001
+From: Michael Olbrich <m.olbrich@pengutronix.de>
+Date: Fri, 24 Jul 2015 22:25:28 +0200
+Subject: [PATCH] automount: handle state changes of the corresponding mount
+ unit correctly
+
+The expire timeout must be started/stopped if the corresponding mount unit
+changes its state, e.g. it is started via local-fs.target or stopped by a
+manual umount.
+
+(cherry picked from commit 3dbadf9ef96e76f1bc472660ba5435dc0fa27a66)
+
+Resolves: #1596241
+---
+ src/core/automount.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/src/core/automount.c b/src/core/automount.c
+index 08519e49c..f57782b9b 100644
+--- a/src/core/automount.c
++++ b/src/core/automount.c
+@@ -499,6 +499,7 @@ static int automount_send_ready(Automount *a, Set *tokens, int status) {
+ 
+ int automount_update_mount(Automount *a, MountState old_state, MountState state) {
+         _cleanup_close_ int ioctl_fd = -1;
++        int r;
+ 
+         assert(a);
+ 
+@@ -506,6 +507,9 @@ int automount_update_mount(Automount *a, MountState old_state, MountState state)
+         case MOUNT_MOUNTED:
+         case MOUNT_REMOUNTING:
+                 automount_send_ready(a, a->tokens, 0);
++                r = automount_start_expire(a);
++                if (r < 0)
++                        log_unit_warning_errno(UNIT(a)->id, r, "Failed to start expiration timer, ignoring: %m");
+                 break;
+          case MOUNT_DEAD:
+          case MOUNT_UNMOUNTING:
+@@ -518,6 +522,7 @@ int automount_update_mount(Automount *a, MountState old_state, MountState state)
+          case MOUNT_FAILED:
+                 if (old_state != state)
+                         automount_send_ready(a, a->tokens, -ENODEV);
++                (void) sd_event_source_set_enabled(a->expire_event_source, SD_EVENT_OFF);
+                 break;
+         default:
+                 break;
+@@ -768,10 +773,6 @@ static void automount_enter_running(Automount *a) {
+                 goto fail;
+         }
+ 
+-        r = automount_start_expire(a);
+-        if (r < 0)
+-                log_unit_warning_errno(UNIT(a)->id, r, "Failed to start expiration timer, ignoring: %m");
+-
+         automount_set_state(a, AUTOMOUNT_RUNNING);
+         return;
+ 

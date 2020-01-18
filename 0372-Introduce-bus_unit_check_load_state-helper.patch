@@ -1,0 +1,53 @@
+From c55a7f9448378c10a7e8074db908502ae5ff60aa Mon Sep 17 00:00:00 2001
+From: Franck Bui <fbui@suse.com>
+Date: Fri, 13 Nov 2015 14:12:19 +0100
+Subject: [PATCH] Introduce bus_unit_check_load_state() helper
+
+This function is used to check that a previous unit load succeed and
+returns 0 in this case.
+
+In the case the load failed, the function setup a bus error
+accordingly and returns -errno.
+
+(cherry picked from commit 000a996dc46c187f803b67b0b0d51ad4d0bc1658)
+Related: #1256858
+---
+ src/core/dbus-unit.c | 17 +++++++++++++++++
+ src/core/dbus-unit.h |  2 ++
+ 2 files changed, 19 insertions(+)
+
+diff --git a/src/core/dbus-unit.c b/src/core/dbus-unit.c
+index 49770bfda..c3654db9e 100644
+--- a/src/core/dbus-unit.c
++++ b/src/core/dbus-unit.c
+@@ -1083,3 +1083,20 @@ int bus_unit_set_properties(
+ 
+         return n;
+ }
++
++int bus_unit_check_load_state(Unit *u, sd_bus_error *error) {
++
++        if (u->load_state == UNIT_LOADED)
++                return 0;
++
++        /* Give a better description of the unit error when
++         * possible. Note that in the case of UNIT_MASKED, load_error
++         * is not set. */
++        if (u->load_state == UNIT_MASKED)
++                return sd_bus_error_setf(error, BUS_ERROR_UNIT_MASKED, "Unit is masked.");
++
++        if (u->load_state == UNIT_NOT_FOUND)
++                return sd_bus_error_setf(error, BUS_ERROR_NO_SUCH_UNIT, "Unit not found.");
++
++        return sd_bus_error_set_errnof(error, u->load_error, "Unit is not loaded properly: %m.");
++}
+diff --git a/src/core/dbus-unit.h b/src/core/dbus-unit.h
+index 57a5e1974..433849641 100644
+--- a/src/core/dbus-unit.h
++++ b/src/core/dbus-unit.h
+@@ -37,3 +37,5 @@ int bus_unit_method_reset_failed(sd_bus *bus, sd_bus_message *message, void *use
+ int bus_unit_queue_job(sd_bus *bus, sd_bus_message *message, Unit *u, JobType type, JobMode mode, bool reload_if_possible, sd_bus_error *error);
+ int bus_unit_set_properties(Unit *u, sd_bus_message *message, UnitSetPropertiesMode mode, bool commit, sd_bus_error *error);
+ int bus_unit_method_set_properties(sd_bus *bus, sd_bus_message *message, void *userdata, sd_bus_error *error);
++
++int bus_unit_check_load_state(Unit *u, sd_bus_error *error);

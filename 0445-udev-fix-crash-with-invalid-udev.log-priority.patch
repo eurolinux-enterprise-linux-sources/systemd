@@ -1,0 +1,32 @@
+From 22423054480ed8dee70160e9e886ca372b3440f3 Mon Sep 17 00:00:00 2001
+From: Michal Schmidt <mschmidt@redhat.com>
+Date: Tue, 21 Jul 2015 18:26:09 +0200
+Subject: [PATCH] udev: fix crash with invalid udev.log-priority
+
+Fixes: https://bugzilla.redhat.com/show_bug.cgi?id=1245293
+
+Conflicts:
+	src/udev/udevd.c
+
+Cherry-picked from: e00f5bddde0daff900cbd93e1ee0530ad1ae06ce
+Resolves: #1245293
+---
+ src/udev/udevd.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/src/udev/udevd.c b/src/udev/udevd.c
+index 21e7e7f9a..82c7a5425 100644
+--- a/src/udev/udevd.c
++++ b/src/udev/udevd.c
+@@ -990,7 +990,10 @@ static void kernel_cmdline_options(struct udev *udev) {
+                         int prio;
+ 
+                         prio = util_log_priority(value);
+-                        log_set_max_level(prio);
++                        if (prio < 0)
++                                log_warning("Invalid udev.log-priority ignored: %s", value);
++                        else
++                                log_set_max_level(prio);
+                 } else if ((value = startswith(opt, "udev.children-max="))) {
+                         r = safe_atoi(value, &arg_children_max);
+                         if (r < 0)

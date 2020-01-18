@@ -1,0 +1,24 @@
+From 7dbaab7b61fb25d91178f097cf7474d855d0ae29 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Fri, 7 Oct 2016 14:05:40 +0200
+Subject: [PATCH] manager: 219 needs u->id in log_unit_debug
+
+RHEL-only
+Related: #1380259
+---
+ src/core/manager.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/core/manager.c b/src/core/manager.c
+index 27f032b9d..6d045fdf3 100644
+--- a/src/core/manager.c
++++ b/src/core/manager.c
+@@ -1637,7 +1637,7 @@ static void manager_invoke_notify_message(Manager *m, Unit *u, pid_t pid, const
+                 x = cescape(buf);
+                 if (x)
+                         y = ellipsize(x, 20, 90);
+-                log_unit_debug(u, "Got notification message \"%s\", ignoring.", strnull(y));
++                log_unit_debug(u->id, "Got notification message \"%s\", ignoring.", strnull(y));
+         }
+ }
+ 

@@ -1,0 +1,122 @@
+From e7e3e1d230c15079a3d1480c47076ffd89f1de63 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekletar@users.noreply.github.com>
+Date: Mon, 16 Oct 2017 16:15:05 +0200
+Subject: [PATCH] mount: make sure we unmount tmpfs mounts before we deactivate
+ swaps (#7076)
+
+In the past we introduced this property just for tmp.mount. However on
+todays systems usually there are many more tmpfs mounts. Most notably
+mounts backing XDG_RUNTIME_DIR for each user.
+
+Let's generalize what we already have for tmp.mount and implement the
+ordering After=swap.target for all tmpfs based mounts.
+
+(cherry picked from commit fab35afabf01a5dea651187a1ccb5ae7cd778f9d)
+
+Conflicts:
+	src/core/mount.h
+
+Resolves: #1437518
+---
+ src/core/dbus-mount.c | 10 +---------
+ src/core/mount.c      | 24 ++++++++++++++++++++++++
+ src/core/mount.h      |  1 +
+ units/tmp.mount       |  1 -
+ 4 files changed, 26 insertions(+), 10 deletions(-)
+
+diff --git a/src/core/dbus-mount.c b/src/core/dbus-mount.c
+index 53fe4edc3..04beba631 100644
+--- a/src/core/dbus-mount.c
++++ b/src/core/dbus-mount.c
+@@ -90,20 +90,12 @@ static int property_get_type(
+                 sd_bus_error *error) {
+ 
+         Mount *m = userdata;
+-        const char *d;
+ 
+         assert(bus);
+         assert(reply);
+         assert(m);
+ 
+-        if (m->from_proc_self_mountinfo && m->parameters_proc_self_mountinfo.fstype)
+-                d = m->parameters_proc_self_mountinfo.fstype;
+-        else if (m->from_fragment && m->parameters_fragment.fstype)
+-                d = m->parameters_fragment.fstype;
+-        else
+-                d = "";
+-
+-        return sd_bus_message_append(reply, "s", d);
++        return sd_bus_message_append(reply, "s", mount_get_fstype(m));
+ }
+ 
+ static BUS_DEFINE_PROPERTY_GET_ENUM(property_get_result, mount_result, MountResult);
+diff --git a/src/core/mount.c b/src/core/mount.c
+index 7ca7f5a25..a6d93b869 100644
+--- a/src/core/mount.c
++++ b/src/core/mount.c
+@@ -119,6 +119,21 @@ static bool needs_quota(const MountParameters *p) {
+                                  "usrquota\0" "grpquota\0" "quota\0" "usrjquota\0" "grpjquota\0");
+ }
+ 
++const char *mount_get_fstype(const Mount *m) {
++        const char *type = NULL;
++
++        assert(m);
++
++        if (m->from_proc_self_mountinfo && m->parameters_proc_self_mountinfo.fstype)
++                type = m->parameters_proc_self_mountinfo.fstype;
++        else if (m->from_fragment && m->parameters_fragment.fstype)
++                type = m->parameters_fragment.fstype;
++        else
++                type = "";
++
++        return type;
++}
++
+ static void mount_init(Unit *u) {
+         Mount *m = MOUNT(u);
+ 
+@@ -236,6 +251,7 @@ _pure_ static MountParameters* get_mount_parameters(Mount *m) {
+ 
+ static int mount_add_mount_links(Mount *m) {
+         _cleanup_free_ char *parent = NULL;
++        const char *fstype;
+         MountParameters *pm;
+         Unit *other;
+         Iterator i;
+@@ -292,6 +308,14 @@ static int mount_add_mount_links(Mount *m) {
+                 }
+         }
+ 
++        /* If this is a tmpfs mount then we have to unmount it before we try to deactivate swaps */
++        fstype = mount_get_fstype(m);
++        if (streq(fstype, "tmpfs")) {
++                r = unit_add_dependency_by_name(UNIT(m), UNIT_AFTER, SPECIAL_SWAP_TARGET, NULL, true);
++                if (r < 0)
++                        return r;
++        }
++
+         return 0;
+ }
+ 
+diff --git a/src/core/mount.h b/src/core/mount.h
+index d6987e6fa..353222000 100644
+--- a/src/core/mount.h
++++ b/src/core/mount.h
+@@ -130,3 +130,4 @@ const char* mount_result_to_string(MountResult i) _const_;
+ MountResult mount_result_from_string(const char *s) _pure_;
+ 
+ void warn_if_dir_nonempty(const char *unit, const char* where);
++const char *mount_get_fstype(const Mount *m);
+diff --git a/units/tmp.mount b/units/tmp.mount
+index 8c53a8705..af0cf4a55 100644
+--- a/units/tmp.mount
++++ b/units/tmp.mount
+@@ -13,7 +13,6 @@ ConditionPathIsSymbolicLink=!/tmp
+ DefaultDependencies=no
+ Conflicts=umount.target
+ Before=local-fs.target umount.target
+-After=swap.target
+ 
+ [Mount]
+ What=tmpfs

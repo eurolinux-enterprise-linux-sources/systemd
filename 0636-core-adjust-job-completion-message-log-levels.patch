@@ -1,0 +1,75 @@
+From ea366cda56dc0550b9829e4d9e733cb8b70ffb30 Mon Sep 17 00:00:00 2001
+From: Michal Schmidt <mschmidt@redhat.com>
+Date: Tue, 21 Jul 2015 19:07:24 +0200
+Subject: [PATCH] core: adjust job completion message log levels
+
+We do not print all non-OK job completion status messages to the console
+in red, because not all of them are plain errors. We do however log the
+same messages as LOG_ERR.
+
+Differentiate the log levels by deducing them from the job result in a
+way that more or less matches the color of the console message.
+
+(cherry picked from commit 64f575d2ab9a6743d3c7172b7591c88ba243cf1b)
+
+Related: #1506256
+---
+ src/core/job.c | 19 +++++++++++++++----
+ 1 file changed, 15 insertions(+), 4 deletions(-)
+
+diff --git a/src/core/job.c b/src/core/job.c
+index 086050aa7..1861c8a63 100644
+--- a/src/core/job.c
++++ b/src/core/job.c
+@@ -714,6 +714,17 @@ static void job_print_status_message(Unit *u, JobType t, JobResult result) {
+ static void job_log_status_message(Unit *u, JobType t, JobResult result) {
+         const char *format;
+         char buf[LINE_MAX];
++        static const int job_result_log_level[_JOB_RESULT_MAX] = {
++                [JOB_DONE]        = LOG_INFO,
++                [JOB_CANCELED]    = LOG_INFO,
++                [JOB_TIMEOUT]     = LOG_ERR,
++                [JOB_FAILED]      = LOG_ERR,
++                [JOB_DEPENDENCY]  = LOG_WARNING,
++                [JOB_SKIPPED]     = LOG_NOTICE,
++                [JOB_INVALID]     = LOG_INFO,
++                [JOB_ASSERT]      = LOG_WARNING,
++                [JOB_UNSUPPORTED] = LOG_WARNING,
++        };
+ 
+         assert(u);
+         assert(t >= 0);
+@@ -738,14 +749,14 @@ static void job_log_status_message(Unit *u, JobType t, JobResult result) {
+ 
+                 mid = result == JOB_DONE ? SD_MESSAGE_UNIT_STARTED : SD_MESSAGE_UNIT_FAILED;
+                 log_unit_struct(u->id,
+-                                result == JOB_DONE ? LOG_INFO : LOG_ERR,
++                                job_result_log_level[result],
+                                 LOG_MESSAGE_ID(mid),
+                                 LOG_MESSAGE("%s", buf),
+                                 "RESULT=%s", job_result_to_string(result),
+                                 NULL);
+         } else if (t == JOB_STOP || t == JOB_RESTART)
+                 log_unit_struct(u->id,
+-                                result == JOB_DONE ? LOG_INFO : LOG_ERR,
++                                job_result_log_level[result],
+                                 LOG_MESSAGE_ID(SD_MESSAGE_UNIT_STOPPED),
+                                 LOG_MESSAGE("%s", buf),
+                                 "RESULT=%s", job_result_to_string(result),
+@@ -753,14 +764,14 @@ static void job_log_status_message(Unit *u, JobType t, JobResult result) {
+ 
+         else if (t == JOB_RELOAD)
+                 log_unit_struct(u->id,
+-                                result == JOB_DONE ? LOG_INFO : LOG_ERR,
++                                job_result_log_level[result],
+                                 LOG_MESSAGE_ID(SD_MESSAGE_UNIT_RELOADED),
+                                 LOG_MESSAGE("%s", buf),
+                                 "RESULT=%s", job_result_to_string(result),
+                                 NULL);
+         else
+                 log_unit_struct(u->id,
+-                                result == JOB_DONE ? LOG_INFO : LOG_ERR,
++                                job_result_log_level[result],
+                                 LOG_MESSAGE("%s", buf),
+                                 "RESULT=%s", job_result_to_string(result),
+                                 NULL);

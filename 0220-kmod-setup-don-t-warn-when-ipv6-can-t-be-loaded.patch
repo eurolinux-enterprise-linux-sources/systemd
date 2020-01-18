@@ -1,0 +1,33 @@
+From 7076491959d3e67f339a520dcdfb824a46ff5ccb Mon Sep 17 00:00:00 2001
+From: Daniel Mack <daniel@zonque.org>
+Date: Fri, 5 Jun 2015 14:59:36 +0200
+Subject: [PATCH] kmod-setup: don't warn when ipv6 can't be loaded
+
+Not having IPv6 is a valid setup. Let's not print a warning in that
+case.
+
+Addresses:
+
+  https://bugs.freedesktop.org/show_bug.cgi?id=87475
+
+(cherry picked from commit b4aa82f168913b7bff42017023b43933b3aa0d24)
+
+Cherry-picked from: b4aa82f
+Resolves: #1222517
+---
+ src/core/kmod-setup.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/core/kmod-setup.c b/src/core/kmod-setup.c
+index 97f3b9b34..6b2f29585 100644
+--- a/src/core/kmod-setup.c
++++ b/src/core/kmod-setup.c
+@@ -66,7 +66,7 @@ int kmod_setup(void) {
+                 { "autofs4",   "/sys/class/misc/autofs",    true,  NULL                },
+ 
+                 /* early configure of ::1 on the loopback device */
+-                { "ipv6",      "/sys/module/ipv6",          true,  NULL                },
++                { "ipv6",      "/sys/module/ipv6",          false,  NULL               },
+ 
+                 /* this should never be a module */
+                 { "unix",      "/proc/net/unix",            true,  NULL                },

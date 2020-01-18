@@ -1,0 +1,67 @@
+From f45b66a348f5778bd391ad1b0a0e09bf5789b415 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Sat, 24 Oct 2015 13:17:54 +0200
+Subject: [PATCH] journal: fix error handling when compressing journal objects
+
+Let's make sure we handle compression errors properly, and don't
+misunderstand an error for success.
+
+Also, let's actually compress things if lz4 is enabled.
+
+Fixes #1662.
+
+Cherry-picked from: d1afbcd22170e95c79261340071d376fe41fc3af
+Resolves: #1292447
+---
+ src/journal/journal-file.c | 12 +++++++-----
+ src/journal/journal-file.h |  5 +++++
+ 2 files changed, 12 insertions(+), 5 deletions(-)
+
+diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
+index f500568fe..a8f92e23a 100644
+--- a/src/journal/journal-file.c
++++ b/src/journal/journal-file.c
+@@ -1051,23 +1051,25 @@ static int journal_file_append_data(
+         o->data.hash = htole64(hash);
+ 
+ #if defined(HAVE_XZ) || defined(HAVE_LZ4)
+-        if (f->compress_xz &&
+-            size >= COMPRESSION_SIZE_THRESHOLD) {
++        if (JOURNAL_FILE_COMPRESS(f) && size >= COMPRESSION_SIZE_THRESHOLD) {
+                 size_t rsize;
+ 
+                 compression = compress_blob(data, size, o->data.payload, &rsize);
+ 
+-                if (compression) {
++                if (compression >= 0) {
+                         o->object.size = htole64(offsetof(Object, data.payload) + rsize);
+                         o->object.flags |= compression;
+ 
+                         log_debug("Compressed data object %"PRIu64" -> %zu using %s",
+                                   size, rsize, object_compressed_to_string(compression));
+-                }
++                } else
++                        /* Compression didn't work, we don't really care why, let's continue without compression */
++                        compression = 0;
++
+         }
+ #endif
+ 
+-        if (!compression && size > 0)
++        if (compression == 0 && size > 0)
+                 memcpy(o->data.payload, data, size);
+ 
+         r = journal_file_link_data(f, o, p, hash);
+diff --git a/src/journal/journal-file.h b/src/journal/journal-file.h
+index 403c8f760..0f29b092b 100644
+--- a/src/journal/journal-file.h
++++ b/src/journal/journal-file.h
+@@ -229,3 +229,8 @@ int journal_file_get_cutoff_realtime_usec(JournalFile *f, usec_t *from, usec_t *
+ int journal_file_get_cutoff_monotonic_usec(JournalFile *f, sd_id128_t boot, usec_t *from, usec_t *to);
+ 
+ bool journal_file_rotate_suggested(JournalFile *f, usec_t max_file_usec);
++
++static inline bool JOURNAL_FILE_COMPRESS(JournalFile *f) {
++        assert(f);
++        return f->compress_xz || f->compress_lz4;
++}

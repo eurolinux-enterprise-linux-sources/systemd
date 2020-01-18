@@ -1,0 +1,120 @@
+From bae0c1d66cba62b19d39a3a79cb76fbd5d4ef7e7 Mon Sep 17 00:00:00 2001
+From: Jan Rybar <jrybar@redhat.com>
+Date: Thu, 17 Aug 2017 14:38:11 +0200
+Subject: [PATCH] Add support to read lz4 compressed journals
+
+Functionality already in codebase, but deactivated in RHEL
+Changed calling of LZ4 functions due to deprecation of the originals.
+Fixed typecasting of max_bytes to size_t in debuglog()
+
+Resolves: rhbz#1431687
+
+changes to .spec file:
+
+@@ -552,6 +553,7 @@ BuildRequires:  libblkid-devel
+ BuildRequires:  xz-devel
+ BuildRequires:  zlib-devel
+ BuildRequires:  bzip2-devel
++BuildRequires:  lz4-devel
+ BuildRequires:  libidn-devel
+ BuildRequires:  libcurl-devel
+ BuildRequires:  kmod-devel
+@@ -742,6 +744,7 @@ CONFIGURE_OPTS=(
+     --enable-compat-libs
+     --disable-sysusers
+     --disable-ldconfig
++    --enable-lz4
+ %ifarch s390 s390x ppc %{power64} aarch64
+     --disable-lto
+ %endif
+---
+ src/journal/compress.c     | 11 ++++++++---
+ src/journal/compress.h     | 11 -----------
+ src/journal/journal-file.c |  5 ++---
+ 3 files changed, 10 insertions(+), 17 deletions(-)
+
+diff --git a/src/journal/compress.c b/src/journal/compress.c
+index 4fb09f596..3baf9e4ad 100644
+--- a/src/journal/compress.c
++++ b/src/journal/compress.c
+@@ -98,7 +98,12 @@ int compress_blob_lz4(const void *src, uint64_t src_size, void *dst, size_t *dst
+         if (src_size < 9)
+                 return -ENOBUFS;
+ 
+-        r = LZ4_compress_limitedOutput(src, dst + 8, src_size, src_size - 8 - 1);
++#if LZ4_VERSION_NUMBER >= 10700
++        r = LZ4_compress_default(src, (char*)dst + 8, src_size, src_size - 8 - 1);
++#else
++        r = LZ4_compress_limitedOutput(src, (char*)dst + 8, src_size, src_size - 8 - 1);
++#endif
++
+         if (r <= 0)
+                 return -ENOBUFS;
+ 
+@@ -458,7 +463,7 @@ int compress_stream_lz4(int fdf, int fdt, off_t max_bytes) {
+ 
+                 total_in += n;
+ 
+-                r = LZ4_compress_continue(&lz4_data, buf, out, n);
++                r = LZ4_compress_fast_continue(&lz4_data, buf, out, n, LZ4_COMPRESSBOUND(LZ4_BUFSIZE), 0);
+                 if (r == 0) {
+                         log_error("LZ4 compression failed.");
+                         return -EBADMSG;
+@@ -634,7 +639,7 @@ int decompress_stream_lz4(int fdf, int fdt, off_t max_bytes) {
+                 total_out += r;
+ 
+                 if (max_bytes != -1 && total_out > (size_t) max_bytes) {
+-                        log_debug("Decompressed stream longer than %zd bytes", max_bytes);
++                        log_debug("Decompressed stream longer than %zd bytes", (size_t) max_bytes);
+                         return -EFBIG;
+                 }
+ 
+diff --git a/src/journal/compress.h b/src/journal/compress.h
+index 136dda6d3..0f62a58d6 100644
+--- a/src/journal/compress.h
++++ b/src/journal/compress.h
+@@ -35,15 +35,9 @@ int compress_blob_lz4(const void *src, uint64_t src_size, void *dst, size_t *dst
+ 
+ static inline int compress_blob(const void *src, uint64_t src_size, void *dst, size_t *dst_size) {
+         int r;
+-#ifdef HAVE_LZ4
+-        r = compress_blob_lz4(src, src_size, dst, dst_size);
+-        if (r == 0)
+-                return OBJECT_COMPRESSED_LZ4;
+-#else
+         r = compress_blob_xz(src, src_size, dst, dst_size);
+         if (r == 0)
+                 return OBJECT_COMPRESSED_XZ;
+-#endif
+         return r;
+ }
+ 
+@@ -75,12 +69,7 @@ int compress_stream_lz4(int fdf, int fdt, off_t max_bytes);
+ int decompress_stream_xz(int fdf, int fdt, off_t max_size);
+ int decompress_stream_lz4(int fdf, int fdt, off_t max_size);
+ 
+-#ifdef HAVE_LZ4
+-#  define compress_stream compress_stream_lz4
+-#  define COMPRESSED_EXT ".lz4"
+-#else
+ #  define compress_stream compress_stream_xz
+ #  define COMPRESSED_EXT ".xz"
+-#endif
+ 
+ int decompress_stream(const char *filename, int fdf, int fdt, off_t max_bytes);
+diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
+index 0fd59ec07..ebc8e6230 100644
+--- a/src/journal/journal-file.c
++++ b/src/journal/journal-file.c
+@@ -2615,9 +2615,8 @@ int journal_file_open(
+         f->flags = flags;
+         f->prot = prot_from_flags(flags);
+         f->writable = (flags & O_ACCMODE) != O_RDONLY;
+-#if defined(HAVE_LZ4)
+-        f->compress_lz4 = compress;
+-#elif defined(HAVE_XZ)
++
++#if defined(HAVE_XZ)
+         f->compress_xz = compress;
+ #endif
+ #ifdef HAVE_GCRYPT

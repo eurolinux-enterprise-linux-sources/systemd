@@ -1,0 +1,30 @@
+From 461c10112d74ab223226554f2bb73aabaef43c9a Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Tue, 15 Aug 2017 13:29:51 +0200
+Subject: [PATCH] udev: ignore SIGCHLD from unexpected processes (#1306539)
+
+RHEL-only
+
+Author: grzegorz.halat@motorolasolutions.com
+Resolves: #1306539
+---
+ src/udev/udev-event.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/udev/udev-event.c b/src/udev/udev-event.c
+index bc115f112..0ba079201 100644
+--- a/src/udev/udev-event.c
++++ b/src/udev/udev-event.c
+@@ -610,7 +610,11 @@ static int spawn_wait(struct udev_event *event,
+                                 event->sigterm = true;
+                                 break;
+                         case SIGCHLD:
+-                                if (waitpid(pid, &status, WNOHANG) < 0)
++                                if (pid != (pid_t) fdsi.ssi_pid) {
++                                        log_debug("expected SIGCHLD from '%s' ["PID_FMT"] received from unknown process ["PID_FMT"]. Ignoring", cmd, pid, fdsi.ssi_pid);
++                                        continue;
++                                }
++                                if (waitpid(pid, &status, WNOHANG) <= 0)
+                                         break;
+                                 if (WIFEXITED(status)) {
+                                         log_debug("'%s' ["PID_FMT"] exit with return code %i", cmd, pid, WEXITSTATUS(status));

@@ -1,0 +1,62 @@
+From afcf3919f5db85a00352a9937c9a5cb9c7b30269 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Tue, 4 Sep 2018 20:03:34 +0200
+Subject: [PATCH] cryptsetup-generator: allow whitespace characters in keydev
+ specification
+
+For example, <luks.uuid>=/keyfile:LABEL="KEYFILE FS" previously wouldn't
+work, because we truncated label at the first whitespace character,
+i.e. LABEL="KEYFILE".
+
+Related: #1619743
+---
+ src/cryptsetup/cryptsetup-generator.c | 21 +++++++++++++++------
+ 1 file changed, 15 insertions(+), 6 deletions(-)
+
+diff --git a/src/cryptsetup/cryptsetup-generator.c b/src/cryptsetup/cryptsetup-generator.c
+index a9598180c..7b90d2615 100644
+--- a/src/cryptsetup/cryptsetup-generator.c
++++ b/src/cryptsetup/cryptsetup-generator.c
+@@ -421,27 +421,36 @@ static int parse_proc_cmdline_item(const char *key, const char *value) {
+                         return log_oom();
+ 
+         } else if (STR_IN_SET(key, "luks.key", "rd.luks.key") && value) {
++                int n;
+ 
+-                r = sscanf(value, "%m[0-9a-fA-F-]=%ms", &uuid, &uuid_value);
+-                if (r == 2) {
++                r = sscanf(value, "%m[0-9a-fA-F-]=%n", &uuid, &n);
++                if (r == 1) {
+                         char *c;
++                        const char *keyspec;
+                         _cleanup_free_ char *keyfile = NULL, *keydev = NULL;
+ 
+                         d = get_crypto_device(uuid);
+                         if (!d)
+                                 return log_oom();
+ 
+-                        c = strrchr(uuid_value, ':');
++                        keyspec = value + n;
++
++                        c = strrchr(keyspec, ':');
+                         if (!c) {
++                                /* No keydev specified */
++                                keyfile = strdup(keyspec);
++                                if (!keyfile)
++                                        return log_oom();
++
+                                 free(d->keyfile);
+-                                d->keyfile = uuid_value;
+-                                uuid_value = NULL;
++                                d->keyfile = keyfile;
++                                keyfile = NULL;
+ 
+                                 return 0;
+                         }
+ 
+                         *c = '\0';
+-                        keyfile = strdup(uuid_value);
++                        keyfile = strdup(keyspec);
+                         keydev = strdup(++c);
+ 
+                         if (!keyfile || !keydev)

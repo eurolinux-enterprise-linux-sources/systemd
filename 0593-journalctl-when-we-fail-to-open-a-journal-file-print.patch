@@ -1,0 +1,204 @@
+From 9f7b08ba18ac3d4fd51e70d78d44b60ffb65411f Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Mon, 2 Nov 2015 23:37:05 +0100
+Subject: [PATCH] journalctl: when we fail to open a journal file, print why
+
+When we enumerate journal files and encounter an invalid one, remember
+which this, and show it to the user.
+
+Note the possibly slightly surprising logic here: we store only one path
+per error code. This means we show all error kinds but not every actual
+error we encounter. This has the benefit of not requiring us to keep a
+potentially unbounded list of errors with their sources around, but can
+still provide a pretty complete overview on the errors we encountered.
+
+Fixes #1669.
+
+(cherry picked from commit 5768d2594940668506bb4cafa078f654cc20dc5a)
+
+Resolves: #1465759
+---
+ src/journal/journal-internal.h |  2 +-
+ src/journal/journalctl.c       | 27 +++++++++++++++----
+ src/journal/sd-journal.c       | 49 +++++++++++++++++++++++++++-------
+ 3 files changed, 63 insertions(+), 15 deletions(-)
+
+diff --git a/src/journal/journal-internal.h b/src/journal/journal-internal.h
+index 115d7776d..eb23ac28a 100644
+--- a/src/journal/journal-internal.h
++++ b/src/journal/journal-internal.h
+@@ -123,7 +123,7 @@ struct sd_journal {
+         Hashmap *directories_by_path;
+         Hashmap *directories_by_wd;
+ 
+-        Set *errors;
++        Hashmap *errors;
+ };
+ 
+ char *journal_make_match_string(sd_journal *j);
+diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
+index 8c8379732..0be70764e 100644
+--- a/src/journal/journalctl.c
++++ b/src/journal/journalctl.c
+@@ -1783,33 +1783,50 @@ static int access_check_var_log_journal(sd_journal *j) {
+ static int access_check(sd_journal *j) {
+         Iterator it;
+         void *code;
++        char *path;
+         int r = 0;
+ 
+         assert(j);
+ 
+-        if (set_isempty(j->errors)) {
++        if (hashmap_isempty(j->errors)) {
+                 if (ordered_hashmap_isempty(j->files))
+                         log_notice("No journal files were found.");
+ 
+                 return 0;
+         }
+ 
+-        if (set_contains(j->errors, INT_TO_PTR(-EACCES))) {
++        if (hashmap_contains(j->errors, INT_TO_PTR(-EACCES))) {
+                 (void) access_check_var_log_journal(j);
+ 
+                 if (ordered_hashmap_isempty(j->files))
+                         r = log_error_errno(EACCES, "No journal files were opened due to insufficient permissions.");
+         }
+ 
+-        SET_FOREACH(code, j->errors, it) {
++        HASHMAP_FOREACH_KEY(path, code, j->errors, it) {
+                 int err;
+ 
+                 err = abs(PTR_TO_INT(code));
+ 
+-                if (err == EACCES)
++                switch (err) {
++                case EACCES:
+                         continue;
+ 
+-                log_warning_errno(err, "An error was encountered while opening journal files, ignoring: %m");
++                case ENODATA:
++                        log_warning_errno(err, "Journal file %s is truncated, ignoring file.", path);
++                        break;
++
++                case EPROTONOSUPPORT:
++                        log_warning_errno(err, "Journal file %s uses an unsupported feature, ignoring file.", path);
++                        break;
++
++                case EBADMSG:
++                        log_warning_errno(err, "Journal file %s corrupted, ignoring file.", path);
++                        break;
++
++                default:
++                        log_warning_errno(err, "An error was encountered while opening journal file %s, ignoring file.", path);
++                        break;
++                }
+         }
+ 
+         return r;
+diff --git a/src/journal/sd-journal.c b/src/journal/sd-journal.c
+index 9895d9608..14b65cfed 100644
+--- a/src/journal/sd-journal.c
++++ b/src/journal/sd-journal.c
+@@ -62,19 +62,46 @@ static bool journal_pid_changed(sd_journal *j) {
+         return j->original_pid != getpid();
+ }
+ 
+-/* We return an error here only if we didn't manage to
+-   memorize the real error. */
+-static int set_put_error(sd_journal *j, int r) {
++static int journal_put_error(sd_journal *j, int r, const char *path) {
++        char *copy;
+         int k;
+ 
++        /* Memorize an error we encountered, and store which
++         * file/directory it was generated from. Note that we store
++         * only *one* path per error code, as the error code is the
++         * key into the hashmap, and the path is the value. This means
++         * we keep track only of all error kinds, but not of all error
++         * locations. This has the benefit that the hashmap cannot
++         * grow beyond bounds.
++         *
++         * We return an error here only if we didn't manage to
++         * memorize the real error. */
++
+         if (r >= 0)
+                 return r;
+ 
+-        k = set_ensure_allocated(&j->errors, NULL);
++        k = hashmap_ensure_allocated(&j->errors, NULL);
+         if (k < 0)
+                 return k;
+ 
+-        return set_put(j->errors, INT_TO_PTR(r));
++        if (path) {
++                copy = strdup(path);
++                if (!copy)
++                        return -ENOMEM;
++        } else
++                copy = NULL;
++
++        k = hashmap_put(j->errors, INT_TO_PTR(r), copy);
++        if (k < 0) {
++                free(copy);
++
++                if (k == -EEXIST)
++                        return 0;
++
++                return k;
++        }
++
++        return 0;
+ }
+ 
+ static void detach_location(sd_journal *j) {
+@@ -1234,7 +1261,7 @@ static int add_any_file(sd_journal *j, const char *path) {
+         return 0;
+ 
+ fail:
+-        k = set_put_error(j, r);
++        k = journal_put_error(j, r, path);
+         if (k < 0)
+                 return k;
+ 
+@@ -1396,7 +1423,7 @@ static int add_directory(sd_journal *j, const char *prefix, const char *dirname)
+         return 0;
+ 
+ fail:
+-        k = set_put_error(j, r);
++        k = journal_put_error(j, r, path ?: dirname);
+         if (k < 0)
+                 return k;
+ 
+@@ -1487,7 +1514,7 @@ static int add_root_directory(sd_journal *j, const char *p, bool missing_ok) {
+         return 0;
+ 
+ fail:
+-        k = set_put_error(j, r);
++        k = journal_put_error(j, r, p);
+         if (k < 0)
+                 return k;
+ 
+@@ -1732,6 +1759,7 @@ fail:
+ _public_ void sd_journal_close(sd_journal *j) {
+         Directory *d;
+         JournalFile *f;
++        char *p;
+ 
+         if (!j)
+                 return;
+@@ -1759,10 +1787,13 @@ _public_ void sd_journal_close(sd_journal *j) {
+                 mmap_cache_unref(j->mmap);
+         }
+ 
++        while ((p = hashmap_steal_first(j->errors)))
++                free(p);
++        hashmap_free(j->errors);
++
+         free(j->path);
+         free(j->prefix);
+         free(j->unique_field);
+-        set_free(j->errors);
+         free(j);
+ }
+ 

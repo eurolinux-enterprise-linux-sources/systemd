@@ -1,0 +1,49 @@
+From 9576fa3ecf91fd4703e2180ac080fd975292730f Mon Sep 17 00:00:00 2001
+From: hese10 <heikki.kemppainen@nokia.com>
+Date: Wed, 12 Oct 2016 19:40:28 +0300
+Subject: [PATCH] Avoid forever loop for journalctl --list-boots command
+ (#4278)
+
+When date is changed in system to future and normal user logs to new
+journal file, and then date is changed back to present time, the
+"journalctl --list-boot" command goes to forever loop. This commit tries
+to fix this problem by checking first the boot id list if the found boot
+id was already in that list. If it is found, then stopping the boot id
+find loop.
+
+(cherry picked from commit ec02a6c90a5d8b234db534ce3f8f1901f8532057)
+
+Conflicts:
+	src/journal/journalctl.c
+Related: #1294516
+---
+ src/journal/journalctl.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
+index 723854a2e..c771cff8b 100644
+--- a/src/journal/journalctl.c
++++ b/src/journal/journalctl.c
+@@ -1039,7 +1039,7 @@ static int get_boots(
+ 
+         bool skip_once;
+         int r, count = 0;
+-        BootId *head = NULL, *tail = NULL;
++        BootId *head = NULL, *tail = NULL, *id;
+         const bool advance_older = query_ref_boot && ref_boot_offset <= 0;
+         sd_id128_t previous_boot_id;
+ 
+@@ -1121,6 +1121,13 @@ static int get_boots(
+                                 break;
+                         }
+                 } else {
++                        LIST_FOREACH(boot_list, id, head) {
++                                if (sd_id128_equal(id->id, current->id)) {
++                                        /* boot id already stored, something wrong with the journal files */
++                                        /* exiting as otherwise this problem would cause forever loop */
++                                        goto finish;
++                                }
++                        }
+                         LIST_INSERT_AFTER(boot_list, head, tail, current);
+                         tail = current;
+                         current = NULL;

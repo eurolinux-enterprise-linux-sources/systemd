@@ -1,0 +1,42 @@
+From 14ca846073e3b7accb71012a9612d0a7cb6b5ea6 Mon Sep 17 00:00:00 2001
+From: gwendalcr <gwendal@chromium.org>
+Date: Wed, 20 Jun 2018 16:54:05 +0200
+Subject: [PATCH] rules: Add MODEL_ID for NVMe device (#7037)
+
+To mimic MODEL_ID variable built for ATA and SCSI devices, add rules
+to add MODEL_ID variable for NVMe devices.
+
+TEST: Check on a system with NVMe device that MODEL_ID variable is
+present:
+ udevadm info --query=all -n /dev/nvme0n1p1 | grep ID_MODEL
+and
+ udevadm info --query=all -n /dev/nvme0n1p1 | grep ID_MODEL
+return:
+E: ID_MODEL=SAMSUNG...
+
+(cherry picked from commit e2c2d70ba7cc7497b03c4a377bfb529035540aa7)
+
+Resolves: #1397264
+---
+ rules/60-persistent-storage.rules | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/rules/60-persistent-storage.rules b/rules/60-persistent-storage.rules
+index ba619633b..4aae97a9f 100644
+--- a/rules/60-persistent-storage.rules
++++ b/rules/60-persistent-storage.rules
+@@ -28,10 +28,12 @@ KERNEL=="nvme*[0-9]n*[0-9]p*[0-9]", ENV{DEVTYPE}=="partition", ATTRS{wwid}=="?*"
+ 
+ KERNEL=="nvme*[0-9]n*[0-9]", ENV{DEVTYPE}=="disk", ATTRS{serial}=="?*", ENV{ID_SERIAL_SHORT}="$attr{serial}"
+ KERNEL=="nvme*[0-9]n*[0-9]", ENV{DEVTYPE}=="disk", ATTRS{wwid}=="?*", ENV{ID_WWN}="$attr{wwid}"
+-KERNEL=="nvme*[0-9]n*[0-9]", ENV{DEVTYPE}=="disk", ATTRS{model}=="?*", ENV{ID_SERIAL_SHORT}=="?*", ENV{ID_SERIAL}="$attr{model}_$env{ID_SERIAL_SHORT}", SYMLINK+="disk/by-id/nvme-$env{ID_SERIAL}", OPTIONS="string_escape=replace"
++KERNEL=="nvme*[0-9]n*[0-9]", ENV{DEVTYPE}=="disk", ATTRS{model}=="?*", ENV{ID_MODEL}="$attr{model}"
++KERNEL=="nvme*[0-9]n*[0-9]", ENV{DEVTYPE}=="disk", ENV{ID_MODEL}=="?*", ENV{ID_SERIAL_SHORT}=="?*", ENV{ID_SERIAL}="$env{ID_MODEL}_$env{ID_SERIAL_SHORT}", SYMLINK+="disk/by-id/nvme-$env{ID_SERIAL}", OPTIONS="string_escape=replace"
+ 
+ KERNEL=="nvme*[0-9]n*[0-9]p*[0-9]", ENV{DEVTYPE}=="partition", ATTRS{serial}=="?*", ENV{ID_SERIAL_SHORT}="$attr{serial}"
+-KERNEL=="nvme*[0-9]n*[0-9]p*[0-9]", ENV{DEVTYPE}=="partition", ATTRS{model}=="?*", ENV{ID_SERIAL_SHORT}=="?*", ENV{ID_SERIAL}="$attr{model}_$env{ID_SERIAL_SHORT}", SYMLINK+="disk/by-id/nvme-$env{ID_SERIAL}-part%n", OPTIONS="string_escape=replace"
++KERNEL=="nvme*[0-9]n*[0-9]p*[0-9]", ENV{DEVTYPE}=="partition", ATTRS{model}=="?*", ENV{ID_MODEL}="$attr{model}"
++KERNEL=="nvme*[0-9]n*[0-9]p*[0-9]", ENV{DEVTYPE}=="partition", ENV{ID_MODEL}=="?*", ENV{ID_SERIAL_SHORT}=="?*", ENV{ID_SERIAL}="$env{ID_MODEL}_$env{ID_SERIAL_SHORT}", SYMLINK+="disk/by-id/nvme-$env{ID_SERIAL}-part%n", OPTIONS="string_escape=replace"
+ 
+ # virtio-blk
+ KERNEL=="vd*[!0-9]", ATTRS{serial}=="?*", ENV{ID_SERIAL}="$attr{serial}", SYMLINK+="disk/by-id/virtio-$env{ID_SERIAL}"
