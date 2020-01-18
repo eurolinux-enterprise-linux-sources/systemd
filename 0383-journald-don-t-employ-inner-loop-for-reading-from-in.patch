@@ -19,7 +19,7 @@ Cherry-picked from: a315ac4e076c4ce7ce3e5c95792cf916d5e918c5
  1 file changed, 100 insertions(+), 104 deletions(-)
 
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index 1eb1394d1..275224dc9 100644
+index 1eb1394d10..275224dc99 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -1103,6 +1103,42 @@ finish:

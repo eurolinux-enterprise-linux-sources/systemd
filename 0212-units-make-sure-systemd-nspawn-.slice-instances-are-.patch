@@ -14,7 +14,7 @@ Resolves: #1222517
  1 file changed, 1 insertion(+)
 
 diff --git a/units/systemd-nspawn@.service.in b/units/systemd-nspawn@.service.in
-index 3e26b53fd..5e8612113 100644
+index 3e26b53fd6..5e86121130 100644
 --- a/units/systemd-nspawn@.service.in
 +++ b/units/systemd-nspawn@.service.in
 @@ -17,6 +17,7 @@ KillMode=mixed

@@ -40,7 +40,7 @@ Related: #1331667
  1 file changed, 3 insertions(+)
 
 diff --git a/src/core/load-dropin.c b/src/core/load-dropin.c
-index 8be190040..42cf00572 100644
+index 8be190040e..42cf00572f 100644
 --- a/src/core/load-dropin.c
 +++ b/src/core/load-dropin.c
 @@ -68,6 +68,9 @@ int unit_load_dropin(Unit *u) {

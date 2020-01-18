@@ -16,7 +16,7 @@ Resolves: #1222517
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/mount.c b/src/core/mount.c
-index 3ae0eb462..335922025 100644
+index 3ae0eb4621..3359220251 100644
 --- a/src/core/mount.c
 +++ b/src/core/mount.c
 @@ -107,7 +107,9 @@ static bool mount_is_auto(const MountParameters *p) {

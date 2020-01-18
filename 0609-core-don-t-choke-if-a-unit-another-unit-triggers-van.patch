@@ -15,7 +15,7 @@ Resolves: #1545676
  3 files changed, 62 insertions(+), 11 deletions(-)
 
 diff --git a/src/core/automount.c b/src/core/automount.c
-index 182ba5240..679fe071e 100644
+index 182ba5240f..679fe071e7 100644
 --- a/src/core/automount.c
 +++ b/src/core/automount.c
 @@ -715,6 +715,7 @@ static int automount_start_expire(Automount *a) {
@@ -87,7 +87,7 @@ index 182ba5240..679fe071e 100644
                          log_unit_warning(UNIT(a)->id,
                                           "%s failed to queue umount startup job: %s",
 diff --git a/src/core/path.c b/src/core/path.c
-index 51e36fa8b..0533bb4e2 100644
+index 51e36fa8be..0533bb4e21 100644
 --- a/src/core/path.c
 +++ b/src/core/path.c
 @@ -475,6 +475,7 @@ static void path_enter_dead(Path *p, PathResult f) {
@@ -135,7 +135,7 @@ index 51e36fa8b..0533bb4e2 100644
          path_mkdir(p);
  
 diff --git a/src/core/timer.c b/src/core/timer.c
-index f318dc6f4..91d8db67e 100644
+index f318dc6f44..91d8db67e8 100644
 --- a/src/core/timer.c
 +++ b/src/core/timer.c
 @@ -343,8 +343,18 @@ static void timer_enter_waiting(Timer *t, bool initial) {

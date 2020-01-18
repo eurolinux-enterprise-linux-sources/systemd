@@ -17,7 +17,7 @@ Related: #1511565
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index 6e7568b60..7c69061f4 100644
+index 6e7568b60b..7c69061f47 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -1716,7 +1716,7 @@ static int server_connect_notify(Server *s) {

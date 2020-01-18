@@ -32,7 +32,7 @@ Resolves: #1337244
  9 files changed, 160 insertions(+), 25 deletions(-)
 
 diff --git a/man/logind.conf.xml b/man/logind.conf.xml
-index 54651f07d..bcc8ee975 100644
+index 54651f07d2..bcc8ee9753 100644
 --- a/man/logind.conf.xml
 +++ b/man/logind.conf.xml
 @@ -1,4 +1,4 @@
@@ -62,7 +62,7 @@ index 54651f07d..bcc8ee975 100644
  
        <varlistentry>
 diff --git a/src/login/logind-dbus.c b/src/login/logind-dbus.c
-index fb84e92e5..63b9a0df3 100644
+index fb84e92e5d..63b9a0df36 100644
 --- a/src/login/logind-dbus.c
 +++ b/src/login/logind-dbus.c
 @@ -2325,13 +2325,101 @@ int manager_dispatch_delayed(Manager *manager) {
@@ -180,7 +180,7 @@ index fb84e92e5..63b9a0df3 100644
          if (r < 0)
                  return r;
 diff --git a/src/login/logind-gperf.gperf b/src/login/logind-gperf.gperf
-index 62460673b..8a064e2a9 100644
+index 62460673b9..8a064e2a96 100644
 --- a/src/login/logind-gperf.gperf
 +++ b/src/login/logind-gperf.gperf
 @@ -33,3 +33,4 @@ Login.IdleAction,                  config_parse_handle_action, 0, offsetof(Manag
@@ -189,7 +189,7 @@ index 62460673b..8a064e2a9 100644
  Login.RemoveIPC,                   config_parse_bool,          0, offsetof(Manager, remove_ipc)
 +Login.UserTasksMax,                config_parse_uint64,        0, offsetof(Manager, user_tasks_max)
 diff --git a/src/login/logind-session.c b/src/login/logind-session.c
-index 746e50aa5..4575a029f 100644
+index 746e50aa51..4575a029fe 100644
 --- a/src/login/logind-session.c
 +++ b/src/login/logind-session.c
 @@ -510,21 +510,28 @@ static int session_start_scope(Session *s) {
@@ -239,7 +239,7 @@ index 746e50aa5..4575a029f 100644
          return 0;
  }
 diff --git a/src/login/logind-session.h b/src/login/logind-session.h
-index 5002b6868..d662082d8 100644
+index 5002b68689..d662082d85 100644
 --- a/src/login/logind-session.h
 +++ b/src/login/logind-session.h
 @@ -115,7 +115,8 @@ struct Session {
@@ -253,7 +253,7 @@ index 5002b6868..d662082d8 100644
          sd_bus_message *create_message;
  
 diff --git a/src/login/logind-user.c b/src/login/logind-user.c
-index 97eb4feca..4298704ce 100644
+index 97eb4feca9..4298704cea 100644
 --- a/src/login/logind-user.c
 +++ b/src/login/logind-user.c
 @@ -33,6 +33,7 @@
@@ -329,7 +329,7 @@ index 97eb4feca..4298704ce 100644
          return 0;
  }
 diff --git a/src/login/logind.c b/src/login/logind.c
-index e8d0669bb..16c931c3e 100644
+index e8d0669bbf..16c931c3e0 100644
 --- a/src/login/logind.c
 +++ b/src/login/logind.c
 @@ -63,6 +63,7 @@ Manager *manager_new(void) {
@@ -341,7 +341,7 @@ index e8d0669bb..16c931c3e 100644
          m->devices = hashmap_new(&string_hash_ops);
          m->seats = hashmap_new(&string_hash_ops);
 diff --git a/src/login/logind.conf b/src/login/logind.conf
-index be8d7dff2..d33e0b34d 100644
+index be8d7dff29..d33e0b34d2 100644
 --- a/src/login/logind.conf
 +++ b/src/login/logind.conf
 @@ -31,3 +31,4 @@
@@ -350,7 +350,7 @@ index be8d7dff2..d33e0b34d 100644
  #RemoveIPC=no
 +#UserTasksMax=
 diff --git a/src/login/logind.h b/src/login/logind.h
-index e0cb7d023..8503eb24d 100644
+index e0cb7d0238..8503eb24dd 100644
 --- a/src/login/logind.h
 +++ b/src/login/logind.h
 @@ -128,6 +128,7 @@ struct Manager {

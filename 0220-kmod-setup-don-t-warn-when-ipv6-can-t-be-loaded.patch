@@ -19,7 +19,7 @@ Resolves: #1222517
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/kmod-setup.c b/src/core/kmod-setup.c
-index 97f3b9b34..6b2f29585 100644
+index 97f3b9b34a..6b2f29585d 100644
 --- a/src/core/kmod-setup.c
 +++ b/src/core/kmod-setup.c
 @@ -66,7 +66,7 @@ int kmod_setup(void) {

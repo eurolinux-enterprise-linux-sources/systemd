@@ -13,7 +13,7 @@ Resolves: #1263158
  2 files changed, 15 deletions(-)
 
 diff --git a/NEWS b/NEWS
-index d78874924..ee976d44b 100644
+index d788749240..ee976d44ba 100644
 --- a/NEWS
 +++ b/NEWS
 @@ -619,18 +619,6 @@ CHANGES WITH 217:
@@ -36,7 +36,7 @@ index d78874924..ee976d44b 100644
            available for service units, that allows locking all service
            processes into a stricter bus policy, in order to limit
 diff --git a/sysctl.d/50-default.conf b/sysctl.d/50-default.conf
-index def151bb8..44c48236c 100644
+index def151bb84..44c48236cc 100644
 --- a/sysctl.d/50-default.conf
 +++ b/sysctl.d/50-default.conf
 @@ -32,9 +32,6 @@ net.ipv4.conf.all.accept_source_route = 0

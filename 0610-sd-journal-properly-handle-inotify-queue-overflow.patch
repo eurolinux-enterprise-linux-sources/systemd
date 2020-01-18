@@ -29,7 +29,7 @@ Resolves: #1540538
  5 files changed, 206 insertions(+), 51 deletions(-)
 
 diff --git a/src/journal/journal-file.h b/src/journal/journal-file.h
-index c74ad5fc5..dd8ef52d2 100644
+index c74ad5fc58..dd8ef52d2a 100644
 --- a/src/journal/journal-file.h
 +++ b/src/journal/journal-file.h
 @@ -121,6 +121,8 @@ typedef struct JournalFile {
@@ -42,7 +42,7 @@ index c74ad5fc5..dd8ef52d2 100644
  } JournalFile;
  
 diff --git a/src/journal/journal-internal.h b/src/journal/journal-internal.h
-index eb23ac28a..999e9d8cb 100644
+index eb23ac28ad..999e9d8cb6 100644
 --- a/src/journal/journal-internal.h
 +++ b/src/journal/journal-internal.h
 @@ -81,6 +81,7 @@ struct Directory {
@@ -62,7 +62,7 @@ index eb23ac28a..999e9d8cb 100644
          char *unique_field;
          JournalFile *unique_file;
 diff --git a/src/journal/sd-journal.c b/src/journal/sd-journal.c
-index 14b65cfed..9186f5188 100644
+index 14b65cfedd..9186f5188e 100644
 --- a/src/journal/sd-journal.c
 +++ b/src/journal/sd-journal.c
 @@ -1229,8 +1229,16 @@ static int add_any_file(sd_journal *j, const char *path) {
@@ -406,7 +406,7 @@ index 14b65cfed..9186f5188 100644
          d = hashmap_get(j->directories_by_wd, INT_TO_PTR(e->wd));
          if (d) {
 diff --git a/src/shared/path-util.c b/src/shared/path-util.c
-index 5d4de9ec4..fcc591686 100644
+index 5d4de9ec4d..fcc591686f 100644
 --- a/src/shared/path-util.c
 +++ b/src/shared/path-util.c
 @@ -861,3 +861,17 @@ char *prefix_root(const char *root, const char *path) {
@@ -428,7 +428,7 @@ index 5d4de9ec4..fcc591686 100644
 +        return r;
 +}
 diff --git a/src/shared/path-util.h b/src/shared/path-util.h
-index 34c016229..96490e12b 100644
+index 34c016229c..96490e12b1 100644
 --- a/src/shared/path-util.h
 +++ b/src/shared/path-util.h
 @@ -66,6 +66,8 @@ int fsck_exists(const char *fstype);

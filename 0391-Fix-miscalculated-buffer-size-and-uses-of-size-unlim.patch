@@ -15,7 +15,7 @@ Related: #1318994
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/src/journal/journald-syslog.c b/src/journal/journald-syslog.c
-index 8602b4a95..b499a0d38 100644
+index 8602b4a95d..b499a0d381 100644
 --- a/src/journal/journald-syslog.c
 +++ b/src/journal/journald-syslog.c
 @@ -317,7 +317,7 @@ void server_process_syslog_message(

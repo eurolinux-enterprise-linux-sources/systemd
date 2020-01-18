@@ -24,7 +24,7 @@ Related: #1411199
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/tmpfiles.d/systemd.conf.m4 b/tmpfiles.d/systemd.conf.m4
-index b447b01f5..d9d51af92 100644
+index b447b01f58..d9d51af929 100644
 --- a/tmpfiles.d/systemd.conf.m4
 +++ b/tmpfiles.d/systemd.conf.m4
 @@ -35,7 +35,7 @@ z /var/log/journal 2755 root systemd-journal - -

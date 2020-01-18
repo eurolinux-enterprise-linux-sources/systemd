@@ -23,7 +23,7 @@ Resolves: #1475870
  1 file changed, 16 insertions(+), 5 deletions(-)
 
 diff --git a/test/test-functions b/test/test-functions
-index f8950e31e..cf5612370 100644
+index f8950e31e8..cf5612370b 100644
 --- a/test/test-functions
 +++ b/test/test-functions
 @@ -141,15 +141,26 @@ install_missing_libraries() {

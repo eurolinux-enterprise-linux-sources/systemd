@@ -1,0 +1,360 @@
+From cb1a8f709ff3c27fc9f43aa27f985131422795bc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Tue, 13 Feb 2018 10:50:13 +0100
+Subject: [PATCH] pid1: rename unit_check_gc to unit_may_gc
+
+"check" is unclear: what is true, what is false? Let's rename to "can_gc" and
+revert the return value ("positive" values are easier to grok).
+
+v2:
+- rename from unit_can_gc to unit_may_gc
+
+(cherry picked from commit f2f725e5cc950e84ebfd09bd64bc01c0ebdb6734)
+(cherry picked from commit 1716821fc5b93667a0bf821b25905de00818aec9)
+
+Related: #1729228
+---
+ src/core/automount.c | 13 ++++++++-----
+ src/core/manager.c   |  2 +-
+ src/core/mount.c     |  9 ++++++---
+ src/core/scope.c     |  8 ++++----
+ src/core/service.c   |  8 ++++----
+ src/core/socket.c    |  6 +++---
+ src/core/socket.h    |  4 ++--
+ src/core/swap.c      |  9 ++++++---
+ src/core/unit.c      | 31 +++++++++++++++++--------------
+ src/core/unit.h      |  9 ++++-----
+ 10 files changed, 55 insertions(+), 44 deletions(-)
+
+diff --git a/src/core/automount.c b/src/core/automount.c
+index 4678bdc7c9..7b9c4aaf1d 100644
+--- a/src/core/automount.c
++++ b/src/core/automount.c
+@@ -936,13 +936,16 @@ static const char *automount_sub_state_to_string(Unit *u) {
+         return automount_state_to_string(AUTOMOUNT(u)->state);
+ }
+ 
+-static bool automount_check_gc(Unit *u) {
++static bool automount_may_gc(Unit *u) {
++        Unit *t;
++
+         assert(u);
+ 
+-        if (!UNIT_TRIGGER(u))
+-                return false;
++        t = UNIT_TRIGGER(u);
++        if (!t)
++                return true;
+ 
+-        return UNIT_VTABLE(UNIT_TRIGGER(u))->check_gc(UNIT_TRIGGER(u));
++        return UNIT_VTABLE(t)->may_gc(t);
+ }
+ 
+ static int automount_dispatch_io(sd_event_source *s, int fd, uint32_t events, void *userdata) {
+@@ -1115,7 +1118,7 @@ const UnitVTable automount_vtable = {
+         .active_state = automount_active_state,
+         .sub_state_to_string = automount_sub_state_to_string,
+ 
+-        .check_gc = automount_check_gc,
++        .may_gc = automount_may_gc,
+ 
+         .reset_failed = automount_reset_failed,
+ 
+diff --git a/src/core/manager.c b/src/core/manager.c
+index 3bca61d0b1..9dfdd67860 100644
+--- a/src/core/manager.c
++++ b/src/core/manager.c
+@@ -871,7 +871,7 @@ static void unit_gc_sweep(Unit *u, unsigned gc_marker) {
+         if (u->in_cleanup_queue)
+                 goto bad;
+ 
+-        if (unit_check_gc(u))
++        if (!unit_may_gc(u))
+                 goto good;
+ 
+         u->gc_marker = gc_marker + GC_OFFSET_IN_PATH;
+diff --git a/src/core/mount.c b/src/core/mount.c
+index c7aed2333f..8a25ebd163 100644
+--- a/src/core/mount.c
++++ b/src/core/mount.c
+@@ -1180,12 +1180,15 @@ _pure_ static const char *mount_sub_state_to_string(Unit *u) {
+         return mount_state_to_string(MOUNT(u)->state);
+ }
+ 
+-_pure_ static bool mount_check_gc(Unit *u) {
++_pure_ static bool mount_may_gc(Unit *u) {
+         Mount *m = MOUNT(u);
+ 
+         assert(m);
+ 
+-        return m->from_proc_self_mountinfo;
++        if (m->from_proc_self_mountinfo)
++                return false;
++
++        return true;
+ }
+ 
+ static void mount_sigchld_event(Unit *u, pid_t pid, int code, int status) {
+@@ -1954,7 +1957,7 @@ const UnitVTable mount_vtable = {
+         .active_state = mount_active_state,
+         .sub_state_to_string = mount_sub_state_to_string,
+ 
+-        .check_gc = mount_check_gc,
++        .may_gc = mount_may_gc,
+ 
+         .sigchld_event = mount_sigchld_event,
+ 
+diff --git a/src/core/scope.c b/src/core/scope.c
+index 29954ba285..e9b45aa3f8 100644
+--- a/src/core/scope.c
++++ b/src/core/scope.c
+@@ -381,7 +381,7 @@ static int scope_deserialize_item(Unit *u, const char *key, const char *value, F
+         return 0;
+ }
+ 
+-static bool scope_check_gc(Unit *u) {
++static bool scope_may_gc(Unit *u) {
+         assert(u);
+ 
+         /* Never clean up scopes that still have a process around,
+@@ -392,10 +392,10 @@ static bool scope_check_gc(Unit *u) {
+ 
+                 r = cg_is_empty_recursive(SYSTEMD_CGROUP_CONTROLLER, u->cgroup_path, true);
+                 if (r <= 0)
+-                        return true;
++                        return false;
+         }
+ 
+-        return false;
++        return true;
+ }
+ 
+ static void scope_notify_cgroup_empty_event(Unit *u) {
+@@ -547,7 +547,7 @@ const UnitVTable scope_vtable = {
+         .active_state = scope_active_state,
+         .sub_state_to_string = scope_sub_state_to_string,
+ 
+-        .check_gc = scope_check_gc,
++        .may_gc = scope_may_gc,
+ 
+         .sigchld_event = scope_sigchld_event,
+ 
+diff --git a/src/core/service.c b/src/core/service.c
+index 957c6f37cc..69ec916f2d 100644
+--- a/src/core/service.c
++++ b/src/core/service.c
+@@ -2436,7 +2436,7 @@ static const char *service_sub_state_to_string(Unit *u) {
+         return service_state_to_string(SERVICE(u)->state);
+ }
+ 
+-static bool service_check_gc(Unit *u) {
++static bool service_may_gc(Unit *u) {
+         Service *s = SERVICE(u);
+ 
+         assert(s);
+@@ -2446,9 +2446,9 @@ static bool service_check_gc(Unit *u) {
+         if (cgroup_good(s) > 0 ||
+             main_pid_good(s) > 0 ||
+             control_pid_good(s) > 0)
+-                return true;
++                return false;
+ 
+-        return false;
++        return true;
+ }
+ 
+ _pure_ static bool service_check_snapshot(Unit *u) {
+@@ -3461,7 +3461,7 @@ const UnitVTable service_vtable = {
+         .active_state = service_active_state,
+         .sub_state_to_string = service_sub_state_to_string,
+ 
+-        .check_gc = service_check_gc,
++        .may_gc = service_may_gc,
+         .check_snapshot = service_check_snapshot,
+ 
+         .sigchld_event = service_sigchld_event,
+diff --git a/src/core/socket.c b/src/core/socket.c
+index efefe7ce5d..3e4cdd467f 100644
+--- a/src/core/socket.c
++++ b/src/core/socket.c
+@@ -2269,12 +2269,12 @@ const char* socket_port_type_to_string(SocketPort *p) {
+         }
+ }
+ 
+-_pure_ static bool socket_check_gc(Unit *u) {
++_pure_ static bool socket_may_gc(Unit *u) {
+         Socket *s = SOCKET(u);
+ 
+         assert(u);
+ 
+-        return s->n_connections > 0;
++        return s->n_connections == 0;
+ }
+ 
+ static int socket_dispatch_io(sd_event_source *source, int fd, uint32_t revents, void *userdata) {
+@@ -2713,7 +2713,7 @@ const UnitVTable socket_vtable = {
+         .active_state = socket_active_state,
+         .sub_state_to_string = socket_sub_state_to_string,
+ 
+-        .check_gc = socket_check_gc,
++        .may_gc = socket_may_gc,
+ 
+         .sigchld_event = socket_sigchld_event,
+ 
+diff --git a/src/core/socket.h b/src/core/socket.h
+index a2e08998c0..cc1428b3f7 100644
+--- a/src/core/socket.h
++++ b/src/core/socket.h
+@@ -114,8 +114,8 @@ struct Socket {
+         ExecRuntime *exec_runtime;
+ 
+         /* For Accept=no sockets refers to the one service we'll
+-        activate. For Accept=yes sockets is either NULL, or filled
+-        when the next service we spawn. */
++         * activate. For Accept=yes sockets is either NULL, or filled
++         * to refer to the next service we spawn. */
+         UnitRef service;
+ 
+         SocketState state, deserialized_state;
+diff --git a/src/core/swap.c b/src/core/swap.c
+index e71de4e657..1f69736aa3 100644
+--- a/src/core/swap.c
++++ b/src/core/swap.c
+@@ -949,12 +949,15 @@ _pure_ static const char *swap_sub_state_to_string(Unit *u) {
+         return swap_state_to_string(SWAP(u)->state);
+ }
+ 
+-_pure_ static bool swap_check_gc(Unit *u) {
++_pure_ static bool swap_may_gc(Unit *u) {
+         Swap *s = SWAP(u);
+ 
+         assert(s);
+ 
+-        return s->from_proc_swaps;
++        if (s->from_proc_swaps)
++                return false;
++
++        return true;
+ }
+ 
+ static void swap_sigchld_event(Unit *u, pid_t pid, int code, int status) {
+@@ -1497,7 +1500,7 @@ const UnitVTable swap_vtable = {
+         .active_state = swap_active_state,
+         .sub_state_to_string = swap_sub_state_to_string,
+ 
+-        .check_gc = swap_check_gc,
++        .may_gc = swap_may_gc,
+ 
+         .sigchld_event = swap_sigchld_event,
+ 
+diff --git a/src/core/unit.c b/src/core/unit.c
+index b004aa8fcd..1b8ec9a20e 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -282,15 +282,19 @@ int unit_set_description(Unit *u, const char *description) {
+         return 0;
+ }
+ 
+-bool unit_check_gc(Unit *u) {
++bool unit_may_gc(Unit *u) {
+         UnitActiveState state;
+         assert(u);
+ 
++        /* Checks whether the unit is ready to be unloaded for garbage collection.
++         * Returns true when the unit may be collected, and false if there's some
++         * reason to keep it loaded. */
++
+         if (u->job)
+-                return true;
++                return false;
+ 
+         if (u->nop_job)
+-                return true;
++                return false;
+ 
+         state = unit_active_state(u);
+ 
+@@ -303,22 +307,21 @@ bool unit_check_gc(Unit *u) {
+         /* But we keep the unit object around for longer when it is
+          * referenced or configured to not be gc'ed */
+         if (state != UNIT_INACTIVE)
+-                return true;
++                return false;
+ 
+         if (UNIT_VTABLE(u)->no_gc)
+-                return true;
++                return false;
+ 
+         if (u->no_gc)
+-                return true;
++                return false;
+ 
+         if (u->refs)
+-                return true;
++                return false;
+ 
+-        if (UNIT_VTABLE(u)->check_gc)
+-                if (UNIT_VTABLE(u)->check_gc(u))
+-                        return true;
++        if (UNIT_VTABLE(u)->may_gc && !UNIT_VTABLE(u)->may_gc(u))
++                return false;
+ 
+-        return false;
++        return true;
+ }
+ 
+ void unit_add_to_load_queue(Unit *u) {
+@@ -348,7 +351,7 @@ void unit_add_to_gc_queue(Unit *u) {
+         if (u->in_gc_queue || u->in_cleanup_queue)
+                 return;
+ 
+-        if (unit_check_gc(u))
++        if (!unit_may_gc(u))
+                 return;
+ 
+         LIST_PREPEND(gc_queue, u->manager->gc_queue, u);
+@@ -888,7 +891,7 @@ void unit_dump(Unit *u, FILE *f, const char *prefix) {
+                 "%s\tActive Enter Timestamp: %s\n"
+                 "%s\tActive Exit Timestamp: %s\n"
+                 "%s\tInactive Enter Timestamp: %s\n"
+-                "%s\tGC Check Good: %s\n"
++                "%s\tMay GC: %s\n"
+                 "%s\tNeed Daemon Reload: %s\n"
+                 "%s\tTransient: %s\n"
+                 "%s\tSlice: %s\n"
+@@ -905,7 +908,7 @@ void unit_dump(Unit *u, FILE *f, const char *prefix) {
+                 prefix, strna(format_timestamp(timestamp2, sizeof(timestamp2), u->active_enter_timestamp.realtime)),
+                 prefix, strna(format_timestamp(timestamp3, sizeof(timestamp3), u->active_exit_timestamp.realtime)),
+                 prefix, strna(format_timestamp(timestamp4, sizeof(timestamp4), u->inactive_enter_timestamp.realtime)),
+-                prefix, yes_no(unit_check_gc(u)),
++                prefix, yes_no(unit_may_gc(u)),
+                 prefix, yes_no(unit_need_daemon_reload(u)),
+                 prefix, yes_no(u->transient),
+                 prefix, strna(unit_slice_name(u)),
+diff --git a/src/core/unit.h b/src/core/unit.h
+index 091ef7596e..3f411a1793 100644
+--- a/src/core/unit.h
++++ b/src/core/unit.h
+@@ -353,10 +353,9 @@ struct UnitVTable {
+          * unit is in. */
+         const char* (*sub_state_to_string)(Unit *u);
+ 
+-        /* Return true when there is reason to keep this entry around
+-         * even nothing references it and it isn't active in any
+-         * way */
+-        bool (*check_gc)(Unit *u);
++        /* Return false when there is a reason to prevent this unit from being gc'ed
++         * even though nothing references it and it isn't active in any way. */
++        bool (*may_gc)(Unit *u);
+ 
+         /* When the unit is not running and no job for it queued we
+          * shall release its runtime resources */
+@@ -496,7 +495,7 @@ int unit_add_exec_dependencies(Unit *u, ExecContext *c);
+ int unit_choose_id(Unit *u, const char *name);
+ int unit_set_description(Unit *u, const char *description);
+ 
+-bool unit_check_gc(Unit *u);
++bool unit_may_gc(Unit *u);
+ 
+ void unit_add_to_load_queue(Unit *u);
+ void unit_add_to_dbus_queue(Unit *u);

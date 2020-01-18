@@ -15,7 +15,7 @@ Resolves: #1266479
  1 file changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/src/libsystemd/sd-event/sd-event.c b/src/libsystemd/sd-event/sd-event.c
-index c6350be9f..1f1e6fe91 100644
+index c6350be9f4..1f1e6fe917 100644
 --- a/src/libsystemd/sd-event/sd-event.c
 +++ b/src/libsystemd/sd-event/sd-event.c
 @@ -231,6 +231,12 @@ static int prepare_prioq_compare(const void *a, const void *b) {

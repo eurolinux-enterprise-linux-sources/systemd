@@ -29,7 +29,7 @@ dbus-daemon does).
  2 files changed, 13 insertions(+), 4 deletions(-)
 
 diff --git a/src/bus-proxyd/proxy.c b/src/bus-proxyd/proxy.c
-index 3dea908f5..e13cf5e2e 100644
+index 3dea908f5b..e13cf5e2ea 100644
 --- a/src/bus-proxyd/proxy.c
 +++ b/src/bus-proxyd/proxy.c
 @@ -729,13 +729,21 @@ static int proxy_process_destination_to_local(Proxy *p) {
@@ -59,7 +59,7 @@ index 3dea908f5..e13cf5e2e 100644
  }
  
 diff --git a/src/bus-proxyd/proxy.h b/src/bus-proxyd/proxy.h
-index 913d47071..782c4e60b 100644
+index 913d47071b..782c4e60b3 100644
 --- a/src/bus-proxyd/proxy.h
 +++ b/src/bus-proxyd/proxy.h
 @@ -40,6 +40,7 @@ struct Proxy {

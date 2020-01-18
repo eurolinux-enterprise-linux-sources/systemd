@@ -48,7 +48,7 @@ Resolves: #1500119
  create mode 100644 rules/60-evdev.rules
 
 diff --git a/Makefile.am b/Makefile.am
-index a1ebf5cb0..13c93f485 100644
+index a1ebf5cb07..13c93f485e 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -3499,6 +3499,7 @@ dist_udevrules_DATA += \
@@ -69,7 +69,7 @@ index a1ebf5cb0..13c93f485 100644
  	hwdb/70-touchpad.hwdb
 diff --git a/hwdb/60-evdev.hwdb b/hwdb/60-evdev.hwdb
 new file mode 100644
-index 000000000..ad2d09e72
+index 0000000000..ad2d09e721
 --- /dev/null
 +++ b/hwdb/60-evdev.hwdb
 @@ -0,0 +1,37 @@
@@ -112,7 +112,7 @@ index 000000000..ad2d09e72
 +# be present. e.g. ::45 sets the resolution to 45 units/mm.
 diff --git a/rules/60-evdev.rules b/rules/60-evdev.rules
 new file mode 100644
-index 000000000..67308ad23
+index 0000000000..67308ad230
 --- /dev/null
 +++ b/rules/60-evdev.rules
 @@ -0,0 +1,14 @@
@@ -131,7 +131,7 @@ index 000000000..67308ad23
 +
 +LABEL="evdev_end"
 diff --git a/src/udev/udev-builtin-keyboard.c b/src/udev/udev-builtin-keyboard.c
-index 86f4018ef..eaa21abf6 100644
+index 86f4018ef5..eaa21abf60 100644
 --- a/src/udev/udev-builtin-keyboard.c
 +++ b/src/udev/udev-builtin-keyboard.c
 @@ -99,6 +99,69 @@ static void map_keycode(int fd, const char *devnode, int scancode, const char *k

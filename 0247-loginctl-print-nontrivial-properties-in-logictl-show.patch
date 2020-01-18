@@ -11,7 +11,7 @@ Resolves: #1260465
  2 files changed, 162 insertions(+), 3 deletions(-)
 
 diff --git a/src/login/loginctl.c b/src/login/loginctl.c
-index b0eede9a3..6c8a59e7c 100644
+index b0eede9a34..6c8a59e7c9 100644
 --- a/src/login/loginctl.c
 +++ b/src/login/loginctl.c
 @@ -657,19 +657,165 @@ finish:
@@ -184,7 +184,7 @@ index b0eede9a3..6c8a59e7c 100644
  
  static int show_session(int argc, char *argv[], void *userdata) {
 diff --git a/src/shared/macro.h b/src/shared/macro.h
-index 7f89951d6..9d857dc8d 100644
+index 7f89951d62..9d857dc8d7 100644
 --- a/src/shared/macro.h
 +++ b/src/shared/macro.h
 @@ -26,6 +26,7 @@

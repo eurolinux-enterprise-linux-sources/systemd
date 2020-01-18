@@ -16,7 +16,7 @@ in --user mode, but leave a BindsTo= dependency in --system mode.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/unit.c b/src/core/unit.c
-index ee8e607c2..9f1e55e2f 100644
+index ee8e607c27..9f1e55e2f1 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -2845,7 +2845,7 @@ int unit_add_node_link(Unit *u, const char *what, bool wants) {

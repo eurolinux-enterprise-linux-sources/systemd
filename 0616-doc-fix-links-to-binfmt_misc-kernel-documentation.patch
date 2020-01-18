@@ -13,7 +13,7 @@ Resolves: #1572244
  5 files changed, 5 insertions(+), 5 deletions(-)
 
 diff --git a/man/binfmt.d.xml b/man/binfmt.d.xml
-index 5b63cfb4c..1a57517d0 100644
+index 5b63cfb4c3..1a57517d0c 100644
 --- a/man/binfmt.d.xml
 +++ b/man/binfmt.d.xml
 @@ -67,7 +67,7 @@
@@ -26,7 +26,7 @@ index 5b63cfb4c..1a57517d0 100644
      and how to write rules.</para>
  
 diff --git a/src/test/test-util.c b/src/test/test-util.c
-index fcf5416c0..f2c52edce 100644
+index fcf5416c02..f2c52edcee 100644
 --- a/src/test/test-util.c
 +++ b/src/test/test-util.c
 @@ -1213,7 +1213,7 @@ static void test_files_same(void) {
@@ -39,7 +39,7 @@ index fcf5416c0..f2c52edce 100644
          assert_se(documentation_url_is_valid("man:systemd.special(7)"));
          assert_se(documentation_url_is_valid("info:bar"));
 diff --git a/units/proc-sys-fs-binfmt_misc.automount b/units/proc-sys-fs-binfmt_misc.automount
-index 6be38937b..b28bf9bb8 100644
+index 6be38937b1..b28bf9bb8a 100644
 --- a/units/proc-sys-fs-binfmt_misc.automount
 +++ b/units/proc-sys-fs-binfmt_misc.automount
 @@ -7,7 +7,7 @@
@@ -52,7 +52,7 @@ index 6be38937b..b28bf9bb8 100644
  DefaultDependencies=no
  Before=sysinit.target
 diff --git a/units/proc-sys-fs-binfmt_misc.mount b/units/proc-sys-fs-binfmt_misc.mount
-index 8c7c38631..8d22dc908 100644
+index 8c7c386318..8d22dc9089 100644
 --- a/units/proc-sys-fs-binfmt_misc.mount
 +++ b/units/proc-sys-fs-binfmt_misc.mount
 @@ -7,7 +7,7 @@
@@ -65,7 +65,7 @@ index 8c7c38631..8d22dc908 100644
  DefaultDependencies=no
  
 diff --git a/units/systemd-binfmt.service.in b/units/systemd-binfmt.service.in
-index 02dfe774d..e066f7fec 100644
+index 02dfe774df..e066f7fec9 100644
 --- a/units/systemd-binfmt.service.in
 +++ b/units/systemd-binfmt.service.in
 @@ -8,7 +8,7 @@

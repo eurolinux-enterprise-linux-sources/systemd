@@ -11,7 +11,7 @@ Resolves: #1330973
  2 files changed, 17 insertions(+), 2 deletions(-)
 
 diff --git a/src/nss-myhostname/nss-myhostname.c b/src/nss-myhostname/nss-myhostname.c
-index a939bb267..e197cc752 100644
+index a939bb267c..e197cc752d 100644
 --- a/src/nss-myhostname/nss-myhostname.c
 +++ b/src/nss-myhostname/nss-myhostname.c
 @@ -33,6 +33,7 @@
@@ -39,7 +39,7 @@ index a939bb267..e197cc752 100644
                  canonical = hn;
                  additional = n_addresses <= 0 && af == AF_INET6 ? "localhost" : NULL;
 diff --git a/src/shared/socket-util.c b/src/shared/socket-util.c
-index a21251014..79d1582d4 100644
+index a212510146..79d1582d49 100644
 --- a/src/shared/socket-util.c
 +++ b/src/shared/socket-util.c
 @@ -435,6 +435,16 @@ bool socket_ipv6_is_supported(void) {

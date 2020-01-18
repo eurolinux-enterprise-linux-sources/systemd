@@ -23,7 +23,7 @@ Related: #1447937
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/shared/util.h b/src/shared/util.h
-index f1b6c348f..80ad18c0a 100644
+index f1b6c348f8..80ad18c0ad 100644
 --- a/src/shared/util.h
 +++ b/src/shared/util.h
 @@ -72,7 +72,7 @@

@@ -13,7 +13,7 @@ https://lists.fedoraproject.org/pipermail/devel/2015-February/208412.html
  1 file changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/sysctl.d/50-default.conf b/sysctl.d/50-default.conf
-index f18923399..def151bb8 100644
+index f18923399b..def151bb84 100644
 --- a/sysctl.d/50-default.conf
 +++ b/sysctl.d/50-default.conf
 @@ -5,9 +5,16 @@

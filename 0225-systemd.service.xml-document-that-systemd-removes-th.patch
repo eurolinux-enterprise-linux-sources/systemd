@@ -13,7 +13,7 @@ Resolves: #1222517
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/man/systemd.service.xml b/man/systemd.service.xml
-index f59870563..a274db480 100644
+index f598705633..a274db4803 100644
 --- a/man/systemd.service.xml
 +++ b/man/systemd.service.xml
 @@ -226,7 +226,10 @@

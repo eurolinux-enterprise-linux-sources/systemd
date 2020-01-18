@@ -13,7 +13,7 @@ Related: #1318994
  1 file changed, 15 insertions(+), 6 deletions(-)
 
 diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
-index ba9ae05f7..5864ff50a 100644
+index ba9ae05f72..5864ff50a6 100644
 --- a/src/journal/journalctl.c
 +++ b/src/journal/journalctl.c
 @@ -932,6 +932,15 @@ static int add_matches(sd_journal *j, char **args) {

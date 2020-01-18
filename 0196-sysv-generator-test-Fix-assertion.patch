@@ -12,7 +12,7 @@ Resolves: #1222517
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/test/sysv-generator-test.py b/test/sysv-generator-test.py
-index 09f5c0176..509899e0a 100644
+index 09f5c01762..509899e0a5 100644
 --- a/test/sysv-generator-test.py
 +++ b/test/sysv-generator-test.py
 @@ -323,7 +323,7 @@ class SysvGeneratorTest(unittest.TestCase):

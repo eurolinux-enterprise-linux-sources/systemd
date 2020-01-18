@@ -16,7 +16,7 @@ Resolves: #1446171
  1 file changed, 2 deletions(-)
 
 diff --git a/src/fstab-generator/fstab-generator.c b/src/fstab-generator/fstab-generator.c
-index 32aca2244..23b5457e4 100644
+index 32aca22444..23b5457e43 100644
 --- a/src/fstab-generator/fstab-generator.c
 +++ b/src/fstab-generator/fstab-generator.c
 @@ -476,8 +476,6 @@ static int parse_fstab(bool initrd) {

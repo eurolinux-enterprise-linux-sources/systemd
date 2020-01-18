@@ -17,7 +17,7 @@ Resolves: #1305608
  3 files changed, 5 insertions(+), 3 deletions(-)
 
 diff --git a/src/login/logind-inhibit.c b/src/login/logind-inhibit.c
-index 84fee0e77..bf96898f2 100644
+index 84fee0e773..bf96898f2d 100644
 --- a/src/login/logind-inhibit.c
 +++ b/src/login/logind-inhibit.c
 @@ -303,7 +303,7 @@ int inhibitor_create_fifo(Inhibitor *i) {
@@ -30,7 +30,7 @@ index 84fee0e77..bf96898f2 100644
                          return r;
          }
 diff --git a/src/login/logind-session.c b/src/login/logind-session.c
-index dc24539f1..59f5a7ad5 100644
+index dc24539f12..59f5a7ad5d 100644
 --- a/src/login/logind-session.c
 +++ b/src/login/logind-session.c
 @@ -905,7 +905,9 @@ int session_create_fifo(Session *s) {
@@ -45,7 +45,7 @@ index dc24539f1..59f5a7ad5 100644
                          return r;
          }
 diff --git a/src/login/logind.c b/src/login/logind.c
-index 3afbf34a1..e8d0669bb 100644
+index 3afbf34a13..e8d0669bbf 100644
 --- a/src/login/logind.c
 +++ b/src/login/logind.c
 @@ -685,7 +685,7 @@ static int manager_connect_bus(Manager *m) {

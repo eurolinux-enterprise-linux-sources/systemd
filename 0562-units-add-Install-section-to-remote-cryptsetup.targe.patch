@@ -17,7 +17,7 @@ Resolves: #1477757
  2 files changed, 7 insertions(+)
 
 diff --git a/system-preset/90-systemd.preset b/system-preset/90-systemd.preset
-index 24963f062..a011ec67a 100644
+index 24963f0623..a011ec67ab 100644
 --- a/system-preset/90-systemd.preset
 +++ b/system-preset/90-systemd.preset
 @@ -9,6 +9,7 @@
@@ -29,7 +29,7 @@ index 24963f062..a011ec67a 100644
  
  enable getty@.service
 diff --git a/units/remote-cryptsetup.target b/units/remote-cryptsetup.target
-index 60943bd1c..c306d521f 100644
+index 60943bd1cb..c306d521f7 100644
 --- a/units/remote-cryptsetup.target
 +++ b/units/remote-cryptsetup.target
 @@ -8,3 +8,9 @@

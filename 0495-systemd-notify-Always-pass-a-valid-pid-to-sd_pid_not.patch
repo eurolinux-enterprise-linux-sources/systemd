@@ -18,7 +18,7 @@ Resolves: #1381743
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/notify/notify.c b/src/notify/notify.c
-index c89a6cc06..0d382992a 100644
+index c89a6cc063..0d382992a5 100644
 --- a/src/notify/notify.c
 +++ b/src/notify/notify.c
 @@ -209,7 +209,7 @@ int main(int argc, char* argv[]) {

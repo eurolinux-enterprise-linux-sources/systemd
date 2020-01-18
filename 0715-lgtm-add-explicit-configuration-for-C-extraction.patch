@@ -1,0 +1,25 @@
+From 1cc8d043c32d2616faea1de55bb5bf3555bc3ca0 Mon Sep 17 00:00:00 2001
+From: Frantisek Sumsal <fsumsal@redhat.com>
+Date: Fri, 22 Feb 2019 17:24:57 +0100
+Subject: [PATCH] lgtm: add explicit configuration for C extraction
+
+---
+ .lgtm.yml | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+ create mode 100644 .lgtm.yml
+
+diff --git a/.lgtm.yml b/.lgtm.yml
+new file mode 100644
+index 0000000000..0c8304d689
+--- /dev/null
++++ b/.lgtm.yml
+@@ -0,0 +1,9 @@
++extraction:
++  cpp:
++    configure:
++      command:
++        - ./autogen.sh
++        - ./configure --disable-timesyncd --disable-kdbus --disable-terminal
++                      --disable-gtk-doc --disable-manpages --disable-gtk-doc-html
++                      --enable-compat-libs --disable-sysusers --disable-ldconfig
++                      --enable-lz4 --disable-microhttpd

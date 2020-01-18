@@ -26,7 +26,7 @@ Related: #1387398
  create mode 100644 test/exec-capabilityboundingset-simple.service
 
 diff --git a/src/test/test-capability.c b/src/test/test-capability.c
-index 43769923b..67a9ec2d1 100644
+index 43769923b0..67a9ec2d14 100644
 --- a/src/test/test-capability.c
 +++ b/src/test/test-capability.c
 @@ -17,21 +17,22 @@
@@ -164,7 +164,7 @@ index 43769923b..67a9ec2d1 100644
          return 0;
  }
 diff --git a/src/test/test-execute.c b/src/test/test-execute.c
-index 6e5567c3e..8e70702cb 100644
+index 6e5567c3ed..8e70702cbb 100644
 --- a/src/test/test-execute.c
 +++ b/src/test/test-execute.c
 @@ -17,7 +17,11 @@
@@ -241,7 +241,7 @@ index 6e5567c3e..8e70702cb 100644
          test_function_t *test = NULL;
 diff --git a/test/exec-capabilityambientset-merge-nfsnobody.service b/test/exec-capabilityambientset-merge-nfsnobody.service
 new file mode 100644
-index 000000000..00bec581b
+index 0000000000..00bec581b5
 --- /dev/null
 +++ b/test/exec-capabilityambientset-merge-nfsnobody.service
 @@ -0,0 +1,9 @@
@@ -256,7 +256,7 @@ index 000000000..00bec581b
 +AmbientCapabilities=CAP_NET_RAW
 diff --git a/test/exec-capabilityambientset-merge.service b/test/exec-capabilityambientset-merge.service
 new file mode 100644
-index 000000000..64964380e
+index 0000000000..64964380e2
 --- /dev/null
 +++ b/test/exec-capabilityambientset-merge.service
 @@ -0,0 +1,9 @@
@@ -271,7 +271,7 @@ index 000000000..64964380e
 +AmbientCapabilities=CAP_NET_RAW
 diff --git a/test/exec-capabilityambientset-nfsnobody.service b/test/exec-capabilityambientset-nfsnobody.service
 new file mode 100644
-index 000000000..614cfdd58
+index 0000000000..614cfdd584
 --- /dev/null
 +++ b/test/exec-capabilityambientset-nfsnobody.service
 @@ -0,0 +1,8 @@
@@ -285,7 +285,7 @@ index 000000000..614cfdd58
 +AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW
 diff --git a/test/exec-capabilityambientset.service b/test/exec-capabilityambientset.service
 new file mode 100644
-index 000000000..d63f884ef
+index 0000000000..d63f884ef8
 --- /dev/null
 +++ b/test/exec-capabilityambientset.service
 @@ -0,0 +1,8 @@
@@ -299,7 +299,7 @@ index 000000000..d63f884ef
 +AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW
 diff --git a/test/exec-capabilityboundingset-invert.service b/test/exec-capabilityboundingset-invert.service
 new file mode 100644
-index 000000000..fd5d24870
+index 0000000000..fd5d248702
 --- /dev/null
 +++ b/test/exec-capabilityboundingset-invert.service
 @@ -0,0 +1,7 @@
@@ -312,7 +312,7 @@ index 000000000..fd5d24870
 +CapabilityBoundingSet=~CAP_CHOWN
 diff --git a/test/exec-capabilityboundingset-merge.service b/test/exec-capabilityboundingset-merge.service
 new file mode 100644
-index 000000000..5c7fcaf43
+index 0000000000..5c7fcaf437
 --- /dev/null
 +++ b/test/exec-capabilityboundingset-merge.service
 @@ -0,0 +1,8 @@
@@ -326,7 +326,7 @@ index 000000000..5c7fcaf43
 +CapabilityBoundingSet=CAP_KILL CAP_CHOWN
 diff --git a/test/exec-capabilityboundingset-reset.service b/test/exec-capabilityboundingset-reset.service
 new file mode 100644
-index 000000000..d7d332020
+index 0000000000..d7d3320204
 --- /dev/null
 +++ b/test/exec-capabilityboundingset-reset.service
 @@ -0,0 +1,8 @@
@@ -340,7 +340,7 @@ index 000000000..d7d332020
 +CapabilityBoundingSet=
 diff --git a/test/exec-capabilityboundingset-simple.service b/test/exec-capabilityboundingset-simple.service
 new file mode 100644
-index 000000000..bf1a7f575
+index 0000000000..bf1a7f575a
 --- /dev/null
 +++ b/test/exec-capabilityboundingset-simple.service
 @@ -0,0 +1,7 @@

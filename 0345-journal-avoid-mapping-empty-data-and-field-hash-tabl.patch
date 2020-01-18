@@ -27,7 +27,7 @@ Related: #1350232
  3 files changed, 43 insertions(+), 11 deletions(-)
 
 diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
-index 892fe4734..ef1849787 100644
+index 892fe47340..ef18497879 100644
 --- a/src/journal/journal-file.c
 +++ b/src/journal/journal-file.c
 @@ -656,13 +656,16 @@ static int journal_file_setup_field_hash_table(JournalFile *f) {
@@ -118,7 +118,7 @@ index 892fe4734..ef1849787 100644
                  r = -EIO;
                  goto fail;
 diff --git a/src/journal/journal-file.h b/src/journal/journal-file.h
-index 0f29b092b..c74ad5fc5 100644
+index 0f29b092b7..c74ad5fc58 100644
 --- a/src/journal/journal-file.h
 +++ b/src/journal/journal-file.h
 @@ -234,3 +234,6 @@ static inline bool JOURNAL_FILE_COMPRESS(JournalFile *f) {
@@ -129,7 +129,7 @@ index 0f29b092b..c74ad5fc5 100644
 +int journal_file_map_data_hash_table(JournalFile *f);
 +int journal_file_map_field_hash_table(JournalFile *f);
 diff --git a/src/journal/journal-verify.c b/src/journal/journal-verify.c
-index 983217c1b..d2d5c400c 100644
+index 983217c1bc..d2d5c400c1 100644
 --- a/src/journal/journal-verify.c
 +++ b/src/journal/journal-verify.c
 @@ -590,6 +590,13 @@ static int verify_hash_table(

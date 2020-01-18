@@ -39,7 +39,7 @@ Resolves: #1426214
  11 files changed, 189 insertions(+), 4 deletions(-)
 
 diff --git a/man/systemd.exec.xml b/man/systemd.exec.xml
-index c5199d3a5..aa5831cc2 100644
+index c5199d3a54..aa5831cc2c 100644
 --- a/man/systemd.exec.xml
 +++ b/man/systemd.exec.xml
 @@ -293,6 +293,33 @@
@@ -77,7 +77,7 @@ index c5199d3a5..aa5831cc2 100644
          <term><varname>StandardInput=</varname></term>
          <listitem><para>Controls where file descriptor 0 (STDIN) of
 diff --git a/shell-completion/bash/systemd-run b/shell-completion/bash/systemd-run
-index 5145cd3f2..36ffa46db 100644
+index 5145cd3f29..36ffa46db5 100644
 --- a/shell-completion/bash/systemd-run
 +++ b/shell-completion/bash/systemd-run
 @@ -73,7 +73,7 @@ _systemd_run() {
@@ -90,7 +90,7 @@ index 5145cd3f2..36ffa46db 100644
              COMPREPLY=( $(compgen -W '$comps' -- "$cur") )
              return 0
 diff --git a/src/core/dbus-execute.c b/src/core/dbus-execute.c
-index a9f7971cd..da8b10d2b 100644
+index a9f7971cde..da8b10d2b3 100644
 --- a/src/core/dbus-execute.c
 +++ b/src/core/dbus-execute.c
 @@ -597,6 +597,7 @@ const sd_bus_vtable bus_exec_vtable[] = {
@@ -142,7 +142,7 @@ index a9f7971cd..da8b10d2b 100644
                  uint64_t rl;
                  rlim_t x;
 diff --git a/src/core/execute.c b/src/core/execute.c
-index 863babd76..f72b20966 100644
+index 863babd761..f72b20966f 100644
 --- a/src/core/execute.c
 +++ b/src/core/execute.c
 @@ -1256,6 +1256,34 @@ static int build_environment(
@@ -227,7 +227,7 @@ index 863babd76..f72b20966 100644
                  fprintf(f,
                          "%sNice: %i\n",
 diff --git a/src/core/execute.h b/src/core/execute.h
-index 6e0c9faa7..cadd0e6b4 100644
+index 6e0c9faa75..cadd0e6b47 100644
 --- a/src/core/execute.h
 +++ b/src/core/execute.h
 @@ -96,6 +96,7 @@ struct ExecRuntime {
@@ -239,7 +239,7 @@ index 6e0c9faa7..cadd0e6b4 100644
          struct rlimit *rlimit[_RLIMIT_MAX];
          char *working_directory, *root_directory;
 diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
-index c866a9cd0..b50fe45b4 100644
+index c866a9cd02..b50fe45b47 100644
 --- a/src/core/load-fragment-gperf.gperf.m4
 +++ b/src/core/load-fragment-gperf.gperf.m4
 @@ -33,6 +33,7 @@ $1.CPUAffinity,                  config_parse_exec_cpu_affinity,     0,
@@ -251,7 +251,7 @@ index c866a9cd0..b50fe45b4 100644
  $1.StandardOutput,               config_parse_output,                0,                             offsetof($1, exec_context.std_output)
  $1.StandardError,                config_parse_output,                0,                             offsetof($1, exec_context.std_error)
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index 3a3c456da..c450fe2c7 100644
+index 3a3c456da5..c450fe2c72 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -2265,6 +2265,71 @@ int config_parse_environ(const char *unit,
@@ -327,7 +327,7 @@ index 3a3c456da..c450fe2c7 100644
                          const char *filename,
                          unsigned line,
 diff --git a/src/core/load-fragment.h b/src/core/load-fragment.h
-index 7c69e5369..9dd7d1bda 100644
+index 7c69e53699..9dd7d1bda0 100644
 --- a/src/core/load-fragment.h
 +++ b/src/core/load-fragment.h
 @@ -85,6 +85,7 @@ int config_parse_syscall_filter(const char *unit, const char *filename, unsigned
@@ -339,7 +339,7 @@ index 7c69e5369..9dd7d1bda 100644
  int config_parse_cpu_shares(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
  int config_parse_memory_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
 diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
-index d35776087..ed0849b63 100644
+index d357760870..ed0849b638 100644
 --- a/src/libsystemd/sd-bus/bus-util.c
 +++ b/src/libsystemd/sd-bus/bus-util.c
 @@ -1535,7 +1535,7 @@ int bus_append_unit_property_assignment(sd_bus_message *m, const char *assignmen
@@ -352,7 +352,7 @@ index d35776087..ed0849b63 100644
                  r = sd_bus_message_append(m, "v", "as", 1, eq);
  
 diff --git a/src/shared/env-util.c b/src/shared/env-util.c
-index e8da4c978..581d84a20 100644
+index e8da4c978a..581d84a20b 100644
 --- a/src/shared/env-util.c
 +++ b/src/shared/env-util.c
 @@ -136,6 +136,21 @@ bool strv_env_is_valid(char **e) {
@@ -378,7 +378,7 @@ index e8da4c978..581d84a20 100644
          char **p, **q;
  
 diff --git a/src/shared/env-util.h b/src/shared/env-util.h
-index 252d87be1..b8c2d81e4 100644
+index 252d87be1f..b8c2d81e4a 100644
 --- a/src/shared/env-util.h
 +++ b/src/shared/env-util.h
 @@ -34,6 +34,7 @@ bool strv_env_is_valid(char **e);

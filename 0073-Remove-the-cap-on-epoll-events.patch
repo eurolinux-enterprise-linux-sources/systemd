@@ -14,7 +14,7 @@ avoiding this issue.
  1 file changed, 1 insertion(+), 2 deletions(-)
 
 diff --git a/src/libsystemd/sd-event/sd-event.c b/src/libsystemd/sd-event/sd-event.c
-index 25089a033..c6350be9f 100644
+index 25089a0335..c6350be9f4 100644
 --- a/src/libsystemd/sd-event/sd-event.c
 +++ b/src/libsystemd/sd-event/sd-event.c
 @@ -37,7 +37,6 @@

@@ -10,7 +10,7 @@ Resolves: #1177336
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/man/journald.conf.xml b/man/journald.conf.xml
-index abfe3130d..2cbe58bc1 100644
+index abfe3130dd..2cbe58bc15 100644
 --- a/man/journald.conf.xml
 +++ b/man/journald.conf.xml
 @@ -361,7 +361,7 @@

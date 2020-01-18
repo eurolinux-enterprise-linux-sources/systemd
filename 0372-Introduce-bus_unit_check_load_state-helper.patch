@@ -17,7 +17,7 @@ Related: #1256858
  2 files changed, 19 insertions(+)
 
 diff --git a/src/core/dbus-unit.c b/src/core/dbus-unit.c
-index 49770bfda..c3654db9e 100644
+index 49770bfda1..c3654db9ea 100644
 --- a/src/core/dbus-unit.c
 +++ b/src/core/dbus-unit.c
 @@ -1083,3 +1083,20 @@ int bus_unit_set_properties(
@@ -42,7 +42,7 @@ index 49770bfda..c3654db9e 100644
 +        return sd_bus_error_set_errnof(error, u->load_error, "Unit is not loaded properly: %m.");
 +}
 diff --git a/src/core/dbus-unit.h b/src/core/dbus-unit.h
-index 57a5e1974..433849641 100644
+index 57a5e19744..433849641e 100644
 --- a/src/core/dbus-unit.h
 +++ b/src/core/dbus-unit.h
 @@ -37,3 +37,5 @@ int bus_unit_method_reset_failed(sd_bus *bus, sd_bus_message *message, void *use

@@ -9,7 +9,7 @@ Resolves: #1252409
  1 file changed, 4 deletions(-)
 
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index fb7aae309..f13147f65 100644
+index fb7aae3096..f13147f659 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -1577,10 +1577,6 @@ int server_init(Server *s) {

@@ -31,7 +31,7 @@ Resolves: #1274401
  2 files changed, 60 insertions(+), 28 deletions(-)
 
 diff --git a/rules/40-redhat.rules b/rules/40-redhat.rules
-index 0164dc921..c928d412b 100644
+index 0164dc9214..c928d412b7 100644
 --- a/rules/40-redhat.rules
 +++ b/rules/40-redhat.rules
 @@ -15,3 +15,28 @@ SUBSYSTEM=="scsi", ENV{DEVTYPE}=="scsi_target", TEST!="[module/sg]", RUN+="/sbin
@@ -64,7 +64,7 @@ index 0164dc921..c928d412b 100644
 +
 +LABEL="zfcp_scsi_device_end"
 diff --git a/src/udev/udev-builtin-path_id.c b/src/udev/udev-builtin-path_id.c
-index 88a812ff5..19447201b 100644
+index 88a812ff53..19447201b4 100644
 --- a/src/udev/udev-builtin-path_id.c
 +++ b/src/udev/udev-builtin-path_id.c
 @@ -615,27 +615,23 @@ static struct udev_device *handle_bcma(struct udev_device *parent, char **path)

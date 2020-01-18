@@ -15,7 +15,7 @@ Resolves: #1371205
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/libsystemd/sd-bus/bus-internal.h b/src/libsystemd/sd-bus/bus-internal.h
-index 071b3da79..6a106862e 100644
+index 071b3da790..6a106862ee 100644
 --- a/src/libsystemd/sd-bus/bus-internal.h
 +++ b/src/libsystemd/sd-bus/bus-internal.h
 @@ -326,8 +326,8 @@ struct sd_bus {

@@ -22,7 +22,7 @@ Related: #1511043
  1 file changed, 8 insertions(+), 33 deletions(-)
 
 diff --git a/src/cryptsetup/cryptsetup.c b/src/cryptsetup/cryptsetup.c
-index c57d2b294..69a015614 100644
+index c57d2b2948..69a0156144 100644
 --- a/src/cryptsetup/cryptsetup.c
 +++ b/src/cryptsetup/cryptsetup.c
 @@ -217,23 +217,6 @@ static void log_glue(int level, const char *msg, void *usrptr) {

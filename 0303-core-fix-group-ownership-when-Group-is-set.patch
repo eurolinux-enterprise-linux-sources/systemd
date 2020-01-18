@@ -19,7 +19,7 @@ Resolves: #1324826
  create mode 100644 test/exec-runtimedirectory-owner.service
 
 diff --git a/src/core/execute.c b/src/core/execute.c
-index 1815e3de2..8172c8b44 100644
+index 1815e3de2d..8172c8b442 100644
 --- a/src/core/execute.c
 +++ b/src/core/execute.c
 @@ -629,14 +629,6 @@ static int enforce_groups(const ExecContext *context, const char *username, gid_
@@ -56,7 +56,7 @@ index 1815e3de2..8172c8b44 100644
           * must sure to drop O_NONBLOCK */
          if (socket_fd >= 0)
 diff --git a/src/test/test-execute.c b/src/test/test-execute.c
-index 90b1c871c..38522a168 100644
+index 90b1c871cc..38522a168d 100644
 --- a/src/test/test-execute.c
 +++ b/src/test/test-execute.c
 @@ -144,6 +144,7 @@ static void test_exec_umask(Manager *m) {
@@ -69,7 +69,7 @@ index 90b1c871c..38522a168 100644
  int main(int argc, char *argv[]) {
 diff --git a/test/exec-runtimedirectory-owner.service b/test/exec-runtimedirectory-owner.service
 new file mode 100644
-index 000000000..077e08d1c
+index 0000000000..077e08d1c5
 --- /dev/null
 +++ b/test/exec-runtimedirectory-owner.service
 @@ -0,0 +1,9 @@

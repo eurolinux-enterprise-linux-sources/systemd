@@ -1,0 +1,36 @@
+From 2175fc04df0f8e272cbff7540acd38eced9c63d7 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 29 Apr 2016 11:18:53 +0200
+Subject: [PATCH] core: rerun GC logic for a unit that loses a reference
+
+Let's make sure when we drop a reference to a unit, that we run the GC queue on
+it again.
+
+This (together with the previous commit) should deal with the GC issues pointed
+out in:
+
+https://github.com/systemd/systemd/pull/2993#issuecomment-215331189
+
+(cherry picked from commit b75102e5bf4cf249052d42be955d403e3e03b47c)
+(cherry picked from commit 0ace07115f14a57c81afbc9a7e947778a743870e)
+
+Related: #1729228
+---
+ src/core/unit.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/core/unit.c b/src/core/unit.c
+index 1dff541ac3..b004aa8fcd 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -3145,6 +3145,10 @@ void unit_ref_unset(UnitRef *ref) {
+         if (!ref->unit)
+                 return;
+ 
++        /* We are about to drop a reference to the unit, make sure the garbage collection has a look at it as it might
++         * be unreferenced now. */
++        unit_add_to_gc_queue(ref->unit);
++
+         LIST_REMOVE(refs, ref->unit->refs, ref);
+         ref->unit = NULL;
+ }

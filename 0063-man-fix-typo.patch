@@ -9,7 +9,7 @@ Subject: [PATCH] man: fix typo
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/man/systemd.netdev.xml b/man/systemd.netdev.xml
-index 4480e1999..ef58887dc 100644
+index 4480e1999d..ef58887dc8 100644
 --- a/man/systemd.netdev.xml
 +++ b/man/systemd.netdev.xml
 @@ -108,7 +108,7 @@

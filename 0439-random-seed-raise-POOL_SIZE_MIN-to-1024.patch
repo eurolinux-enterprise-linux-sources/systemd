@@ -9,7 +9,7 @@ Resolves: #1386824
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/random-seed/random-seed.c b/src/random-seed/random-seed.c
-index ce1bd195d..3ccc8f681 100644
+index ce1bd195d2..3ccc8f6819 100644
 --- a/src/random-seed/random-seed.c
 +++ b/src/random-seed/random-seed.c
 @@ -29,7 +29,7 @@

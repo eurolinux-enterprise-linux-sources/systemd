@@ -10,7 +10,7 @@ https://bugs.freedesktop.org/show_bug.cgi?id=89379
  1 file changed, 5 insertions(+), 7 deletions(-)
 
 diff --git a/src/libsystemd/sd-daemon/sd-daemon.c b/src/libsystemd/sd-daemon/sd-daemon.c
-index 028c2a7a5..22a3a5347 100644
+index 028c2a7a5b..22a3a5347a 100644
 --- a/src/libsystemd/sd-daemon/sd-daemon.c
 +++ b/src/libsystemd/sd-daemon/sd-daemon.c
 @@ -352,11 +352,7 @@ _public_ int sd_pid_notify_with_fds(pid_t pid, int unset_environment, const char

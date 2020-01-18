@@ -17,7 +17,7 @@ Resolves: #1354410
  8 files changed, 269 insertions(+), 28 deletions(-)
 
 diff --git a/man/systemd.automount.xml b/man/systemd.automount.xml
-index b5b5885cd..9561590c5 100644
+index b5b5885cdf..9561590c5c 100644
 --- a/man/systemd.automount.xml
 +++ b/man/systemd.automount.xml
 @@ -135,6 +135,14 @@
@@ -36,7 +36,7 @@ index b5b5885cd..9561590c5 100644
    </refsect1>
  
 diff --git a/man/systemd.mount.xml b/man/systemd.mount.xml
-index 8e652e133..04ed1e1cf 100644
+index 8e652e1332..04ed1e1cf4 100644
 --- a/man/systemd.mount.xml
 +++ b/man/systemd.mount.xml
 @@ -177,6 +177,15 @@
@@ -56,7 +56,7 @@ index 8e652e133..04ed1e1cf 100644
          <term><option>x-systemd.device-timeout=</option></term>
  
 diff --git a/src/core/automount.c b/src/core/automount.c
-index b391f6198..4e066613d 100644
+index b391f6198e..4e066613d7 100644
 --- a/src/core/automount.c
 +++ b/src/core/automount.c
 @@ -42,6 +42,7 @@
@@ -433,7 +433,7 @@ index b391f6198..4e066613d 100644
                  log_unit_error(UNIT(a)->id, "Received unknown automount request %i", packet.hdr.type);
                  break;
 diff --git a/src/core/automount.h b/src/core/automount.h
-index 60f552238..2a50fef68 100644
+index 60f5522389..2a50fef68d 100644
 --- a/src/core/automount.h
 +++ b/src/core/automount.h
 @@ -47,6 +47,7 @@ struct Automount {
@@ -463,7 +463,7 @@ index 60f552238..2a50fef68 100644
  const char* automount_state_to_string(AutomountState i) _const_;
  AutomountState automount_state_from_string(const char *s) _pure_;
 diff --git a/src/core/dbus-automount.c b/src/core/dbus-automount.c
-index b2a510ad0..c62ad8242 100644
+index b2a510ad09..c62ad8242b 100644
 --- a/src/core/dbus-automount.c
 +++ b/src/core/dbus-automount.c
 @@ -32,5 +32,6 @@ const sd_bus_vtable bus_automount_vtable[] = {
@@ -474,7 +474,7 @@ index b2a510ad0..c62ad8242 100644
          SD_BUS_VTABLE_END
  };
 diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
-index f3a6e13d9..c866a9cd0 100644
+index f3a6e13d9f..c866a9cd02 100644
 --- a/src/core/load-fragment-gperf.gperf.m4
 +++ b/src/core/load-fragment-gperf.gperf.m4
 @@ -318,6 +318,7 @@ KILL_CONTEXT_CONFIG_ITEMS(Mount)m4_dnl
@@ -486,7 +486,7 @@ index f3a6e13d9..c866a9cd0 100644
  Swap.What,                       config_parse_path,                  0,                             offsetof(Swap, parameters_fragment.what)
  Swap.Priority,                   config_parse_int,                   0,                             offsetof(Swap, parameters_fragment.priority)
 diff --git a/src/core/mount.c b/src/core/mount.c
-index 3fbdb7daf..7ca7f5a25 100644
+index 3fbdb7dafb..7ca7f5a258 100644
 --- a/src/core/mount.c
 +++ b/src/core/mount.c
 @@ -552,7 +552,7 @@ static int mount_load(Unit *u) {
@@ -531,7 +531,7 @@ index 3fbdb7daf..7ca7f5a25 100644
          if (state != old_state)
                  log_unit_debug(UNIT(m)->id,
 diff --git a/src/fstab-generator/fstab-generator.c b/src/fstab-generator/fstab-generator.c
-index 029eb1638..a943393b0 100644
+index 029eb16380..a943393b04 100644
 --- a/src/fstab-generator/fstab-generator.c
 +++ b/src/fstab-generator/fstab-generator.c
 @@ -213,6 +213,30 @@ static int write_requires_mounts_for(FILE *f, const char *opts) {

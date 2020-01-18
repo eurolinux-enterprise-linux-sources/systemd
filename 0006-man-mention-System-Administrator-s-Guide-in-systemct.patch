@@ -10,7 +10,7 @@ Resolves: #978948
  1 file changed, 11 insertions(+)
 
 diff --git a/man/systemctl.xml b/man/systemctl.xml
-index 338c1d328..6f30474c3 100644
+index 338c1d3280..6f30474c39 100644
 --- a/man/systemctl.xml
 +++ b/man/systemctl.xml
 @@ -1713,6 +1713,17 @@ kobject-uevent 1 systemd-udevd-kernel.socket systemd-udevd.service

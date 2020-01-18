@@ -13,7 +13,7 @@ Resolves: #1289461
  2 files changed, 3 insertions(+), 5 deletions(-)
 
 diff --git a/src/udev/udev-builtin-blkid.c b/src/udev/udev-builtin-blkid.c
-index 89995831b..2b2c3dad6 100644
+index 89995831b1..2b2c3dad66 100644
 --- a/src/udev/udev-builtin-blkid.c
 +++ b/src/udev/udev-builtin-blkid.c
 @@ -263,7 +263,7 @@ static int builtin_blkid(struct udev_device *dev, int argc, char *argv[], bool t
@@ -26,7 +26,7 @@ index 89995831b..2b2c3dad6 100644
          }
  
 diff --git a/src/udev/udev-builtin-usb_id.c b/src/udev/udev-builtin-usb_id.c
-index ab0d96e37..64b763c1e 100644
+index ab0d96e377..64b763c1e1 100644
 --- a/src/udev/udev-builtin-usb_id.c
 +++ b/src/udev/udev-builtin-usb_id.c
 @@ -168,10 +168,8 @@ static int dev_if_packed_info(struct udev_device *dev, char *ifs_str, size_t len

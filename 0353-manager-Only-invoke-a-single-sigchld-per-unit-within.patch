@@ -27,7 +27,7 @@ Resolves: #1342173
  3 files changed, 16 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/manager.c b/src/core/manager.c
-index e5226a8a6..63693b93a 100644
+index e5226a8a6f..63693b93a6 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -1747,14 +1747,25 @@ static int manager_dispatch_notify_fd(sd_event_source *source, int fd, uint32_t
@@ -58,7 +58,7 @@ index e5226a8a6..63693b93a 100644
  
  static int manager_dispatch_sigchld(Manager *m) {
 diff --git a/src/core/unit.c b/src/core/unit.c
-index d6ead7d67..d62135d87 100644
+index d6ead7d672..d62135d878 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -94,6 +94,7 @@ Unit *unit_new(Manager *m, size_t size) {
@@ -70,7 +70,7 @@ index d6ead7d67..d62135d87 100644
          return u;
  }
 diff --git a/src/core/unit.h b/src/core/unit.h
-index 0eebc0b89..d93645777 100644
+index 0eebc0b891..d936457776 100644
 --- a/src/core/unit.h
 +++ b/src/core/unit.h
 @@ -167,6 +167,9 @@ struct Unit {

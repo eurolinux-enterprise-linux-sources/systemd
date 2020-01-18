@@ -14,7 +14,7 @@ Resolves: #1477757
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/units/remote-cryptsetup.target b/units/remote-cryptsetup.target
-index d485b0672..ac4e1b71d 100644
+index d485b06726..ac4e1b71db 100644
 --- a/units/remote-cryptsetup.target
 +++ b/units/remote-cryptsetup.target
 @@ -8,7 +8,7 @@

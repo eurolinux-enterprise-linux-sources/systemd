@@ -10,7 +10,7 @@ Resolves: #1409527
  1 file changed, 6 insertions(+)
 
 diff --git a/src/libsystemd/libsystemd.sym.m4 b/src/libsystemd/libsystemd.sym.m4
-index 76a8c921c..b1c2b43dd 100644
+index 76a8c921c6..b1c2b43ddf 100644
 --- a/src/libsystemd/libsystemd.sym.m4
 +++ b/src/libsystemd/libsystemd.sym.m4
 @@ -163,6 +163,12 @@ global:

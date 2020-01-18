@@ -42,7 +42,7 @@ Resolves: #1368856
  4 files changed, 64 insertions(+), 30 deletions(-)
 
 diff --git a/src/core/manager.c b/src/core/manager.c
-index 9c406bb5b..0466e4bb8 100644
+index 9c406bb5bf..0466e4bb8a 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -1373,6 +1373,41 @@ Unit *manager_get_unit(Manager *m, const char *name) {
@@ -100,7 +100,7 @@ index 9c406bb5b..0466e4bb8 100644
  }
  
 diff --git a/src/core/manager.h b/src/core/manager.h
-index 90d2d982e..b0e4cad1f 100644
+index 90d2d982e1..b0e4cad1fc 100644
 --- a/src/core/manager.h
 +++ b/src/core/manager.h
 @@ -114,6 +114,9 @@ struct Manager {
@@ -114,7 +114,7 @@ index 90d2d982e..b0e4cad1f 100644
  
          /* We use two hash tables here, since the same PID might be
 diff --git a/src/core/unit.c b/src/core/unit.c
-index 22d9beed7..cfddce34d 100644
+index 22d9beed76..cfddce34d4 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -519,6 +519,9 @@ void unit_free(Unit *u) {
@@ -192,7 +192,7 @@ index 22d9beed7..cfddce34d 100644
                  r = unit_add_slice_dependencies(u);
                  if (r < 0)
 diff --git a/src/core/unit.h b/src/core/unit.h
-index 480e2e95f..dfec9cea0 100644
+index 480e2e95f1..dfec9cea01 100644
 --- a/src/core/unit.h
 +++ b/src/core/unit.h
 @@ -162,6 +162,9 @@ struct Unit {

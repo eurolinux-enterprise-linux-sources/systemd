@@ -26,7 +26,7 @@ Resolves: #1535135
  1 file changed, 16 insertions(+), 12 deletions(-)
 
 diff --git a/src/core/automount.c b/src/core/automount.c
-index 20a5de8ca..182ba5240 100644
+index 20a5de8cae..182ba5240f 100644
 --- a/src/core/automount.c
 +++ b/src/core/automount.c
 @@ -712,7 +712,7 @@ static int automount_start_expire(Automount *a) {

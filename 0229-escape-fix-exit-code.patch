@@ -14,7 +14,7 @@ Resolves: #1222517
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/escape/escape.c b/src/escape/escape.c
-index f2a072186..766a2c2c6 100644
+index f2a0721861..766a2c2c61 100644
 --- a/src/escape/escape.c
 +++ b/src/escape/escape.c
 @@ -232,5 +232,5 @@ int main(int argc, char *argv[]) {

@@ -11,7 +11,7 @@ Found by Valgrind while testing the previous memory leak fix.
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/src/journal-remote/microhttpd-util.c b/src/journal-remote/microhttpd-util.c
-index de9c6ab32..a95fff18f 100644
+index de9c6ab32d..a95fff18f3 100644
 --- a/src/journal-remote/microhttpd-util.c
 +++ b/src/journal-remote/microhttpd-util.c
 @@ -239,10 +239,14 @@ static int get_auth_dn(gnutls_x509_crt_t client_cert, char **buf) {

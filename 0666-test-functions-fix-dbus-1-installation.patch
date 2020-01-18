@@ -1,0 +1,29 @@
+From f22596b2032c31e2014c17bf182737c57cf3b83a Mon Sep 17 00:00:00 2001
+From: Evgeny Vereshchagin <evvers@ya.ru>
+Date: Wed, 4 Nov 2015 18:33:37 +0000
+Subject: [PATCH] test-functions: fix dbus-1 installation
+
+The basic setup for the well-known system and session buses is
+now done in read-only files in ${datadir} (normally /usr/share).
+See the NEWS entry for 1.9.18 for details.
+
+http://cgit.freedesktop.org/dbus/dbus/tree/NEWS
+
+Cherry-picked from: e63b61be5350dbe92ea12e1eeb96dde251ed9292
+---
+ test/test-functions | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/test/test-functions b/test/test-functions
+index cf5612370b..def16d3277 100644
+--- a/test/test-functions
++++ b/test/test-functions
+@@ -271,7 +271,7 @@ install_dbus() {
+     inst $ROOTLIBDIR/system/dbus.service
+ 
+     find \
+-        /etc/dbus-1 -xtype f \
++        /etc/dbus-1 /usr/share/dbus-1 -xtype f \
+         | while read file; do
+         inst $file
+     done

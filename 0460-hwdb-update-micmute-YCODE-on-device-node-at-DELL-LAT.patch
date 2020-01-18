@@ -12,7 +12,7 @@ Related: #1413477
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/hwdb/60-keyboard.hwdb b/hwdb/60-keyboard.hwdb
-index a7ae2f867..a9cd73b72 100644
+index a7ae2f8673..a9cd73b727 100644
 --- a/hwdb/60-keyboard.hwdb
 +++ b/hwdb/60-keyboard.hwdb
 @@ -265,7 +265,7 @@ keyboard:dmi:bvn*:bvr*:bd*:svnDell*:pnXPS12-9Q33*:pvr*

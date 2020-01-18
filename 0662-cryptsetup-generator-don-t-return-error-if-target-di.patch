@@ -10,7 +10,7 @@ Related: #1619743
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/src/cryptsetup/cryptsetup-generator.c b/src/cryptsetup/cryptsetup-generator.c
-index 42c30c5ca..a9598180c 100644
+index 42c30c5ca9..a9598180c6 100644
 --- a/src/cryptsetup/cryptsetup-generator.c
 +++ b/src/cryptsetup/cryptsetup-generator.c
 @@ -63,11 +63,11 @@ static int generate_keydev_mount(const char *name, const char *keydev, char **un

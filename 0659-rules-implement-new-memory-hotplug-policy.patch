@@ -28,7 +28,7 @@ Resolves: #1614686
  1 file changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/rules/40-redhat.rules b/rules/40-redhat.rules
-index 34a1df9c4..1b10e173d 100644
+index 34a1df9c48..1b10e173d6 100644
 --- a/rules/40-redhat.rules
 +++ b/rules/40-redhat.rules
 @@ -4,7 +4,14 @@

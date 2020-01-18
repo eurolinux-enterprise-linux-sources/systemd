@@ -1,0 +1,41 @@
+From 2b0874a8a0ff4bced5da0c25a4b3f3fbd2595e23 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Wed, 1 May 2019 15:58:44 +0200
+Subject: [PATCH] udev: check age against both timeouts to prevent integer
+ wraparound
+
+If we get back to while loop after timeout_warn (roughly 60s)
+expired for the first time, but before age of the event is larger than
+second timeout (roughly 120s) we would try to recompute timeout_warn
+again. Previously the following code,
+
+if (timeout_warn_usec > 0)
+        timeout_warn = ((timeout_warn_usec - age_usec) / USEC_PER_MSEC) + MSEC_PER_SEC;
+
+would cause an integer wraparound because (timeout_warn_usec - age_usec)
+is negative however both timeout_warn_usec and age_usec are
+unsigned.
+
+This can happen if we get SIGTERM from the main daemon while waiting in
+the second poll(), i.e. after timeout_warn already expired, because on
+SIGTERM we just take a note of that happening in event->sigterm and
+continue.
+
+Related: #1697909
+---
+ src/udev/udev-event.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/udev/udev-event.c b/src/udev/udev-event.c
+index 07b82d093e..5550ec93de 100644
+--- a/src/udev/udev-event.c
++++ b/src/udev/udev-event.c
+@@ -559,7 +559,7 @@ static int spawn_wait(struct udev_event *event,
+                         usec_t age_usec;
+ 
+                         age_usec = now(CLOCK_MONOTONIC) - event->birth_usec;
+-                        if (age_usec >= timeout_usec)
++                        if (age_usec >= timeout_usec || age_usec >= timeout_warn_usec)
+                                 timeout = 1000;
+                         else {
+                                 if (timeout_warn_usec > 0)

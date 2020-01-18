@@ -15,7 +15,7 @@ Resolves: #1384014
  1 file changed, 1 insertion(+)
 
 diff --git a/units/cryptsetup-pre.target b/units/cryptsetup-pre.target
-index 65353419f..42e35dd4e 100644
+index 65353419fc..42e35dd4e4 100644
 --- a/units/cryptsetup-pre.target
 +++ b/units/cryptsetup-pre.target
 @@ -9,3 +9,4 @@

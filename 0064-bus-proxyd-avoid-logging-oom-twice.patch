@@ -9,7 +9,7 @@ Subject: [PATCH] bus-proxyd: avoid logging oom twice
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/bus-proxyd/bus-proxyd.c b/src/bus-proxyd/bus-proxyd.c
-index b6b005636..b6550ed3c 100644
+index b6b0056362..b6550ed3cf 100644
 --- a/src/bus-proxyd/bus-proxyd.c
 +++ b/src/bus-proxyd/bus-proxyd.c
 @@ -82,7 +82,7 @@ static int client_context_new(ClientContext **out) {

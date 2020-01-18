@@ -14,7 +14,7 @@ Related: #1350232
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/src/journal/journal-verify.c b/src/journal/journal-verify.c
-index 53f0550da..77fb4090d 100644
+index 53f0550daf..77fb4090da 100644
 --- a/src/journal/journal-verify.c
 +++ b/src/journal/journal-verify.c
 @@ -123,8 +123,10 @@ static int journal_file_object_verify(JournalFile *f, uint64_t offset, Object *o

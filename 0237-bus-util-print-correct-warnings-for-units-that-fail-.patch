@@ -11,7 +11,7 @@ Related: #1016680
  1 file changed, 20 insertions(+), 14 deletions(-)
 
 diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
-index 017fbaf2a..e48abf55a 100644
+index 017fbaf2a3..e48abf55a3 100644
 --- a/src/libsystemd/sd-bus/bus-util.c
 +++ b/src/libsystemd/sd-bus/bus-util.c
 @@ -1724,28 +1724,34 @@ static const struct {

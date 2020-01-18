@@ -16,7 +16,7 @@ Resolves: #1329233
  3 files changed, 9 insertions(+)
 
 diff --git a/man/journal-remote.conf.xml b/man/journal-remote.conf.xml
-index a7b222718..9a385c7e5 100644
+index a7b2227182..9a385c7e5e 100644
 --- a/man/journal-remote.conf.xml
 +++ b/man/journal-remote.conf.xml
 @@ -72,6 +72,13 @@
@@ -34,7 +34,7 @@ index a7b222718..9a385c7e5 100644
        <varlistentry>
          <term><varname>SplitMode=</varname></term>
 diff --git a/src/journal-remote/journal-remote.c b/src/journal-remote/journal-remote.c
-index b7cc6d717..9c515f9c8 100644
+index b7cc6d7172..9c515f9c8f 100644
 --- a/src/journal-remote/journal-remote.c
 +++ b/src/journal-remote/journal-remote.c
 @@ -1174,6 +1174,7 @@ static DEFINE_CONFIG_PARSE_ENUM(config_parse_write_split_mode,
@@ -46,7 +46,7 @@ index b7cc6d717..9c515f9c8 100644
                  { "Remote",  "ServerKeyFile",          config_parse_path,             0, &arg_key        },
                  { "Remote",  "ServerCertificateFile",  config_parse_path,             0, &arg_cert       },
 diff --git a/src/journal-remote/journal-remote.conf.in b/src/journal-remote/journal-remote.conf.in
-index 3e32f34de..7122d6336 100644
+index 3e32f34def..7122d63362 100644
 --- a/src/journal-remote/journal-remote.conf.in
 +++ b/src/journal-remote/journal-remote.conf.in
 @@ -1,4 +1,5 @@

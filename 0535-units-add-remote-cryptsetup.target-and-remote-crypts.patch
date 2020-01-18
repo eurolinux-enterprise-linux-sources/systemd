@@ -22,7 +22,7 @@ Resolves: #1384014
  create mode 100644 units/remote-cryptsetup.target
 
 diff --git a/Makefile.am b/Makefile.am
-index 0e2f8d561..a1ebf5cb0 100644
+index 0e2f8d561c..a1ebf5cb07 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -4861,7 +4861,9 @@ systemgenerator_PROGRAMS += \
@@ -37,7 +37,7 @@ index 0e2f8d561..a1ebf5cb0 100644
  systemd_cryptsetup_SOURCES = \
  	src/cryptsetup/cryptsetup.c
 diff --git a/man/systemd.special.xml b/man/systemd.special.xml
-index eb464f9f8..5529d3bf7 100644
+index eb464f9f81..5529d3bf7e 100644
 --- a/man/systemd.special.xml
 +++ b/man/systemd.special.xml
 @@ -81,6 +81,8 @@
@@ -78,7 +78,7 @@ index eb464f9f8..5529d3bf7 100644
          <term><filename>remote-fs.target</filename></term>
          <listitem>
 diff --git a/units/cryptsetup-pre.target b/units/cryptsetup-pre.target
-index 42e35dd4e..6cb28a61a 100644
+index 42e35dd4e4..6cb28a61ae 100644
 --- a/units/cryptsetup-pre.target
 +++ b/units/cryptsetup-pre.target
 @@ -6,7 +6,7 @@
@@ -91,7 +91,7 @@ index 42e35dd4e..6cb28a61a 100644
  RefuseManualStart=yes
  Before=cryptsetup.target
 diff --git a/units/cryptsetup.target b/units/cryptsetup.target
-index 25d3e33f6..10b17fd38 100644
+index 25d3e33f6a..10b17fd387 100644
 --- a/units/cryptsetup.target
 +++ b/units/cryptsetup.target
 @@ -6,5 +6,5 @@
@@ -103,7 +103,7 @@ index 25d3e33f6..10b17fd38 100644
  Documentation=man:systemd.special(7)
 diff --git a/units/remote-cryptsetup-pre.target b/units/remote-cryptsetup-pre.target
 new file mode 100644
-index 000000000..a375e6188
+index 0000000000..a375e61889
 --- /dev/null
 +++ b/units/remote-cryptsetup-pre.target
 @@ -0,0 +1,15 @@
@@ -124,7 +124,7 @@ index 000000000..a375e6188
 +Wants=network-online.target
 diff --git a/units/remote-cryptsetup.target b/units/remote-cryptsetup.target
 new file mode 100644
-index 000000000..60943bd1c
+index 0000000000..60943bd1cb
 --- /dev/null
 +++ b/units/remote-cryptsetup.target
 @@ -0,0 +1,10 @@

@@ -11,7 +11,7 @@ Related: #1477757
  1 file changed, 1 insertion(+), 3 deletions(-)
 
 diff --git a/src/cryptsetup/cryptsetup-generator.c b/src/cryptsetup/cryptsetup-generator.c
-index 82a280d86..c387e2104 100644
+index 82a280d865..c387e2104c 100644
 --- a/src/cryptsetup/cryptsetup-generator.c
 +++ b/src/cryptsetup/cryptsetup-generator.c
 @@ -214,10 +214,8 @@ static int create_disk(

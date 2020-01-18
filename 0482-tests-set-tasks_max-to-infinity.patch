@@ -13,7 +13,7 @@ Related: #1337244
  2 files changed, 16 insertions(+)
 
 diff --git a/src/test/test-cgroup-mask.c b/src/test/test-cgroup-mask.c
-index 9e9de23e0..471adb25b 100644
+index 9e9de23e0e..471adb25ba 100644
 --- a/src/test/test-cgroup-mask.c
 +++ b/src/test/test-cgroup-mask.c
 @@ -45,6 +45,17 @@ static int test_cgroup_mask(void) {
@@ -35,7 +35,7 @@ index 9e9de23e0..471adb25b 100644
          assert_se(manager_startup(m, serial, fdset) >= 0);
  
 diff --git a/src/test/test-execute.c b/src/test/test-execute.c
-index 8e70702cb..627097fcf 100644
+index 8e70702cbb..627097fcf2 100644
 --- a/src/test/test-execute.c
 +++ b/src/test/test-execute.c
 @@ -270,6 +270,11 @@ int main(int argc, char *argv[]) {

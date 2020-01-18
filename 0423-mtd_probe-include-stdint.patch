@@ -10,7 +10,7 @@ Resolves: #1404251
  1 file changed, 1 insertion(+)
 
 diff --git a/src/udev/mtd_probe/mtd_probe.h b/src/udev/mtd_probe/mtd_probe.h
-index d99be9add..cead37402 100644
+index d99be9addc..cead374023 100644
 --- a/src/udev/mtd_probe/mtd_probe.h
 +++ b/src/udev/mtd_probe/mtd_probe.h
 @@ -20,6 +20,7 @@

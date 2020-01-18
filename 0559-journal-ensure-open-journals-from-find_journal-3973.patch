@@ -23,7 +23,7 @@ Resolves: #1493846
  1 file changed, 114 insertions(+), 103 deletions(-)
 
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index c1358e1e9..96e7d6156 100644
+index c1358e1e95..96e7d61565 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -239,6 +239,109 @@ finish:

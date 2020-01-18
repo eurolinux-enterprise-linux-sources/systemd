@@ -10,7 +10,7 @@ Related: #1331667
  1 file changed, 1 insertion(+)
 
 diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
-index faa124d92..1a5525e50 100644
+index faa124d926..1a5525e50f 100644
 --- a/src/core/dbus-manager.c
 +++ b/src/core/dbus-manager.c
 @@ -1621,6 +1621,7 @@ static int reply_unit_file_changes_and_free(

@@ -15,7 +15,7 @@ Resolves: #1493047
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/namespace.c b/src/core/namespace.c
-index 574746273..217dd36cb 100644
+index 5747462736..217dd36cbd 100644
 --- a/src/core/namespace.c
 +++ b/src/core/namespace.c
 @@ -521,7 +521,7 @@ int setup_namespace(

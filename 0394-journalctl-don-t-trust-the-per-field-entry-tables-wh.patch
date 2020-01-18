@@ -52,7 +52,7 @@ Related: #1318994
  1 file changed, 42 insertions(+), 29 deletions(-)
 
 diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
-index 5864ff50a..723854a2e 100644
+index 5864ff50a6..723854a2e9 100644
 --- a/src/journal/journalctl.c
 +++ b/src/journal/journalctl.c
 @@ -941,18 +941,18 @@ static void boot_id_free_all(BootId *l) {

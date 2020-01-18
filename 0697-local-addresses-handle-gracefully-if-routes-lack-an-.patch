@@ -1,0 +1,31 @@
+From c4037813ad63527be927a88fd6a28521cdff0762 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Tue, 23 Jan 2018 15:48:28 +0100
+Subject: [PATCH] local-addresses: handle gracefully if routes lack an RTA_OIF
+ attribute
+
+Some routes (such as those using "nexthop") don't have an RTA_OIF
+attribute. We need to handle that gracefully, by simply ignoring the
+route.
+
+Fixes: #7854
+(cherry picked from commit 568fc5c3f7223770b8f3471da314745742125bb9)
+
+Resolves: #1627750
+---
+ src/libsystemd/sd-rtnl/local-addresses.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/libsystemd/sd-rtnl/local-addresses.c b/src/libsystemd/sd-rtnl/local-addresses.c
+index 31bfa06066..82bad373b7 100644
+--- a/src/libsystemd/sd-rtnl/local-addresses.c
++++ b/src/libsystemd/sd-rtnl/local-addresses.c
+@@ -225,6 +225,8 @@ int local_gateways(sd_rtnl *context, int ifindex, int af, struct local_address *
+                         continue;
+ 
+                 r = sd_rtnl_message_read_u32(m, RTA_OIF, &ifi);
++                if (r == -ENODATA) /* Not all routes have an RTA_OIF attribute (for example nexthop ones) */
++                        continue;
+                 if (r < 0)
+                         return r;
+                 if (ifindex > 0 && (int) ifi != ifindex)

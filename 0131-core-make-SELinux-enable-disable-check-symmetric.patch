@@ -19,7 +19,7 @@ Conflicts:
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
-index 8ba665dc3..2bc37ba60 100644
+index 8ba665dc3d..2bc37ba60e 100644
 --- a/src/core/dbus-manager.c
 +++ b/src/core/dbus-manager.c
 @@ -1772,15 +1772,15 @@ static int method_disable_unit_files_generic(

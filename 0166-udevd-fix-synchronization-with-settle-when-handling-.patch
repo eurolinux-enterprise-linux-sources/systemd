@@ -41,7 +41,7 @@ Resolves: #1222517
  1 file changed, 14 insertions(+), 1 deletion(-)
 
 diff --git a/src/udev/udevd.c b/src/udev/udevd.c
-index e98c1fd6d..87a3f69e9 100644
+index e98c1fd6da..87a3f69e90 100644
 --- a/src/udev/udevd.c
 +++ b/src/udev/udevd.c
 @@ -1502,9 +1502,22 @@ int main(int argc, char *argv[]) {

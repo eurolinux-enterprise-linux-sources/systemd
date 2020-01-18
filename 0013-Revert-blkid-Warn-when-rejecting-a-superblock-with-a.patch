@@ -12,7 +12,7 @@ This reverts commit d47f6ca5f9b7a0b400d8bdb050151a0284fb4bdb.
  3 files changed, 3 insertions(+), 14 deletions(-)
 
 diff --git a/README b/README
-index 287d05c9b..ac2a81c0c 100644
+index 287d05c9b4..ac2a81c0cc 100644
 --- a/README
 +++ b/README
 @@ -115,7 +115,7 @@ REQUIREMENTS:
@@ -25,7 +25,7 @@ index 287d05c9b..ac2a81c0c 100644
          PAM >= 1.1.2 (optional)
          libcryptsetup (optional)
 diff --git a/configure.ac b/configure.ac
-index f701bcf71..9c25c3c6f 100644
+index f701bcf716..9c25c3c6fc 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -437,7 +437,7 @@ AM_CONDITIONAL(HAVE_XKBCOMMON, [test "$have_xkbcommon" = "yes"])
@@ -38,7 +38,7 @@ index f701bcf71..9c25c3c6f 100644
          if test "x$have_blkid" = xno -a "x$enable_blkid" = xyes; then
                  AC_MSG_ERROR([*** blkid support requested but libraries not found])
 diff --git a/src/udev/udev-builtin-blkid.c b/src/udev/udev-builtin-blkid.c
-index 03e3dc286..89995831b 100644
+index 03e3dc2867..89995831b1 100644
 --- a/src/udev/udev-builtin-blkid.c
 +++ b/src/udev/udev-builtin-blkid.c
 @@ -221,7 +221,6 @@ static int builtin_blkid(struct udev_device *dev, int argc, char *argv[], bool t

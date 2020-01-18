@@ -34,7 +34,7 @@ Resolves: #1348208
  1 file changed, 29 insertions(+)
 
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index b7496c006..58998185c 100644
+index b7496c006e..58998185c6 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -5333,6 +5333,29 @@ static int mangle_names(char **original_names, char ***mangled_names) {

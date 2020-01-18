@@ -12,7 +12,7 @@ Related: #1465759
  1 file changed, 2 insertions(+), 5 deletions(-)
 
 diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
-index c771cff8b..8c8379732 100644
+index c771cff8b8..8c83797328 100644
 --- a/src/journal/journalctl.c
 +++ b/src/journal/journalctl.c
 @@ -1804,15 +1804,12 @@ static int access_check(sd_journal *j) {

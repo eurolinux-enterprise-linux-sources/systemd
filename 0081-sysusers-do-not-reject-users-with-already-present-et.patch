@@ -14,7 +14,7 @@ It's better to relax checks here than to duplicate functionality in firstboot.
  1 file changed, 9 insertions(+), 14 deletions(-)
 
 diff --git a/src/sysusers/sysusers.c b/src/sysusers/sysusers.c
-index e47bcb4dc..76b5962c5 100644
+index e47bcb4dca..76b5962c51 100644
 --- a/src/sysusers/sysusers.c
 +++ b/src/sysusers/sysusers.c
 @@ -605,6 +605,8 @@ static int write_files(void) {

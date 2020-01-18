@@ -11,7 +11,7 @@ Resolves: #1476910
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/udev/scsi_id/scsi_id.c b/src/udev/scsi_id/scsi_id.c
-index a1b8e75fa..eae7e2955 100644
+index a1b8e75fac..eae7e29557 100644
 --- a/src/udev/scsi_id/scsi_id.c
 +++ b/src/udev/scsi_id/scsi_id.c
 @@ -333,7 +333,7 @@ static int set_options(struct udev *udev,

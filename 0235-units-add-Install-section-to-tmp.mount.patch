@@ -13,7 +13,7 @@ Resolves: #1199644
  1 file changed, 4 insertions(+)
 
 diff --git a/units/tmp.mount b/units/tmp.mount
-index 00a0d2872..af0cf4a55 100644
+index 00a0d28722..af0cf4a551 100644
 --- a/units/tmp.mount
 +++ b/units/tmp.mount
 @@ -19,3 +19,7 @@ What=tmpfs

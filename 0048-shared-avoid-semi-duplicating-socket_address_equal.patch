@@ -12,7 +12,7 @@ instead of implementing similar comparing of addresses.
  1 file changed, 1 insertion(+), 17 deletions(-)
 
 diff --git a/src/shared/socket-util.c b/src/shared/socket-util.c
-index c31f60ec7..deecce8a8 100644
+index c31f60ec7e..deecce8a80 100644
 --- a/src/shared/socket-util.c
 +++ b/src/shared/socket-util.c
 @@ -464,23 +464,7 @@ bool socket_address_matches_fd(const SocketAddress *a, int fd) {

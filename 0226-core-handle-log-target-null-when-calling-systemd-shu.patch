@@ -15,7 +15,7 @@ Resolves: #1222517
  1 file changed, 4 insertions(+)
 
 diff --git a/src/core/main.c b/src/core/main.c
-index fd527d4d6..1c8d67dac 100644
+index fd527d4d63..1c8d67dac2 100644
 --- a/src/core/main.c
 +++ b/src/core/main.c
 @@ -2001,6 +2001,10 @@ finish:

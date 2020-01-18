@@ -22,7 +22,7 @@ Related: #1351415
  5 files changed, 51 insertions(+), 17 deletions(-)
 
 diff --git a/src/shared/calendarspec.c b/src/shared/calendarspec.c
-index 2fde3e107..abbf0261e 100644
+index 2fde3e107e..abbf0261e7 100644
 --- a/src/shared/calendarspec.c
 +++ b/src/shared/calendarspec.c
 @@ -556,7 +556,7 @@ static int parse_date(const char **p, CalendarSpec *c) {
@@ -44,7 +44,7 @@ index 2fde3e107..abbf0261e 100644
                          goto fail;
  
 diff --git a/src/shared/time-util.c b/src/shared/time-util.c
-index 1c36c577c..c001f52de 100644
+index 1c36c577c4..c001f52def 100644
 --- a/src/shared/time-util.c
 +++ b/src/shared/time-util.c
 @@ -613,7 +613,8 @@ finish:
@@ -129,7 +129,7 @@ index 1c36c577c..c001f52de 100644
          static const struct {
                  const char *suffix;
 diff --git a/src/shared/time-util.h b/src/shared/time-util.h
-index fca8a4db9..f2789142f 100644
+index fca8a4db9b..f2789142fe 100644
 --- a/src/shared/time-util.h
 +++ b/src/shared/time-util.h
 @@ -99,6 +99,7 @@ void dual_timestamp_deserialize(const char *value, dual_timestamp *t);
@@ -141,7 +141,7 @@ index fca8a4db9..f2789142f 100644
  
  bool ntp_synced(void);
 diff --git a/src/test/test-time.c b/src/test/test-time.c
-index 3840fff06..820e4aaee 100644
+index 3840fff061..820e4aaee2 100644
 --- a/src/test/test-time.c
 +++ b/src/test/test-time.c
 @@ -57,6 +57,28 @@ static void test_parse_sec(void) {
@@ -182,7 +182,7 @@ index 3840fff06..820e4aaee 100644
          test_format_timespan(1);
          test_format_timespan(USEC_PER_MSEC);
 diff --git a/src/test/test-unit-file.c b/src/test/test-unit-file.c
-index d15173796..87c81ccd7 100644
+index d151737960..87c81ccd71 100644
 --- a/src/test/test-unit-file.c
 +++ b/src/test/test-unit-file.c
 @@ -559,7 +559,7 @@ static void test_config_parse_rlimit(void) {

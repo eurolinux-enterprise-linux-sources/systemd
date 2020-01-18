@@ -17,7 +17,7 @@ Resolves: #1573838
  1 file changed, 14 insertions(+), 6 deletions(-)
 
 diff --git a/src/cryptsetup/cryptsetup.c b/src/cryptsetup/cryptsetup.c
-index 69a015614..528c36c48 100644
+index 69a0156144..528c36c48b 100644
 --- a/src/cryptsetup/cryptsetup.c
 +++ b/src/cryptsetup/cryptsetup.c
 @@ -36,7 +36,15 @@

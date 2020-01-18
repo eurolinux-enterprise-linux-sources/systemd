@@ -13,7 +13,7 @@ Resolves: #1284974
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/src/import/import-job.c b/src/import/import-job.c
-index 809486500..5f9cfd366 100644
+index 809486500b..5f9cfd366d 100644
 --- a/src/import/import-job.c
 +++ b/src/import/import-job.c
 @@ -587,7 +587,7 @@ fail:

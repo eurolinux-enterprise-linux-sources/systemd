@@ -31,7 +31,7 @@ https://bugs.freedesktop.org/show_bug.cgi?id=89397
  16 files changed, 73 insertions(+), 45 deletions(-)
 
 diff --git a/man/bootchart.conf.xml b/man/bootchart.conf.xml
-index 8d9700d30..bf6ca0bf9 100644
+index 8d9700d300..bf6ca0bf9e 100644
 --- a/man/bootchart.conf.xml
 +++ b/man/bootchart.conf.xml
 @@ -68,8 +68,7 @@
@@ -45,7 +45,7 @@ index 8d9700d30..bf6ca0bf9 100644
    <refsect1>
      <title>Options</title>
 diff --git a/man/coredump.conf.xml b/man/coredump.conf.xml
-index 3d325e6ad..0b7329bf5 100644
+index 3d325e6ad7..0b7329bf55 100644
 --- a/man/coredump.conf.xml
 +++ b/man/coredump.conf.xml
 @@ -63,8 +63,7 @@
@@ -59,7 +59,7 @@ index 3d325e6ad..0b7329bf5 100644
    <refsect1>
      <title>Options</title>
 diff --git a/man/journald.conf.xml b/man/journald.conf.xml
-index 364b58f07..85146b0d8 100644
+index 364b58f07e..85146b0d82 100644
 --- a/man/journald.conf.xml
 +++ b/man/journald.conf.xml
 @@ -64,8 +64,7 @@
@@ -73,7 +73,7 @@ index 364b58f07..85146b0d8 100644
    <refsect1>
      <title>Options</title>
 diff --git a/man/logind.conf.xml b/man/logind.conf.xml
-index ffaec5035..ca2b18783 100644
+index ffaec50351..ca2b18783c 100644
 --- a/man/logind.conf.xml
 +++ b/man/logind.conf.xml
 @@ -58,11 +58,13 @@
@@ -94,7 +94,7 @@ index ffaec5035..ca2b18783 100644
    <refsect1>
      <title>Options</title>
 diff --git a/man/resolved.conf.xml b/man/resolved.conf.xml
-index 36cae2706..8047a4ea7 100644
+index 36cae2706c..8047a4ea75 100644
 --- a/man/resolved.conf.xml
 +++ b/man/resolved.conf.xml
 @@ -63,8 +63,7 @@
@@ -108,7 +108,7 @@ index 36cae2706..8047a4ea7 100644
    <refsect1>
      <title>Options</title>
 diff --git a/man/standard-conf.xml b/man/standard-conf.xml
-index b87d7e955..36af45927 100644
+index b87d7e955b..36af45927d 100644
 --- a/man/standard-conf.xml
 +++ b/man/standard-conf.xml
 @@ -33,13 +33,39 @@
@@ -160,7 +160,7 @@ index b87d7e955..36af45927 100644
    </refsection>
  </refsection>
 diff --git a/man/systemd-sleep.conf.xml b/man/systemd-sleep.conf.xml
-index 433f2f83a..bb17ec866 100644
+index 433f2f83a0..bb17ec8669 100644
 --- a/man/systemd-sleep.conf.xml
 +++ b/man/systemd-sleep.conf.xml
 @@ -112,8 +112,7 @@ along with systemd; If not, see <http://www.gnu.org/licenses/>.
@@ -174,7 +174,7 @@ index 433f2f83a..bb17ec866 100644
    <refsect1>
      <title>Options</title>
 diff --git a/man/systemd-system.conf.xml b/man/systemd-system.conf.xml
-index 7c3f23756..c7bcfaee4 100644
+index 7c3f237567..c7bcfaee4d 100644
 --- a/man/systemd-system.conf.xml
 +++ b/man/systemd-system.conf.xml
 @@ -74,8 +74,7 @@
@@ -188,7 +188,7 @@ index 7c3f23756..c7bcfaee4 100644
    <refsect1>
      <title>Options</title>
 diff --git a/man/timesyncd.conf.xml b/man/timesyncd.conf.xml
-index 1127970a1..89a651c66 100644
+index 1127970a18..89a651c662 100644
 --- a/man/timesyncd.conf.xml
 +++ b/man/timesyncd.conf.xml
 @@ -63,8 +63,7 @@
@@ -202,7 +202,7 @@ index 1127970a1..89a651c66 100644
    <refsect1>
      <title>Options</title>
 diff --git a/src/bootchart/bootchart.conf b/src/bootchart/bootchart.conf
-index 2d7cb6121..4f5e50936 100644
+index 2d7cb61217..4f5e50936e 100644
 --- a/src/bootchart/bootchart.conf
 +++ b/src/bootchart/bootchart.conf
 @@ -5,10 +5,11 @@
@@ -221,7 +221,7 @@ index 2d7cb6121..4f5e50936 100644
  [Bootchart]
  #Samples=500
 diff --git a/src/core/system.conf b/src/core/system.conf
-index a3727200d..231609033 100644
+index a3727200df..231609033b 100644
 --- a/src/core/system.conf
 +++ b/src/core/system.conf
 @@ -5,10 +5,11 @@
@@ -240,7 +240,7 @@ index a3727200d..231609033 100644
  [Manager]
  #LogLevel=info
 diff --git a/src/journal/coredump.conf b/src/journal/coredump.conf
-index 0fe9fe801..c2f0643e0 100644
+index 0fe9fe801a..c2f0643e03 100644
 --- a/src/journal/coredump.conf
 +++ b/src/journal/coredump.conf
 @@ -5,10 +5,11 @@
@@ -259,7 +259,7 @@ index 0fe9fe801..c2f0643e0 100644
  [Coredump]
  #Storage=external
 diff --git a/src/journal/journald.conf b/src/journal/journald.conf
-index 29bdf8f18..47eefe91c 100644
+index 29bdf8f183..47eefe91c1 100644
 --- a/src/journal/journald.conf
 +++ b/src/journal/journald.conf
 @@ -5,10 +5,11 @@
@@ -278,7 +278,7 @@ index 29bdf8f18..47eefe91c 100644
  [Journal]
  #Storage=auto
 diff --git a/src/login/logind.conf b/src/login/logind.conf
-index 6b1943a2d..834c4c2eb 100644
+index 6b1943a2d1..834c4c2ebf 100644
 --- a/src/login/logind.conf
 +++ b/src/login/logind.conf
 @@ -5,10 +5,11 @@
@@ -297,7 +297,7 @@ index 6b1943a2d..834c4c2eb 100644
  [Login]
  #NAutoVTs=6
 diff --git a/src/resolve/resolved.conf.in b/src/resolve/resolved.conf.in
-index e5a19ee47..3eb19e42b 100644
+index e5a19ee474..3eb19e42b7 100644
 --- a/src/resolve/resolved.conf.in
 +++ b/src/resolve/resolved.conf.in
 @@ -5,8 +5,9 @@
@@ -313,7 +313,7 @@ index e5a19ee47..3eb19e42b 100644
  # See resolved.conf(5) for details
  
 diff --git a/src/timesync/timesyncd.conf.in b/src/timesync/timesyncd.conf.in
-index fc3c6c49c..b6a2ada27 100644
+index fc3c6c49cf..b6a2ada273 100644
 --- a/src/timesync/timesyncd.conf.in
 +++ b/src/timesync/timesyncd.conf.in
 @@ -5,10 +5,11 @@

@@ -35,7 +35,7 @@ Resolves: #1496697
  2 files changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/rules/60-persistent-storage.rules b/rules/60-persistent-storage.rules
-index 06e3329cc..10642a1fd 100644
+index 06e3329cc9..10642a1fd8 100644
 --- a/rules/60-persistent-storage.rules
 +++ b/rules/60-persistent-storage.rules
 @@ -71,6 +71,10 @@ ENV{DEVTYPE}=="partition", ENV{ID_SAS_PATH}=="?*", SYMLINK+="disk/by-path/$env{I
@@ -50,7 +50,7 @@ index 06e3329cc..10642a1fd 100644
  KERNEL=="sr*", ENV{DISK_EJECT_REQUEST}!="?*", ENV{ID_CDROM_MEDIA_TRACK_COUNT_DATA}=="?*", ENV{ID_CDROM_MEDIA_SESSION_LAST_OFFSET}=="?*", \
    IMPORT{builtin}="blkid --offset=$env{ID_CDROM_MEDIA_SESSION_LAST_OFFSET}"
 diff --git a/src/udev/udev-builtin-path_id.c b/src/udev/udev-builtin-path_id.c
-index 19447201b..d113ff21b 100644
+index 19447201b4..d113ff21b0 100644
 --- a/src/udev/udev-builtin-path_id.c
 +++ b/src/udev/udev-builtin-path_id.c
 @@ -688,11 +688,8 @@ restart:

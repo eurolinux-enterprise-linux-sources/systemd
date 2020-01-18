@@ -16,7 +16,7 @@ Resolves: #1493976
  2 files changed, 8 insertions(+), 4 deletions(-)
 
 diff --git a/man/systemd-system.conf.xml b/man/systemd-system.conf.xml
-index 53e8ff665..1861bb03f 100644
+index 53e8ff665a..1861bb03f0 100644
 --- a/man/systemd-system.conf.xml
 +++ b/man/systemd-system.conf.xml
 @@ -117,8 +117,10 @@
@@ -33,7 +33,7 @@ index 53e8ff665..1861bb03f 100644
  
        <varlistentry>
 diff --git a/man/systemd.exec.xml b/man/systemd.exec.xml
-index 508146f06..d7503b8e8 100644
+index 508146f06c..d7503b8e81 100644
 --- a/man/systemd.exec.xml
 +++ b/man/systemd.exec.xml
 @@ -211,8 +211,10 @@

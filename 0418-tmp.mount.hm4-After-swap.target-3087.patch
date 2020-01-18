@@ -11,7 +11,7 @@ Resolves: #1298355
  1 file changed, 1 insertion(+)
 
 diff --git a/units/tmp.mount b/units/tmp.mount
-index af0cf4a55..8c53a8705 100644
+index af0cf4a551..8c53a87052 100644
 --- a/units/tmp.mount
 +++ b/units/tmp.mount
 @@ -13,6 +13,7 @@ ConditionPathIsSymbolicLink=!/tmp

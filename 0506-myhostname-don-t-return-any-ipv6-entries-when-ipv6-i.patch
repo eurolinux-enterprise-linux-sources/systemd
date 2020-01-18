@@ -12,7 +12,7 @@ Resolves: #1444824
  1 file changed, 4 insertions(+), 6 deletions(-)
 
 diff --git a/src/nss-myhostname/nss-myhostname.c b/src/nss-myhostname/nss-myhostname.c
-index e197cc752..144c83171 100644
+index e197cc752d..144c831719 100644
 --- a/src/nss-myhostname/nss-myhostname.c
 +++ b/src/nss-myhostname/nss-myhostname.c
 @@ -351,6 +351,8 @@ enum nss_status _nss_myhostname_gethostbyname3_r(

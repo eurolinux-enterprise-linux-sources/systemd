@@ -11,7 +11,7 @@ Related: #947636
  1 file changed, 8 insertions(+), 2 deletions(-)
 
 diff --git a/man/journalctl.xml b/man/journalctl.xml
-index 2764f66ed..0981fba72 100644
+index 2764f66ed4..0981fba729 100644
 --- a/man/journalctl.xml
 +++ b/man/journalctl.xml
 @@ -91,8 +91,14 @@

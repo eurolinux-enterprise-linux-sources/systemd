@@ -15,7 +15,7 @@ https://launchpad.net/bugs/1423867
  2 files changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/Makefile.am b/Makefile.am
-index bf65b2406..2e6455f6e 100644
+index bf65b24060..2e6455f6e3 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -199,6 +199,7 @@ AM_CPPFLAGS = \
@@ -27,7 +27,7 @@ index bf65b2406..2e6455f6e 100644
  	-I $(top_srcdir)/src \
  	-I $(top_builddir)/src/shared \
 diff --git a/src/bootchart/bootchart.c b/src/bootchart/bootchart.c
-index 64a384bac..175be6868 100644
+index 64a384bacf..175be68688 100644
 --- a/src/bootchart/bootchart.c
 +++ b/src/bootchart/bootchart.c
 @@ -76,7 +76,7 @@ int sysfd=-1;

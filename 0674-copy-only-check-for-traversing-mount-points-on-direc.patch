@@ -1,0 +1,47 @@
+From 025eb38eeb31ca07c98d2e41ce90d05016afc0f4 Mon Sep 17 00:00:00 2001
+From: Frantisek Sumsal <fsumsal@redhat.com>
+Date: Mon, 14 Jan 2019 11:20:52 +0100
+Subject: [PATCH] copy: only check for traversing mount points on directories
+
+This fixes the copy routines on overlay filesystem, which typically
+returns the underlying st_dev for files, symlinks, etc.
+
+The value of st_dev is guaranteed to be the same for directories, so
+checking it on directories only fixes this code on overlay filesystem
+and still keeps it from traversing mount points (which was the original
+intent.)
+
+There's a small side effect here, by which regular (non-directory) files
+with bind mounts will be copied by the new logic (while they were
+skipped by the previous logic.)
+
+Tested: ./build/test-copy with an overlay on /tmp.
+
+Cherry-picked from: ef202b848bb6635dec17d3ec0041b04cd2301bed
+---
+ src/shared/copy.c | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/src/shared/copy.c b/src/shared/copy.c
+index 2a0cb28080..0a7ee47f99 100644
+--- a/src/shared/copy.c
++++ b/src/shared/copy.c
+@@ -271,13 +271,12 @@ static int fd_copy_directory(
+                         continue;
+                 }
+ 
+-                if (buf.st_dev != original_device)
+-                        continue;
+-
+-                if (S_ISREG(buf.st_mode))
+-                        q = fd_copy_regular(dirfd(d), de->d_name, &buf, fdt, de->d_name);
+-                else if (S_ISDIR(buf.st_mode))
++                if (S_ISDIR(buf.st_mode)) {
++                        if (buf.st_dev != original_device)
++                                continue;
+                         q = fd_copy_directory(dirfd(d), de->d_name, &buf, fdt, de->d_name, original_device, merge);
++                } else if (S_ISREG(buf.st_mode))
++                        q = fd_copy_regular(dirfd(d), de->d_name, &buf, fdt, de->d_name);
+                 else if (S_ISLNK(buf.st_mode))
+                         q = fd_copy_symlink(dirfd(d), de->d_name, &buf, fdt, de->d_name);
+                 else if (S_ISFIFO(buf.st_mode))

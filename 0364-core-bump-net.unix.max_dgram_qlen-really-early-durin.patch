@@ -14,7 +14,7 @@ Related: #1267707
  2 files changed, 39 insertions(+)
 
 diff --git a/src/core/main.c b/src/core/main.c
-index 60ea36c3c..c9d8ce4a4 100644
+index 60ea36c3cb..c9d8ce4a40 100644
 --- a/src/core/main.c
 +++ b/src/core/main.c
 @@ -1198,6 +1198,7 @@ static int status_welcome(void) {
@@ -75,7 +75,7 @@ index 60ea36c3c..c9d8ce4a4 100644
                  test_mtab();
                  test_usr();
 diff --git a/src/shared/def.h b/src/shared/def.h
-index a3d9fcf38..76daf012d 100644
+index a3d9fcf388..76daf012d7 100644
 --- a/src/shared/def.h
 +++ b/src/shared/def.h
 @@ -35,6 +35,9 @@

@@ -9,7 +9,7 @@ Subject: [PATCH] hwdb: add Logitech G5 Laser Mouse
  1 file changed, 2 insertions(+)
 
 diff --git a/hwdb/70-mouse.hwdb b/hwdb/70-mouse.hwdb
-index a62ebc497..93ee4d9fa 100644
+index a62ebc497d..93ee4d9fa6 100644
 --- a/hwdb/70-mouse.hwdb
 +++ b/hwdb/70-mouse.hwdb
 @@ -196,6 +196,8 @@ mouse:usb:v046dpc52b:name:Logitech Unifying Device. Wireless PID:4008:

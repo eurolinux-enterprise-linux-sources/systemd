@@ -13,7 +13,7 @@ This reverts commit 13790add4bf648fed816361794d8277a75253410.
  4 files changed, 61 insertions(+), 345 deletions(-)
 
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index 7ee8174ea..04839c950 100644
+index 7ee8174ea2..04839c950c 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -1455,7 +1455,6 @@ static int server_open_hostname(Server *s) {
@@ -68,7 +68,7 @@ index 7ee8174ea..04839c950 100644
                  return r;
  
 diff --git a/src/journal/journald-stream.c b/src/journal/journald-stream.c
-index 942a85780..11b852d39 100644
+index 942a857803..11b852d39d 100644
 --- a/src/journal/journald-stream.c
 +++ b/src/journal/journald-stream.c
 @@ -28,11 +28,8 @@
@@ -536,7 +536,7 @@ index 942a85780..11b852d39 100644
          return 0;
  }
 diff --git a/src/journal/journald-stream.h b/src/journal/journald-stream.h
-index 94bf955d7..8cad01296 100644
+index 94bf955d78..8cad012967 100644
 --- a/src/journal/journald-stream.h
 +++ b/src/journal/journald-stream.h
 @@ -21,9 +21,8 @@
@@ -551,7 +551,7 @@ index 94bf955d7..8cad01296 100644
  
  void stdout_stream_free(StdoutStream *s);
 diff --git a/units/systemd-journald.service.in b/units/systemd-journald.service.in
-index a3540c65d..87704bb9c 100644
+index a3540c65d2..87704bb9c1 100644
 --- a/units/systemd-journald.service.in
 +++ b/units/systemd-journald.service.in
 @@ -23,7 +23,6 @@ NotifyAccess=all

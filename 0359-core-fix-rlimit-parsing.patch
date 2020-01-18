@@ -16,7 +16,7 @@ Related: #1351415
  2 files changed, 25 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index d307f1c74..2f6209e05 100644
+index d307f1c743..2f6209e053 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -1160,6 +1160,7 @@ static int parse_rlimit_range(
@@ -41,7 +41,7 @@ index d307f1c74..2f6209e05 100644
          if (!*rl) {
                  *rl = new(struct rlimit, 1);
 diff --git a/src/test/test-unit-file.c b/src/test/test-unit-file.c
-index 931dfeda8..8acf071ff 100644
+index 931dfeda88..8acf071ff3 100644
 --- a/src/test/test-unit-file.c
 +++ b/src/test/test-unit-file.c
 @@ -570,6 +570,27 @@ static void test_config_parse_rlimit(void) {

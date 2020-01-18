@@ -1,0 +1,39 @@
+From 0ee2318c1bc5f13904b8f60e3826eadfe2b7c66f Mon Sep 17 00:00:00 2001
+From: David Tardon <dtardon@redhat.com>
+Date: Thu, 4 Jul 2019 15:57:23 +0200
+Subject: [PATCH] return error value on failure
+
+Regression from commit c0f32feb77768aa76d8c813471b3484c93bc2651 .
+
+(cherry picked from commit e4a25c5d867e6ed832a077c32f3555bcd49ef8a6)
+
+Resolves: #1729226
+---
+ src/core/service.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/core/service.c b/src/core/service.c
+index 93e4759171..957c6f37cc 100644
+--- a/src/core/service.c
++++ b/src/core/service.c
+@@ -750,9 +750,9 @@ static int service_load_pid_file(Service *s, bool may_warn) {
+ 
+         fd = chase_symlinks(s->pid_file, NULL, CHASE_OPEN|CHASE_SAFE, NULL);
+         if (fd == -EPERM)
+-                return log_unit_full(UNIT(s)->id, prio, "Permission denied while opening PID file or unsafe symlink chain: %s", s->pid_file);
++                return log_unit_full_errno(UNIT(s)->id, prio, fd, "Permission denied while opening PID file or unsafe symlink chain: %s", s->pid_file);
+         if (fd < 0)
+-                return log_unit_full(UNIT(s)->id, prio, "Can't open PID file %s (yet?) after %s: %m", s->pid_file, service_state_to_string(s->state));
++                return log_unit_full_errno(UNIT(s)->id, prio, fd, "Can't open PID file %s (yet?) after %s: %m", s->pid_file, service_state_to_string(s->state));
+ 
+         /* Let's read the PID file now that we chased it down. But we need to convert the O_PATH fd chase_symlinks() returned us into a proper fd first. */
+         xsprintf(procfs, "/proc/self/fd/%i", fd);
+@@ -762,7 +762,7 @@ static int service_load_pid_file(Service *s, bool may_warn) {
+ 
+         r = parse_pid(k, &pid);
+         if (r < 0)
+-                return log_unit_full(UNIT(s)->id, prio, "Failed to parse PID from file %s: %m", s->pid_file);
++                return log_unit_full_errno(UNIT(s)->id, prio, r, "Failed to parse PID from file %s: %m", s->pid_file);
+ 
+         if (s->main_pid_known && pid == s->main_pid)
+                 return 0;

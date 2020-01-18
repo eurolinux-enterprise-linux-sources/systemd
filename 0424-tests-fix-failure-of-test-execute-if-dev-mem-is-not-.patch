@@ -16,7 +16,7 @@ Resolves: #1410056
  2 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/test/exec-privatedevices-no.service b/test/exec-privatedevices-no.service
-index cf4f275fb..af1daf78f 100644
+index cf4f275fb6..af1daf78f1 100644
 --- a/test/exec-privatedevices-no.service
 +++ b/test/exec-privatedevices-no.service
 @@ -2,6 +2,6 @@
@@ -28,7 +28,7 @@ index cf4f275fb..af1daf78f 100644
  Type=oneshot
  PrivateDevices=no
 diff --git a/test/exec-privatedevices-yes.service b/test/exec-privatedevices-yes.service
-index 85b3f4f98..384a7b01a 100644
+index 85b3f4f981..384a7b01af 100644
 --- a/test/exec-privatedevices-yes.service
 +++ b/test/exec-privatedevices-yes.service
 @@ -2,6 +2,6 @@

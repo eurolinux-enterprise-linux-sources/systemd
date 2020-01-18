@@ -11,7 +11,7 @@ Resolves: #1361601
  1 file changed, 8 insertions(+), 2 deletions(-)
 
 diff --git a/src/udev/udevd.c b/src/udev/udevd.c
-index 82c7a5425..1d21182fb 100644
+index 82c7a5425a..1d21182fbf 100644
 --- a/src/udev/udevd.c
 +++ b/src/udev/udevd.c
 @@ -697,6 +697,10 @@ static struct udev_ctrl_connection *handle_ctrl_msg(struct udev_ctrl *uctrl) {

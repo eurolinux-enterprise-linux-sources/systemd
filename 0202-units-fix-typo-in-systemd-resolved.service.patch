@@ -19,7 +19,7 @@ Resolves: #1222517
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/units/systemd-resolved.service.m4.in b/units/systemd-resolved.service.m4.in
-index d133847d5..98ae564af 100644
+index d133847d5e..98ae564af6 100644
 --- a/units/systemd-resolved.service.m4.in
 +++ b/units/systemd-resolved.service.m4.in
 @@ -8,7 +8,7 @@

@@ -30,7 +30,7 @@ Related: #1047466
  1 file changed, 68 insertions(+), 38 deletions(-)
 
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index fdda174ae..93b7a193b 100644
+index fdda174ae7..93b7a193b2 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -4211,12 +4211,19 @@ static int show_one(

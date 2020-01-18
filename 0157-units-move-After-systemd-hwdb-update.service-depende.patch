@@ -19,7 +19,7 @@ Resolves: #1222517
  2 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/units/systemd-udev-trigger.service.in b/units/systemd-udev-trigger.service.in
-index 0c33909ce..1e04d11fe 100644
+index 0c33909cee..1e04d11fe3 100644
 --- a/units/systemd-udev-trigger.service.in
 +++ b/units/systemd-udev-trigger.service.in
 @@ -10,7 +10,7 @@ Description=udev Coldplug all Devices
@@ -32,7 +32,7 @@ index 0c33909ce..1e04d11fe 100644
  ConditionPathIsReadWrite=/sys
  
 diff --git a/units/systemd-udevd.service.in b/units/systemd-udevd.service.in
-index 2791f73ac..a13304400 100644
+index 2791f73ac3..a133044005 100644
 --- a/units/systemd-udevd.service.in
 +++ b/units/systemd-udevd.service.in
 @@ -10,7 +10,7 @@ Description=udev Kernel Device Manager

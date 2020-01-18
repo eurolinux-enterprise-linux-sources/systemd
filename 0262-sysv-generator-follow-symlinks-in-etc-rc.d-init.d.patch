@@ -17,7 +17,7 @@ Resolves: #1285492
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/sysv-generator/sysv-generator.c b/src/sysv-generator/sysv-generator.c
-index 3c6cb8f10..0a8a528bd 100644
+index 3c6cb8f10e..0a8a528bdc 100644
 --- a/src/sysv-generator/sysv-generator.c
 +++ b/src/sysv-generator/sysv-generator.c
 @@ -753,7 +753,7 @@ static int enumerate_sysv(const LookupPaths *lp, Hashmap *all_services) {

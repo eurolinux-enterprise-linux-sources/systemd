@@ -16,7 +16,7 @@ Resolves: #1387398
  1 file changed, 19 insertions(+), 23 deletions(-)
 
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index 4830d7ad6..ab3b0c2e9 100644
+index 4830d7ad6f..ab3b0c2e92 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -1015,23 +1015,22 @@ int config_parse_exec_secure_bits(const char *unit,

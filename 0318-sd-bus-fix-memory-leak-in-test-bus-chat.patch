@@ -14,7 +14,7 @@ Related: #1331667
  1 file changed, 1 insertion(+), 3 deletions(-)
 
 diff --git a/src/libsystemd/sd-bus/test-bus-chat.c b/src/libsystemd/sd-bus/test-bus-chat.c
-index 8625ee6d8..a80aaaeef 100644
+index 8625ee6d89..a80aaaeefe 100644
 --- a/src/libsystemd/sd-bus/test-bus-chat.c
 +++ b/src/libsystemd/sd-bus/test-bus-chat.c
 @@ -264,7 +264,7 @@ fail:

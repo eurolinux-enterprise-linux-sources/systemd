@@ -1,0 +1,58 @@
+From 20d684011c93bed4b45c736ac1f9104983a090dc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Wed, 14 Feb 2018 00:01:05 +0100
+Subject: [PATCH] pid1: free basic unit information at the very end, before
+ freeing the unit
+
+We would free stuff like the names of the unit first, and then recurse
+into other structures to remove the unit from there. Technically this
+was OK, since the code did not access the name, but this makes debugging
+harder. And if any log messages are added in any of those functions, they
+are likely to access u->id and such other basic information about the unit.
+So let's move the removal of this "basic" information towards the end
+of unit_free().
+
+(cherry picked from commit a946fa9bb968ac197d7a99970e27388b751dca94)
+(cherry picked from commit 42a93a826cd726d1e4d3ea2c8cb347cec2f0dabe)
+
+Related: #1729228
+---
+ src/core/unit.c | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/src/core/unit.c b/src/core/unit.c
+index 2204be26d2..63f00acc0a 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -537,6 +537,15 @@ void unit_free(Unit *u) {
+         set_remove(u->manager->failed_units, u);
+         set_remove(u->manager->startup_units, u);
+ 
++        unit_unwatch_all_pids(u);
++
++        unit_ref_unset(&u->slice);
++        while (u->refs_by_target)
++                unit_ref_unset(u->refs_by_target);
++
++        condition_free_list(u->conditions);
++        condition_free_list(u->asserts);
++
+         free(u->description);
+         strv_free(u->documentation);
+         free(u->fragment_path);
+@@ -548,15 +557,6 @@ void unit_free(Unit *u) {
+ 
+         set_free_free(u->names);
+ 
+-        unit_unwatch_all_pids(u);
+-
+-        condition_free_list(u->conditions);
+-        condition_free_list(u->asserts);
+-
+-        unit_ref_unset(&u->slice);
+-        while (u->refs_by_target)
+-                unit_ref_unset(u->refs_by_target);
+-
+         free(u);
+ }
+ 

@@ -15,7 +15,7 @@ Resolves: #1254650
  1 file changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index 5d3a85fd9..bf5bb398b 100644
+index 5d3a85fd95..bf5bb398b7 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -3002,6 +3002,7 @@ static int check_unit_generic(sd_bus *bus, int code, const char *good_states, ch

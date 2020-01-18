@@ -19,7 +19,7 @@ Resolves: #1498318
  1 file changed, 50 insertions(+), 24 deletions(-)
 
 diff --git a/src/core/automount.c b/src/core/automount.c
-index 4e066613d..20a5de8ca 100644
+index 4e066613d7..20a5de8cae 100644
 --- a/src/core/automount.c
 +++ b/src/core/automount.c
 @@ -106,18 +106,18 @@ static void unmount_autofs(Automount *a) {

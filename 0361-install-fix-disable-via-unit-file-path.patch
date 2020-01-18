@@ -18,7 +18,7 @@ Resolves: #1348208
  1 file changed, 5 insertions(+), 3 deletions(-)
 
 diff --git a/src/shared/install.c b/src/shared/install.c
-index 5288bb450..f190dbfab 100644
+index 5288bb4501..f190dbfab2 100644
 --- a/src/shared/install.c
 +++ b/src/shared/install.c
 @@ -1910,10 +1910,12 @@ int unit_file_disable(

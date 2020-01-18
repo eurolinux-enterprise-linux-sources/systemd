@@ -17,7 +17,7 @@ Resolves: #1446095
  3 files changed, 76 insertions(+), 11 deletions(-)
 
 diff --git a/src/analyze/analyze.c b/src/analyze/analyze.c
-index ff84f6894..7116aaa88 100644
+index ff84f6894f..7116aaa88d 100644
 --- a/src/analyze/analyze.c
 +++ b/src/analyze/analyze.c
 @@ -29,6 +29,7 @@
@@ -116,7 +116,7 @@ index ff84f6894..7116aaa88 100644
  
  static int set_log_level(sd_bus *bus, char **args) {
 diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
-index d34ed042f..1766163b3 100644
+index d34ed042f6..1766163b33 100644
 --- a/src/core/dbus-manager.c
 +++ b/src/core/dbus-manager.c
 @@ -1064,7 +1064,7 @@ static int method_unsubscribe(sd_bus *bus, sd_bus_message *message, void *userda
@@ -173,7 +173,7 @@ index d34ed042f..1766163b3 100644
          SD_BUS_METHOD("RemoveSnapshot", "s", NULL, method_remove_snapshot, 0),
          SD_BUS_METHOD("Reload", NULL, NULL, method_reload, SD_BUS_VTABLE_UNPRIVILEGED),
 diff --git a/src/core/org.freedesktop.systemd1.conf b/src/core/org.freedesktop.systemd1.conf
-index 3997dd0b4..8187cf173 100644
+index 3997dd0b4e..8187cf1731 100644
 --- a/src/core/org.freedesktop.systemd1.conf
 +++ b/src/core/org.freedesktop.systemd1.conf
 @@ -96,6 +96,10 @@

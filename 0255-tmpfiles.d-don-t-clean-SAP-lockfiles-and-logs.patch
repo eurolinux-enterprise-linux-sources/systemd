@@ -13,7 +13,7 @@ Resolves: #1186044
  create mode 100644 tmpfiles.d/sap.conf
 
 diff --git a/Makefile.am b/Makefile.am
-index 0fcb73750..887e70a95 100644
+index 0fcb737509..887e70a95f 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -2220,7 +2220,8 @@ dist_tmpfiles_DATA = \
@@ -28,7 +28,7 @@ index 0fcb73750..887e70a95 100644
  dist_tmpfiles_DATA += \
 diff --git a/tmpfiles.d/sap.conf b/tmpfiles.d/sap.conf
 new file mode 100644
-index 000000000..01ace42c4
+index 0000000000..01ace42c43
 --- /dev/null
 +++ b/tmpfiles.d/sap.conf
 @@ -0,0 +1,3 @@

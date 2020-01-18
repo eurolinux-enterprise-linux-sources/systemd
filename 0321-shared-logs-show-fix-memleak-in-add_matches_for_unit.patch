@@ -10,7 +10,7 @@ Related: #1331667
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/shared/logs-show.c b/src/shared/logs-show.c
-index c2495056d..8c374116a 100644
+index c2495056d7..8c374116ad 100644
 --- a/src/shared/logs-show.c
 +++ b/src/shared/logs-show.c
 @@ -1060,7 +1060,7 @@ int add_matches_for_unit(sd_journal *j, const char *unit) {

@@ -14,7 +14,7 @@ Resolves: #1359939
  3 files changed, 340 insertions(+), 60 deletions(-)
 
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index 07426b41e..c1358e1e9 100644
+index 07426b41e8..c1358e1e95 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -1477,6 +1477,7 @@ static int server_open_hostname(Server *s) {
@@ -69,7 +69,7 @@ index 07426b41e..c1358e1e9 100644
                  return r;
  
 diff --git a/src/journal/journald-stream.c b/src/journal/journald-stream.c
-index b8607144b..15c9110c0 100644
+index b8607144b3..15c9110c0f 100644
 --- a/src/journal/journald-stream.c
 +++ b/src/journal/journald-stream.c
 @@ -28,8 +28,11 @@
@@ -530,7 +530,7 @@ index b8607144b..15c9110c0 100644
          return 0;
  }
 diff --git a/src/journal/journald-stream.h b/src/journal/journald-stream.h
-index 8cad01296..94bf955d7 100644
+index 8cad012967..94bf955d78 100644
 --- a/src/journal/journald-stream.h
 +++ b/src/journal/journald-stream.h
 @@ -21,8 +21,9 @@

@@ -23,7 +23,7 @@ Resolves: #1370133
  1 file changed, 1 insertion(+)
 
 diff --git a/units/systemd-udevd-control.socket b/units/systemd-udevd-control.socket
-index 8330a1c03..46f704ed7 100644
+index 8330a1c035..46f704ed79 100644
 --- a/units/systemd-udevd-control.socket
 +++ b/units/systemd-udevd-control.socket
 @@ -17,3 +17,4 @@ Service=systemd-udevd.service

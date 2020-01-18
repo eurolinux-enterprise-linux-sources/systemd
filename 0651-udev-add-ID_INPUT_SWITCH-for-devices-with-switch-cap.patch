@@ -12,7 +12,7 @@ Resolves: #1597240
  1 file changed, 3 insertions(+)
 
 diff --git a/src/udev/udev-builtin-input_id.c b/src/udev/udev-builtin-input_id.c
-index 46f1c539d..d6ae07304 100644
+index 46f1c539d2..d6ae073044 100644
 --- a/src/udev/udev-builtin-input_id.c
 +++ b/src/udev/udev-builtin-input_id.c
 @@ -250,6 +250,9 @@ static int builtin_input_id(struct udev_device *dev, int argc, char *argv[], boo

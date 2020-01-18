@@ -18,7 +18,7 @@ Related: #1274651
  1 file changed, 6 insertions(+)
 
 diff --git a/rules/60-persistent-storage.rules b/rules/60-persistent-storage.rules
-index cc01acb16..74f8f21f3 100644
+index cc01acb163..74f8f21f3a 100644
 --- a/rules/60-persistent-storage.rules
 +++ b/rules/60-persistent-storage.rules
 @@ -26,6 +26,12 @@ ENV{DEVTYPE}=="partition", IMPORT{parent}="ID_*"

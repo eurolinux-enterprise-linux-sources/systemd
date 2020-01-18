@@ -24,7 +24,7 @@ Resolves: #1472439
  4 files changed, 235 insertions(+), 49 deletions(-)
 
 diff --git a/src/nspawn/nspawn.c b/src/nspawn/nspawn.c
-index ea365b3f9..ee2e1832f 100644
+index ea365b3f9b..ee2e1832f1 100644
 --- a/src/nspawn/nspawn.c
 +++ b/src/nspawn/nspawn.c
 @@ -990,7 +990,7 @@ static int mount_cgroup_hierarchy(const char *dest, const char *controller, cons
@@ -37,7 +37,7 @@ index ea365b3f9..ee2e1832f 100644
          if (r > 0)
                  return 0;
 diff --git a/src/shared/path-util.c b/src/shared/path-util.c
-index 1181ffb9d..5d4de9ec4 100644
+index 1181ffb9d4..5d4de9ec4d 100644
 --- a/src/shared/path-util.c
 +++ b/src/shared/path-util.c
 @@ -36,6 +36,7 @@
@@ -307,7 +307,7 @@ index 1181ffb9d..5d4de9ec4 100644
  
  int path_is_read_only_fs(const char *path) {
 diff --git a/src/shared/path-util.h b/src/shared/path-util.h
-index 71bb740e9..34c016229 100644
+index 71bb740e98..34c016229c 100644
 --- a/src/shared/path-util.h
 +++ b/src/shared/path-util.h
 @@ -53,6 +53,7 @@ char** path_strv_make_absolute_cwd(char **l);
@@ -319,7 +319,7 @@ index 71bb740e9..34c016229 100644
  int path_is_read_only_fs(const char *path);
  int path_is_os_tree(const char *path);
 diff --git a/src/test/test-path-util.c b/src/test/test-path-util.c
-index 6396fcb39..a4fec07e7 100644
+index 6396fcb398..a4fec07e7c 100644
 --- a/src/test/test-path-util.c
 +++ b/src/test/test-path-util.c
 @@ -21,6 +21,7 @@

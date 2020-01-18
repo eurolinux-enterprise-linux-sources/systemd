@@ -37,7 +37,7 @@ Resolves: #1364092
  3 files changed, 13 insertions(+), 12 deletions(-)
 
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index 96ffda4ec..07426b41e 100644
+index 96ffda4ec9..07426b41e8 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -918,7 +918,7 @@ finish:
@@ -116,7 +116,7 @@ index 96ffda4ec..07426b41e 100644
          server_vacuum(s);
  
 diff --git a/src/journal/journald-server.h b/src/journal/journald-server.h
-index b1263a758..7a456c2d5 100644
+index b1263a7586..7a456c2d54 100644
 --- a/src/journal/journald-server.h
 +++ b/src/journal/journald-server.h
 @@ -173,6 +173,6 @@ void server_sync(Server *s);
@@ -128,7 +128,7 @@ index b1263a758..7a456c2d5 100644
  void server_maybe_append_tags(Server *s);
  int server_process_datagram(sd_event_source *es, int fd, uint32_t revents, void *userdata);
 diff --git a/src/journal/journald.c b/src/journal/journald.c
-index 80f4634f6..15bbcbe3d 100644
+index 80f4634f67..15bbcbe3de 100644
 --- a/src/journal/journald.c
 +++ b/src/journal/journald.c
 @@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {

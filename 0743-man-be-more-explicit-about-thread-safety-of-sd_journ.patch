@@ -1,0 +1,395 @@
+From dd004bcc058dbb7c66b8eb1a728732ccfce746c7 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Tue, 5 Mar 2019 10:45:07 +0100
+Subject: [PATCH] man: be more explicit about thread safety of sd_journal
+
+This adds two generic paragaphs we include via xinclude. One is the
+"strict" version, which contains wording saying that we are thread
+agnostic and what that means. And the other is the "safe" version, for
+the cases we provide fully safety.
+
+Let's then change most man pages to use either of these generic
+paragraphs. With one exception: man/sd_journal_get_catalog.xml contains
+both kinds of function, we hence use manual wording.
+
+(cherry picked from commit 64a7ef8bc06b5dcfcd9f99ea10a43bde75c4370f)
+
+Related: #1609349
+---
+ man/sd-journal.xml                          | 14 ++++++++++++++
+ man/sd_journal_get_catalog.xml              |  9 +++++++++
+ man/sd_journal_get_cursor.xml               |  4 +++-
+ man/sd_journal_get_cutoff_realtime_usec.xml |  4 +++-
+ man/sd_journal_get_data.xml                 |  4 +++-
+ man/sd_journal_get_fd.xml                   |  4 +++-
+ man/sd_journal_get_realtime_usec.xml        |  4 +++-
+ man/sd_journal_get_usage.xml                |  4 +++-
+ man/sd_journal_has_runtime_files.xml        |  8 +++++++-
+ man/sd_journal_next.xml                     |  4 +++-
+ man/sd_journal_open.xml                     |  4 +++-
+ man/sd_journal_print.xml                    |  4 +++-
+ man/sd_journal_query_unique.xml             |  4 +++-
+ man/sd_journal_seek_head.xml                |  4 +++-
+ man/sd_journal_stream_fd.xml                |  4 +++-
+ man/threads-aware.xml                       | 17 +++++++++++++++++
+ 16 files changed, 83 insertions(+), 13 deletions(-)
+ create mode 100644 man/threads-aware.xml
+
+diff --git a/man/sd-journal.xml b/man/sd-journal.xml
+index a1185d372b..11af4cd9b9 100644
+--- a/man/sd-journal.xml
++++ b/man/sd-journal.xml
+@@ -97,6 +97,20 @@
+     tool.</para>
+   </refsect1>
+ 
++  <refsect1>
++    <title>Thread safety</title>
++
++    <para>Functions that operate on <structname>sd_journal</structname> objects are thread agnostic — given
++    <structname>sd_journal</structname> pointer may only be used from one specific thread at all times (and it has to
++    be the very same one during the entire lifetime of the object), but multiple, independent threads may use multiple,
++    independent objects safely. Other functions — those that are used to send entries to the journal, like
++    <citerefentry><refentrytitle>sd_journal_print</refentrytitle><manvolnum>3</manvolnum></citerefentry> and similar,
++    or those that are used to retrieve global information like
++    <citerefentry><refentrytitle>sd_journal_stream_fd</refentrytitle><manvolnum>3</manvolnum></citerefentry> and
++    <citerefentry><refentrytitle>sd_journal_get_catalog_for_message_id</refentrytitle><manvolnum>3</manvolnum></citerefentry>
++    are fully thread-safe and may be called from multiple threads in parallel.</para>
++  </refsect1>
++
+   <xi:include href="libsystemd-pkgconfig.xml" />
+ 
+   <refsect1>
+diff --git a/man/sd_journal_get_catalog.xml b/man/sd_journal_get_catalog.xml
+index c19eb11b20..86eb659fe5 100644
+--- a/man/sd_journal_get_catalog.xml
++++ b/man/sd_journal_get_catalog.xml
+@@ -112,6 +112,15 @@
+   <refsect1>
+     <title>Notes</title>
+ 
++    <para>Function <function>sd_journal_get_catalog()</function> is thread-agnostic and only
++    a single specific thread may operate on a given object during its entire lifetime. It's safe to allocate multiple
++    independent objects and use each from a specific thread in parallel. However, it's not safe to allocate such an
++    object in one thread, and operate or free it from any other, even if locking is used to ensure these threads don't
++    operate on it at the very same time.</para>
++
++    <para>Function <function>sd_journal_get_catalog_for_message_id()</function> is are thread-safe and may be called in
++    parallel from multiple threads.</para>
++
+     <para>The <function>sd_journal_get_catalog()</function> and
+     <function>sd_journal_get_catalog_for_message_id()</function>
+     interfaces are available as a shared library, which can be
+diff --git a/man/sd_journal_get_cursor.xml b/man/sd_journal_get_cursor.xml
+index a400d8b1b5..0a20c36146 100644
+--- a/man/sd_journal_get_cursor.xml
++++ b/man/sd_journal_get_cursor.xml
+@@ -21,7 +21,7 @@
+   along with systemd; If not, see <http://www.gnu.org/licenses/>.
+ -->
+ 
+-<refentry id="sd_journal_get_cursor">
++<refentry id="sd_journal_get_cursor" xmlns:xi="http://www.w3.org/2001/XInclude">
+ 
+   <refentryinfo>
+     <title>sd_journal_get_cursor</title>
+@@ -122,6 +122,8 @@
+   <refsect1>
+     <title>Notes</title>
+ 
++    <xi:include href="threads-aware.xml" xpointer="strict" />
++
+     <para>The <function>sd_journal_get_cursor()</function> and
+     <function>sd_journal_test_cursor()</function> interfaces are
+     available as a shared library, which can be compiled and linked to
+diff --git a/man/sd_journal_get_cutoff_realtime_usec.xml b/man/sd_journal_get_cutoff_realtime_usec.xml
+index 23e7cc65e8..782228009d 100644
+--- a/man/sd_journal_get_cutoff_realtime_usec.xml
++++ b/man/sd_journal_get_cutoff_realtime_usec.xml
+@@ -21,7 +21,7 @@
+   along with systemd; If not, see <http://www.gnu.org/licenses/>.
+ -->
+ 
+-<refentry id="sd_journal_get_cutoff_realtime_usec">
++<refentry id="sd_journal_get_cutoff_realtime_usec" xmlns:xi="http://www.w3.org/2001/XInclude">
+ 
+   <refentryinfo>
+     <title>sd_journal_get_cutoff_realtime_usec</title>
+@@ -120,6 +120,8 @@
+   <refsect1>
+     <title>Notes</title>
+ 
++    <xi:include href="threads-aware.xml" xpointer="strict" />
++
+     <para>The
+     <function>sd_journal_get_cutoff_realtime_usec()</function> and
+     <function>sd_journal_get_cutoff_monotonic_usec()</function>
+diff --git a/man/sd_journal_get_data.xml b/man/sd_journal_get_data.xml
+index 1afbd7371c..dce421795a 100644
+--- a/man/sd_journal_get_data.xml
++++ b/man/sd_journal_get_data.xml
+@@ -21,7 +21,7 @@
+   along with systemd; If not, see <http://www.gnu.org/licenses/>.
+ -->
+ 
+-<refentry id="sd_journal_get_data">
++<refentry id="sd_journal_get_data" xmlns:xi="http://www.w3.org/2001/XInclude">
+ 
+   <refentryinfo>
+     <title>sd_journal_get_data</title>
+@@ -183,6 +183,8 @@
+   <refsect1>
+     <title>Notes</title>
+ 
++    <xi:include href="threads-aware.xml" xpointer="strict"/>
++
+     <para>The <function>sd_journal_get_data()</function>,
+     <function>sd_journal_enumerate_data()</function>,
+     <function>sd_journal_restart_data()</function>,
+diff --git a/man/sd_journal_get_fd.xml b/man/sd_journal_get_fd.xml
+index 3a38f733ab..a96857d0df 100644
+--- a/man/sd_journal_get_fd.xml
++++ b/man/sd_journal_get_fd.xml
+@@ -21,7 +21,7 @@
+   along with systemd; If not, see <http://www.gnu.org/licenses/>.
+ -->
+ 
+-<refentry id="sd_journal_get_fd">
++<refentry id="sd_journal_get_fd" xmlns:xi="http://www.w3.org/2001/XInclude">
+ 
+   <refentryinfo>
+     <title>sd_journal_get_fd</title>
+@@ -231,6 +231,8 @@ else {
+   <refsect1>
+     <title>Notes</title>
+ 
++    <xi:include href="threads-aware.xml" xpointer="strict"/>
++
+     <para>The <function>sd_journal_get_fd()</function>,
+     <function>sd_journal_get_events()</function>,
+     <function>sd_journal_reliable_fd()</function>,
+diff --git a/man/sd_journal_get_realtime_usec.xml b/man/sd_journal_get_realtime_usec.xml
+index 607d74666b..b67e4d6c2d 100644
+--- a/man/sd_journal_get_realtime_usec.xml
++++ b/man/sd_journal_get_realtime_usec.xml
+@@ -21,7 +21,7 @@
+   along with systemd; If not, see <http://www.gnu.org/licenses/>.
+ -->
+ 
+-<refentry id="sd_journal_get_realtime_usec">
++<refentry id="sd_journal_get_realtime_usec" xmlns:xi="http://www.w3.org/2001/XInclude">
+ 
+   <refentryinfo>
+     <title>sd_journal_get_realtime_usec</title>
+@@ -115,6 +115,8 @@
+   <refsect1>
+     <title>Notes</title>
+ 
++    <xi:include href="threads-aware.xml" xpointer="strict"/>
++
+     <para>The <function>sd_journal_get_realtime_usec()</function> and
+     <function>sd_journal_get_monotonic_usec()</function> interfaces
+     are available as a shared library, which can be compiled and
+diff --git a/man/sd_journal_get_usage.xml b/man/sd_journal_get_usage.xml
+index 72c804d834..6281bc850d 100644
+--- a/man/sd_journal_get_usage.xml
++++ b/man/sd_journal_get_usage.xml
+@@ -21,7 +21,7 @@
+   along with systemd; If not, see <http://www.gnu.org/licenses/>.
+ -->
+ 
+-<refentry id="sd_journal_get_usage">
++<refentry id="sd_journal_get_usage" xmlns:xi="http://www.w3.org/2001/XInclude">
+ 
+   <refentryinfo>
+     <title>sd_journal_get_usage</title>
+@@ -80,6 +80,8 @@
+   <refsect1>
+     <title>Notes</title>
+ 
++    <xi:include href="threads-aware.xml" xpointer="strict"/>
++
+     <para>The <function>sd_journal_get_usage()</function> interface is
+     available as a shared library, which can be compiled and linked to
+     with the
+diff --git a/man/sd_journal_has_runtime_files.xml b/man/sd_journal_has_runtime_files.xml
+index 237e649206..4dff3c67d0 100644
+--- a/man/sd_journal_has_runtime_files.xml
++++ b/man/sd_journal_has_runtime_files.xml
+@@ -21,7 +21,7 @@
+   along with systemd; If not, see <http://www.gnu.org/licenses/>.
+ -->
+ 
+-<refentry id="sd_journal_has_runtime_files">
++<refentry id="sd_journal_has_runtime_files" xmlns:xi="http://www.w3.org/2001/XInclude">
+ 
+   <refentryinfo>
+     <title>sd_journal_has_runtime_files</title>
+@@ -85,6 +85,12 @@
+     </para>
+   </refsect1>
+ 
++  <refsect1>
++    <title>Notes</title>
++
++    <xi:include href="threads-aware.xml" xpointer="strict"/>
++  </refsect1>
++
+   <refsect1>
+     <title>See Also</title>
+     <para>
+diff --git a/man/sd_journal_next.xml b/man/sd_journal_next.xml
+index 115fe26661..c8664994ce 100644
+--- a/man/sd_journal_next.xml
++++ b/man/sd_journal_next.xml
+@@ -21,7 +21,7 @@
+   along with systemd; If not, see <http://www.gnu.org/licenses/>.
+ -->
+ 
+-<refentry id="sd_journal_next">
++<refentry id="sd_journal_next" xmlns:xi="http://www.w3.org/2001/XInclude">
+ 
+   <refentryinfo>
+     <title>sd_journal_next</title>
+@@ -146,6 +146,8 @@
+   <refsect1>
+     <title>Notes</title>
+ 
++    <xi:include href="threads-aware.xml" xpointer="strict"/>
++
+     <para>The <function>sd_journal_next()</function>,
+     <function>sd_journal_previous()</function>,
+     <function>sd_journal_next_skip()</function> and
+diff --git a/man/sd_journal_open.xml b/man/sd_journal_open.xml
+index fb572802a3..c3044670de 100644
+--- a/man/sd_journal_open.xml
++++ b/man/sd_journal_open.xml
+@@ -21,7 +21,7 @@
+   along with systemd; If not, see <http://www.gnu.org/licenses/>.
+ -->
+ 
+-<refentry id="sd_journal_open">
++<refentry id="sd_journal_open" xmlns:xi="http://www.w3.org/2001/XInclude">
+ 
+   <refentryinfo>
+     <title>sd_journal_open</title>
+@@ -196,6 +196,8 @@
+   <refsect1>
+     <title>Notes</title>
+ 
++    <xi:include href="threads-aware.xml" xpointer="strict"/>
++
+     <para>The <function>sd_journal_open()</function>,
+     <function>sd_journal_open_directory()</function> and
+     <function>sd_journal_close()</function> interfaces are available
+diff --git a/man/sd_journal_print.xml b/man/sd_journal_print.xml
+index 0cd0b45b9a..50ad5de7be 100644
+--- a/man/sd_journal_print.xml
++++ b/man/sd_journal_print.xml
+@@ -21,7 +21,7 @@
+   along with systemd; If not, see <http://www.gnu.org/licenses/>.
+ -->
+ 
+-<refentry id="sd_journal_print">
++<refentry id="sd_journal_print" xmlns:xi="http://www.w3.org/2001/XInclude">
+ 
+   <refentryinfo>
+     <title>sd_journal_print</title>
+@@ -232,6 +232,8 @@ sd_journal_send("MESSAGE=Hello World, this is PID %lu!", (unsigned long) getpid(
+   <refsect1>
+     <title>Notes</title>
+ 
++    <xi:include href="threads-aware.xml" xpointer="safe"/>
++
+     <para>The <function>sd_journal_print()</function>,
+     <function>sd_journal_printv()</function>,
+     <function>sd_journal_send()</function> and
+diff --git a/man/sd_journal_query_unique.xml b/man/sd_journal_query_unique.xml
+index ac0e5f633f..074dfd6789 100644
+--- a/man/sd_journal_query_unique.xml
++++ b/man/sd_journal_query_unique.xml
+@@ -21,7 +21,7 @@
+   along with systemd; If not, see <http://www.gnu.org/licenses/>.
+ -->
+ 
+-<refentry id="sd_journal_query_unique">
++<refentry id="sd_journal_query_unique" xmlns:xi="http://www.w3.org/2001/XInclude">
+ 
+   <refentryinfo>
+     <title>sd_journal_query_unique</title>
+@@ -145,6 +145,8 @@
+   <refsect1>
+     <title>Notes</title>
+ 
++    <xi:include href="threads-aware.xml" xpointer="strict"/>
++
+     <para>The <function>sd_journal_query_unique()</function>,
+     <function>sd_journal_enumerate_unique()</function> and
+     <function>sd_journal_restart_unique()</function> interfaces are
+diff --git a/man/sd_journal_seek_head.xml b/man/sd_journal_seek_head.xml
+index d74c2d5bbc..8bbbb22a73 100644
+--- a/man/sd_journal_seek_head.xml
++++ b/man/sd_journal_seek_head.xml
+@@ -21,7 +21,7 @@
+   along with systemd; If not, see <http://www.gnu.org/licenses/>.
+ -->
+ 
+-<refentry id="sd_journal_seek_head">
++<refentry id="sd_journal_seek_head" xmlns:xi="http://www.w3.org/2001/XInclude">
+ 
+   <refentryinfo>
+     <title>sd_journal_seek_head</title>
+@@ -144,6 +144,8 @@
+   <refsect1>
+     <title>Notes</title>
+ 
++    <xi:include href="threads-aware.xml" xpointer="strict"/>
++
+     <para>The <function>sd_journal_seek_head()</function>,
+     <function>sd_journal_seek_tail()</function>,
+     <function>sd_journal_seek_monotonic_usec()</function>,
+diff --git a/man/sd_journal_stream_fd.xml b/man/sd_journal_stream_fd.xml
+index 2ea7731b48..340760ba36 100644
+--- a/man/sd_journal_stream_fd.xml
++++ b/man/sd_journal_stream_fd.xml
+@@ -21,7 +21,7 @@
+   along with systemd; If not, see <http://www.gnu.org/licenses/>.
+ -->
+ 
+-<refentry id="sd_journal_stream_fd">
++<refentry id="sd_journal_stream_fd" xmlns:xi="http://www.w3.org/2001/XInclude">
+ 
+   <refentryinfo>
+     <title>sd_journal_stream_fd</title>
+@@ -104,6 +104,8 @@
+   <refsect1>
+     <title>Notes</title>
+ 
++    <xi:include href="threads-aware.xml" xpointer="safe"/>
++
+     <para>The <function>sd_journal_stream_fd()</function> interface is
+     available as a shared library, which can be compiled and linked to
+     with the
+diff --git a/man/threads-aware.xml b/man/threads-aware.xml
+new file mode 100644
+index 0000000000..7985f4acd1
+--- /dev/null
++++ b/man/threads-aware.xml
+@@ -0,0 +1,17 @@
++<?xml version="1.0"?>
++<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
++
++<!--
++  SPDX-License-Identifier: LGPL-2.1+
++-->
++
++<refsect1>
++
++<para id="strict">All functions listed here are thread-agnostic and only a single specific thread may operate on a
++given object during its entire lifetime. It's safe to allocate multiple independent objects and use each from a
++specific thread in parallel. However, it's not safe to allocate such an object in one thread, and operate or free it
++from any other, even if locking is used to ensure these threads don't operate on it at the very same time.</para>
++
++<para id="safe">All functions listed here are thread-safe and may be called in parallel from multiple threads.</para>
++
++</refsect1>

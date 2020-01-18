@@ -27,7 +27,7 @@ Resolves: #1446140
  1 file changed, 1 insertion(+)
 
 diff --git a/src/journal/sd-journal.c b/src/journal/sd-journal.c
-index 20456c3a1..72f312b67 100644
+index 20456c3a12..72f312b67c 100644
 --- a/src/journal/sd-journal.c
 +++ b/src/journal/sd-journal.c
 @@ -2190,6 +2190,7 @@ _public_ int sd_journal_process(sd_journal *j) {

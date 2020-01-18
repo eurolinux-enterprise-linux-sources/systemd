@@ -1,0 +1,29 @@
+From f0beebf7beb86a804a80e53794b6234da97f085b Mon Sep 17 00:00:00 2001
+From: Susant Sahani <ssahani@users.noreply.github.com>
+Date: Thu, 21 Apr 2016 06:06:33 +0530
+Subject: [PATCH] networkd: respect DHCP UseRoutes option
+
+This fixes #2282.
+
+(cherry picked from commit 964b26fe2127d28713bccf03603900a7691216ba)
+
+Resolves: #1663365
+---
+ src/network/networkd-dhcp4.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/network/networkd-dhcp4.c b/src/network/networkd-dhcp4.c
+index c3d0e3d39d..354c760ba9 100644
+--- a/src/network/networkd-dhcp4.c
++++ b/src/network/networkd-dhcp4.c
+@@ -58,6 +58,10 @@ static int link_set_dhcp_routes(Link *link) {
+ 
+         assert(link);
+         assert(link->dhcp_lease);
++        assert(link->network);
++
++        if (!link->network->dhcp_routes)
++                return 0;
+ 
+         r = sd_dhcp_lease_get_router(link->dhcp_lease, &gateway);
+         if (r < 0 && r != -ENOENT) {

@@ -20,7 +20,7 @@ Resolves: #1465737
  1 file changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/src/core/manager.c b/src/core/manager.c
-index 287cf6a74..041fac46b 100644
+index 287cf6a741..041fac46be 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -799,16 +799,19 @@ static int manager_setup_kdbus(Manager *m) {

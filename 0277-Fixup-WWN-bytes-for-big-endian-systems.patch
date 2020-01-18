@@ -10,7 +10,7 @@ Resolves: #1273306
  1 file changed, 4 insertions(+)
 
 diff --git a/src/udev/ata_id/ata_id.c b/src/udev/ata_id/ata_id.c
-index 4adec4496..ef05fba26 100644
+index 4adec44960..ef05fba263 100644
 --- a/src/udev/ata_id/ata_id.c
 +++ b/src/udev/ata_id/ata_id.c
 @@ -485,6 +485,10 @@ int main(int argc, char *argv[])

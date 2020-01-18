@@ -1,0 +1,31 @@
+From 067cc9cc451ef4b98f451bf3a67c10660749ddd0 Mon Sep 17 00:00:00 2001
+From: David Tardon <dtardon@redhat.com>
+Date: Wed, 10 Jul 2019 09:48:51 +0200
+Subject: [PATCH] revert local changes made during backport of the test
+
+(cherry picked from commit 225a458ec4c1bee97d0cee13895977614fd8cc16)
+
+Related: #1729226
+---
+ test/TEST-20-MAINPIDGAMES/testsuite.sh | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/test/TEST-20-MAINPIDGAMES/testsuite.sh b/test/TEST-20-MAINPIDGAMES/testsuite.sh
+index d4ad63865c..8b0b664652 100755
+--- a/test/TEST-20-MAINPIDGAMES/testsuite.sh
++++ b/test/TEST-20-MAINPIDGAMES/testsuite.sh
+@@ -175,12 +175,10 @@ ExecStart=/dev/shm/mainpid3.sh
+ EOF
+ 
+ systemctl daemon-reload
+-systemctl start mainpidsh3.service
++! systemctl start mainpidsh3.service
+ 
+ # Test that this failed due to timeout, and not some other error
+-# test `systemctl_show_value -p Result mainpidsh3.service` = timeout
+-# Just check that there is no MainPID => the pid file was ignored
+-test `systemctl_show_value -p MainPID mainpidsh3.service` -eq 0
++test `systemctl_show_value -p Result mainpidsh3.service` = timeout
+ 
+ systemd-analyze set-log-level info
+ 

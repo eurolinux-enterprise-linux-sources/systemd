@@ -17,7 +17,7 @@ Mar 13 19:48:28 adam.happyassassin.net systemd[1]: Collecting (null)
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/manager.c b/src/core/manager.c
-index 203a6a0a1..7483a96ec 100644
+index 203a6a0a1a..7483a96ec6 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -844,7 +844,8 @@ static unsigned manager_dispatch_gc_queue(Manager *m) {

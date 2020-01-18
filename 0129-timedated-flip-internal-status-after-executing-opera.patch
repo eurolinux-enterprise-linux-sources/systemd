@@ -15,7 +15,7 @@ https://bugzilla.redhat.com/show_bug.cgi?id=1014315
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/timedate/timedated.c b/src/timedate/timedated.c
-index 66097ef74..c3113b081 100644
+index 66097ef741..c3113b081e 100644
 --- a/src/timedate/timedated.c
 +++ b/src/timedate/timedated.c
 @@ -679,8 +679,6 @@ static int method_set_ntp(sd_bus *bus, sd_bus_message *m, void *userdata, sd_bus

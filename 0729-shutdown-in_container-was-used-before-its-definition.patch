@@ -1,0 +1,33 @@
+From 25112918d6b54fc1136dde2eef24d6c2d33e55b3 Mon Sep 17 00:00:00 2001
+From: Lukas Nykryn <lnykryn@redhat.com>
+Date: Thu, 28 Mar 2019 15:24:58 +0100
+Subject: [PATCH] shutdown: in_container was used before its definition
+
+RHEL-only
+Resolves: #1693716
+---
+ src/core/shutdown.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/core/shutdown.c b/src/core/shutdown.c
+index 0b0a54a7de..eff1cf2d59 100644
+--- a/src/core/shutdown.c
++++ b/src/core/shutdown.c
+@@ -296,6 +296,8 @@ int main(int argc, char *argv[]) {
+ 
+         cg_get_root_path(&cgroup);
+ 
++        in_container = detect_container(NULL) > 0;
++
+         use_watchdog = !!getenv("WATCHDOG_USEC");
+ 
+         /* lock us into memory */
+@@ -314,8 +316,6 @@ int main(int argc, char *argv[]) {
+         log_info("Sending SIGKILL to remaining processes...");
+         broadcast_signal(SIGKILL, true, false);
+ 
+-        in_container = detect_container(NULL) > 0;
+-
+         need_umount = !in_container;
+         need_swapoff = !in_container;
+         need_loop_detach = !in_container;

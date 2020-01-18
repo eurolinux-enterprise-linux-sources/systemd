@@ -1,0 +1,35 @@
+From 110af4eeadeec6e901d1189ed914d04fb8b60e13 Mon Sep 17 00:00:00 2001
+From: Daniel Mack <daniel@zonque.org>
+Date: Tue, 7 Apr 2015 00:44:15 +0200
+Subject: [PATCH] core: mount-setup: handle non-existing mountpoints gracefully
+
+Commit e792e890f ("path-util: don't eat up ENOENT in
+path_is_mount_point()") changed path_is_mount_point() so it doesn't hide
+-ENOENT from its caller. This causes all boots to fail early in case
+any of the mount points does not exist (for instance, when kdbus isn't
+loaded, /sys/fs/kdbus is missing).
+
+Fix this by returning 0 from mount_one() if path_is_mount_point()
+returned -ENOENT.
+
+(cherry picked from commit b604cb9bf6a14d12589e85b82f3f59db93ea0029)
+
+Resolves: #1585411
+---
+ src/core/mount-setup.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/core/mount-setup.c b/src/core/mount-setup.c
+index ed493cbe36..71f07b6e2c 100644
+--- a/src/core/mount-setup.c
++++ b/src/core/mount-setup.c
+@@ -163,6 +163,9 @@ static int mount_one(const MountPoint *p, bool relabel) {
+                 label_fix(p->where, true, true);
+ 
+         r = path_is_mount_point(p->where, true);
++        if (r == -ENOENT)
++                return 0;
++
+         if (r < 0)
+                 return r;
+ 

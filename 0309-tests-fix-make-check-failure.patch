@@ -12,7 +12,7 @@ Related: #1159308
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/test/test-install-root.c b/src/test/test-install-root.c
-index 89d91d3d6..667c3748c 100644
+index 89d91d3d64..667c3748c5 100644
 --- a/src/test/test-install-root.c
 +++ b/src/test/test-install-root.c
 @@ -657,7 +657,7 @@ int main(int argc, char *argv[]) {

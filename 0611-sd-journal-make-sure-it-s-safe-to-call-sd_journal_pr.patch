@@ -21,7 +21,7 @@ Related: #1540538
  1 file changed, 3 insertions(+)
 
 diff --git a/src/journal/sd-journal.c b/src/journal/sd-journal.c
-index 9186f5188..e1cde6e1c 100644
+index 9186f5188e..e1cde6e1c2 100644
 --- a/src/journal/sd-journal.c
 +++ b/src/journal/sd-journal.c
 @@ -2329,6 +2329,9 @@ _public_ int sd_journal_process(sd_journal *j) {

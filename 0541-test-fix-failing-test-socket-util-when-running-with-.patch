@@ -16,7 +16,7 @@ Resolves: #1497639
  1 file changed, 19 insertions(+), 22 deletions(-)
 
 diff --git a/src/test/test-socket-util.c b/src/test/test-socket-util.c
-index 6fb4a4094..85f222993 100644
+index 6fb4a40944..85f2229937 100644
 --- a/src/test/test-socket-util.c
 +++ b/src/test/test-socket-util.c
 @@ -38,28 +38,25 @@ static void test_socket_address_parse(void) {

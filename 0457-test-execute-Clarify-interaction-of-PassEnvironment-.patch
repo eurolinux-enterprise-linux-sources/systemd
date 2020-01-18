@@ -29,7 +29,7 @@ Related: #1426214
  1 file changed, 21 insertions(+)
 
 diff --git a/src/test/test-execute.c b/src/test/test-execute.c
-index 8def1946d..6e5567c3e 100644
+index 8def1946dc..6e5567c3ed 100644
 --- a/src/test/test-execute.c
 +++ b/src/test/test-execute.c
 @@ -143,6 +143,17 @@ static void test_exec_environment(Manager *m) {

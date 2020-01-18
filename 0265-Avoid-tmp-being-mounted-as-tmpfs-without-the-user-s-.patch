@@ -14,7 +14,7 @@ Resolves: #1298109
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/unit.c b/src/core/unit.c
-index ae47a2876..4fb2fd300 100644
+index ae47a28765..4fb2fd3001 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -807,7 +807,7 @@ int unit_add_exec_dependencies(Unit *u, ExecContext *c) {

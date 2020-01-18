@@ -40,7 +40,7 @@ Resolves: #1280014
  6 files changed, 28 insertions(+), 25 deletions(-)
 
 diff --git a/src/core/dbus-job.c b/src/core/dbus-job.c
-index 8b5ea2566..7ce5d5772 100644
+index 8b5ea2566d..7ce5d57726 100644
 --- a/src/core/dbus-job.c
 +++ b/src/core/dbus-job.c
 @@ -84,7 +84,7 @@ int bus_job_method_cancel(sd_bus *bus, sd_bus_message *message, void *userdata,
@@ -53,7 +53,7 @@ index 8b5ea2566..7ce5d5772 100644
          return sd_bus_reply_method_return(message, NULL);
  }
 diff --git a/src/core/job.c b/src/core/job.c
-index 7416386a1..c2876dec1 100644
+index 7416386a18..c2876dec18 100644
 --- a/src/core/job.c
 +++ b/src/core/job.c
 @@ -190,7 +190,7 @@ Job* job_install(Job *j) {
@@ -157,7 +157,7 @@ index 7416386a1..c2876dec1 100644
          failure_action(u->manager, u->job_timeout_action, u->job_timeout_reboot_arg);
  
 diff --git a/src/core/job.h b/src/core/job.h
-index d967b68a3..e4191ee77 100644
+index d967b68a3f..e4191ee775 100644
 --- a/src/core/job.h
 +++ b/src/core/job.h
 @@ -220,7 +220,7 @@ void job_add_to_dbus_queue(Job *j);
@@ -170,7 +170,7 @@ index d967b68a3..e4191ee77 100644
  char *job_dbus_path(Job *j);
  
 diff --git a/src/core/manager.c b/src/core/manager.c
-index a1504bf17..ee456fb79 100644
+index a1504bf17b..ee456fb790 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -1426,7 +1426,7 @@ void manager_clear_jobs(Manager *m) {
@@ -183,7 +183,7 @@ index a1504bf17..ee456fb79 100644
  
  static int manager_dispatch_run_queue(sd_event_source *source, void *userdata) {
 diff --git a/src/core/transaction.c b/src/core/transaction.c
-index b0b3d6bd6..aed64fa41 100644
+index b0b3d6bd60..aed64fa419 100644
 --- a/src/core/transaction.c
 +++ b/src/core/transaction.c
 @@ -592,7 +592,7 @@ static int transaction_apply(Transaction *tr, Manager *m, JobMode mode) {
@@ -196,7 +196,7 @@ index b0b3d6bd6..aed64fa41 100644
          }
  
 diff --git a/src/core/unit.c b/src/core/unit.c
-index db5aa987e..d6ead7d67 100644
+index db5aa987ec..d6ead7d672 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -1851,12 +1851,12 @@ void unit_notify(Unit *u, UnitActiveState os, UnitActiveState ns, bool reload_su

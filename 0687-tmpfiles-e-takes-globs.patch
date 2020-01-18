@@ -1,0 +1,32 @@
+From 1119f95f55ee9c78d140f4d8808f85a3026380d3 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Tue, 11 Dec 2018 10:35:56 +0100
+Subject: [PATCH] tmpfiles: "e" takes globs
+
+Fixes #7369.
+
+(cherry picked from commit 65241c1485dbad934e22544cd9d8724f4d7ff91d)
+
+Resolves: #1641764
+---
+ src/tmpfiles/tmpfiles.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
+index 8a75efb229..f7fa2e40fa 100644
+--- a/src/tmpfiles/tmpfiles.c
++++ b/src/tmpfiles/tmpfiles.c
+@@ -1550,12 +1550,12 @@ static int clean_item(Item *i) {
+         switch (i->type) {
+         case CREATE_DIRECTORY:
+         case CREATE_SUBVOLUME:
+-        case EMPTY_DIRECTORY:
+         case TRUNCATE_DIRECTORY:
+         case IGNORE_PATH:
+         case COPY_FILES:
+                 clean_item_instance(i, i->path);
+                 return 0;
++        case EMPTY_DIRECTORY:
+         case IGNORE_DIRECTORY_PATH:
+                 return glob_item(i, clean_item_instance, false);
+         default:

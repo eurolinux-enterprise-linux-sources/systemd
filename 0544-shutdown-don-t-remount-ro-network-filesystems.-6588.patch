@@ -16,7 +16,7 @@ Resolves: #1312002
  1 file changed, 12 insertions(+), 5 deletions(-)
 
 diff --git a/src/core/umount.c b/src/core/umount.c
-index bfd8aa5f8..6e8ccc794 100644
+index bfd8aa5f88..6e8ccc794f 100644
 --- a/src/core/umount.c
 +++ b/src/core/umount.c
 @@ -41,6 +41,7 @@

@@ -19,7 +19,7 @@ Resolves: #1542391
  2 files changed, 20 insertions(+)
 
 diff --git a/src/core/service.c b/src/core/service.c
-index ceed1cc2e..71ec5e37c 100644
+index ceed1cc2e3..71ec5e37c9 100644
 --- a/src/core/service.c
 +++ b/src/core/service.c
 @@ -2044,6 +2044,7 @@ static int service_serialize(Unit *u, FILE *f, FDSet *fds) {
@@ -46,7 +46,7 @@ index ceed1cc2e..71ec5e37c 100644
                  char *t;
  
 diff --git a/src/core/unit.c b/src/core/unit.c
-index 8c0fde878..41d7b63d7 100644
+index 8c0fde8784..41d7b63d73 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -2619,6 +2619,7 @@ int unit_serialize(Unit *u, FILE *f, FDSet *fds, bool serialize_jobs) {

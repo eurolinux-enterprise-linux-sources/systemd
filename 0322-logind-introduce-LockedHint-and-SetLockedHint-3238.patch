@@ -16,7 +16,7 @@ Resolves: #1335499
  4 files changed, 75 insertions(+)
 
 diff --git a/src/login/logind-session-dbus.c b/src/login/logind-session-dbus.c
-index 4e7edef52..75b7186e8 100644
+index 4e7edef52d..75b7186e8f 100644
 --- a/src/login/logind-session-dbus.c
 +++ b/src/login/logind-session-dbus.c
 @@ -180,6 +180,24 @@ static int property_get_idle_since_hint(
@@ -98,7 +98,7 @@ index 4e7edef52..75b7186e8 100644
          SD_BUS_METHOD("ReleaseControl", NULL, NULL, method_release_control, SD_BUS_VTABLE_UNPRIVILEGED),
          SD_BUS_METHOD("TakeDevice", "uu", "hb", method_take_device, SD_BUS_VTABLE_UNPRIVILEGED),
 diff --git a/src/login/logind-session.c b/src/login/logind-session.c
-index d2e7b4012..dc24539f1 100644
+index d2e7b40124..dc24539f12 100644
 --- a/src/login/logind-session.c
 +++ b/src/login/logind-session.c
 @@ -843,6 +843,23 @@ void session_set_idle_hint(Session *s, bool b) {
@@ -126,7 +126,7 @@ index d2e7b4012..dc24539f1 100644
          Session *s = userdata;
  
 diff --git a/src/login/logind-session.h b/src/login/logind-session.h
-index a007fb5e8..5002b6868 100644
+index a007fb5e84..5002b68689 100644
 --- a/src/login/logind-session.h
 +++ b/src/login/logind-session.h
 @@ -111,6 +111,8 @@ struct Session {
@@ -148,7 +148,7 @@ index a007fb5e8..5002b6868 100644
  int session_start(Session *s);
  int session_stop(Session *s, bool force);
 diff --git a/src/login/org.freedesktop.login1.conf b/src/login/org.freedesktop.login1.conf
-index 1318328aa..dc7e0bec2 100644
+index 1318328aa0..dc7e0bec20 100644
 --- a/src/login/org.freedesktop.login1.conf
 +++ b/src/login/org.freedesktop.login1.conf
 @@ -160,6 +160,10 @@

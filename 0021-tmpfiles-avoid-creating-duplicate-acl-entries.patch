@@ -16,7 +16,7 @@ Status quo ante can be restored with:
  2 files changed, 81 insertions(+), 2 deletions(-)
 
 diff --git a/src/shared/acl-util.c b/src/shared/acl-util.c
-index a4ff1ab87..cbe09d7ab 100644
+index a4ff1ab878..cbe09d7aba 100644
 --- a/src/shared/acl-util.c
 +++ b/src/shared/acl-util.c
 @@ -282,6 +282,77 @@ int parse_acl(char *text, acl_t *acl_access, acl_t *acl_default, bool want_mask)
@@ -113,7 +113,7 @@ index a4ff1ab87..cbe09d7ab 100644
                  if (acl_copy_entry(j, i) < 0)
                          return -errno;
 diff --git a/src/shared/acl-util.h b/src/shared/acl-util.h
-index 90e88ffa2..fdb90063f 100644
+index 90e88ffa26..fdb90063fa 100644
 --- a/src/shared/acl-util.h
 +++ b/src/shared/acl-util.h
 @@ -41,5 +41,9 @@ int acls_for_file(const char *path, acl_type_t type, acl_t new, acl_t *acl);

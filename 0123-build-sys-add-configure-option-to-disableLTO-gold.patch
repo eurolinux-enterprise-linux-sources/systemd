@@ -8,7 +8,7 @@ Subject: [PATCH] build-sys: add configure option to disableLTO/gold
  1 file changed, 10 insertions(+), 5 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index 081ed0f6e..9103f9b92 100644
+index 081ed0f6eb..9103f9b923 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -208,10 +208,15 @@ AS_CASE([$CC], [*clang*],

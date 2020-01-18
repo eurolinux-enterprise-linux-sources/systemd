@@ -28,7 +28,7 @@ Related: #1426214
  create mode 100644 test/exec-passenvironment.service
 
 diff --git a/Makefile.am b/Makefile.am
-index 924b34b69..e9ceac98a 100644
+index 924b34b699..e9ceac98a4 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -1477,6 +1477,10 @@ EXTRA_DIST += \
@@ -43,7 +43,7 @@ index 924b34b69..e9ceac98a 100644
  	test/exec-ignoresigpipe-no.service \
  	test/exec-ignoresigpipe-yes.service \
 diff --git a/src/test/test-execute.c b/src/test/test-execute.c
-index 5a02960e7..8def1946d 100644
+index 5a02960e76..8def1946dc 100644
 --- a/src/test/test-execute.c
 +++ b/src/test/test-execute.c
 @@ -142,6 +142,19 @@ static void test_exec_environment(Manager *m) {
@@ -76,7 +76,7 @@ index 5a02960e7..8def1946d 100644
                  NULL,
 diff --git a/test/exec-passenvironment-absent.service b/test/exec-passenvironment-absent.service
 new file mode 100644
-index 000000000..7d5e32a4e
+index 0000000000..7d5e32a4eb
 --- /dev/null
 +++ b/test/exec-passenvironment-absent.service
 @@ -0,0 +1,7 @@
@@ -89,7 +89,7 @@ index 000000000..7d5e32a4e
 +PassEnvironment=VAR1 VAR2 VAR3
 diff --git a/test/exec-passenvironment-empty.service b/test/exec-passenvironment-empty.service
 new file mode 100644
-index 000000000..c93c197c1
+index 0000000000..c93c197c10
 --- /dev/null
 +++ b/test/exec-passenvironment-empty.service
 @@ -0,0 +1,8 @@
@@ -103,7 +103,7 @@ index 000000000..c93c197c1
 +PassEnvironment=
 diff --git a/test/exec-passenvironment-repeated.service b/test/exec-passenvironment-repeated.service
 new file mode 100644
-index 000000000..5e8c56f26
+index 0000000000..5e8c56f26a
 --- /dev/null
 +++ b/test/exec-passenvironment-repeated.service
 @@ -0,0 +1,8 @@
@@ -117,7 +117,7 @@ index 000000000..5e8c56f26
 +PassEnvironment=VAR1 VAR3
 diff --git a/test/exec-passenvironment.service b/test/exec-passenvironment.service
 new file mode 100644
-index 000000000..b4a990968
+index 0000000000..b4a9909682
 --- /dev/null
 +++ b/test/exec-passenvironment.service
 @@ -0,0 +1,7 @@

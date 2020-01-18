@@ -11,7 +11,7 @@ CID #1256583.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/login/inhibit.c b/src/login/inhibit.c
-index 44bda34af..88af23e35 100644
+index 44bda34aff..88af23e35c 100644
 --- a/src/login/inhibit.c
 +++ b/src/login/inhibit.c
 @@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {

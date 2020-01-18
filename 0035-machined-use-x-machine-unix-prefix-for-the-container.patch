@@ -16,7 +16,7 @@ Failed to get machine PTY: Input/output error
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/machine/machine-dbus.c b/src/machine/machine-dbus.c
-index b46f0a8da..b0f0f66e0 100644
+index b46f0a8dac..b0f0f66e09 100644
 --- a/src/machine/machine-dbus.c
 +++ b/src/machine/machine-dbus.c
 @@ -477,7 +477,7 @@ int bus_machine_method_open_login(sd_bus *bus, sd_bus_message *message, void *us

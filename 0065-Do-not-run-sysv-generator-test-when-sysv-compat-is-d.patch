@@ -9,7 +9,7 @@ Subject: [PATCH] Do not run sysv-generator-test when sysv compat is disabled
  1 file changed, 5 insertions(+)
 
 diff --git a/Makefile.am b/Makefile.am
-index 2e6455f6e..4933f76bd 100644
+index 2e6455f6e3..4933f76bdd 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -3789,9 +3789,14 @@ TESTS += \

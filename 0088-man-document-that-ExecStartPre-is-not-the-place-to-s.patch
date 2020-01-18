@@ -10,7 +10,7 @@ Subject: [PATCH] man: document that ExecStartPre= is not the place to start
  1 file changed, 5 insertions(+)
 
 diff --git a/man/systemd.service.xml b/man/systemd.service.xml
-index c03b4e8a5..f59870563 100644
+index c03b4e8a54..f598705633 100644
 --- a/man/systemd.service.xml
 +++ b/man/systemd.service.xml
 @@ -334,6 +334,11 @@

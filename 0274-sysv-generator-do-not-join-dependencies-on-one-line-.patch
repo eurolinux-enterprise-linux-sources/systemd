@@ -18,7 +18,7 @@ Resolves: #1288600
  2 files changed, 28 insertions(+), 34 deletions(-)
 
 diff --git a/src/sysv-generator/sysv-generator.c b/src/sysv-generator/sysv-generator.c
-index 0a8a528bd..d60e75a06 100644
+index 0a8a528bdc..d60e75a06b 100644
 --- a/src/sysv-generator/sysv-generator.c
 +++ b/src/sysv-generator/sysv-generator.c
 @@ -134,34 +134,14 @@ static int add_alias(const char *service, const char *alias) {
@@ -84,7 +84,7 @@ index 0a8a528bd..d60e75a06 100644
          fprintf(f,
                  "\n[Service]\n"
 diff --git a/test/sysv-generator-test.py b/test/sysv-generator-test.py
-index 2060ad754..25a35da47 100644
+index 2060ad754e..25a35da47f 100644
 --- a/test/sysv-generator-test.py
 +++ b/test/sysv-generator-test.py
 @@ -23,6 +23,7 @@ import subprocess

@@ -11,7 +11,7 @@ Conflicts:
  2 files changed, 40 deletions(-)
 
 diff --git a/Makefile.am b/Makefile.am
-index bf04d3184..75459f74d 100644
+index bf04d31840..75459f74d3 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -535,7 +535,6 @@ nodist_systemunit_DATA = \
@@ -31,7 +31,7 @@ index bf04d3184..75459f74d 100644
  	units/systemd-suspend.service.in \
  	units/quotaon.service.in \
 diff --git a/src/login/logind-user.c b/src/login/logind-user.c
-index f4c4490e8..97eb4feca 100644
+index f4c4490e8f..97eb4feca9 100644
 --- a/src/login/logind-user.c
 +++ b/src/login/logind-user.c
 @@ -399,39 +399,6 @@ static int user_start_slice(User *u) {

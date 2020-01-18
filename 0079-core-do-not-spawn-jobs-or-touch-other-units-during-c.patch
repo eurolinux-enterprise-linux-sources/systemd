@@ -36,7 +36,7 @@ Fixes https://bugs.freedesktop.org/show_bug.cgi?id=88401
  16 files changed, 89 insertions(+), 33 deletions(-)
 
 diff --git a/src/core/automount.c b/src/core/automount.c
-index 9f6bd84b2..e4c79415d 100644
+index 9f6bd84b21..e4c79415d1 100644
 --- a/src/core/automount.c
 +++ b/src/core/automount.c
 @@ -235,7 +235,7 @@ static void automount_set_state(Automount *a, AutomountState state) {
@@ -49,7 +49,7 @@ index 9f6bd84b2..e4c79415d 100644
          int r;
  
 diff --git a/src/core/busname.c b/src/core/busname.c
-index 1d77292f9..43d7607a3 100644
+index 1d77292f9b..43d7607a30 100644
 --- a/src/core/busname.c
 +++ b/src/core/busname.c
 @@ -335,7 +335,7 @@ static void busname_set_state(BusName *n, BusNameState state) {
@@ -62,7 +62,7 @@ index 1d77292f9..43d7607a3 100644
          int r;
  
 diff --git a/src/core/device.c b/src/core/device.c
-index 1cc103c29..4ff882721 100644
+index 1cc103c290..4ff8827219 100644
 --- a/src/core/device.c
 +++ b/src/core/device.c
 @@ -142,7 +142,7 @@ static void device_set_state(Device *d, DeviceState state) {
@@ -75,7 +75,7 @@ index 1cc103c29..4ff882721 100644
  
          assert(d);
 diff --git a/src/core/manager.c b/src/core/manager.c
-index bc9b7ec62..203a6a0a1 100644
+index bc9b7ec620..203a6a0a1a 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -983,7 +983,28 @@ static int manager_coldplug(Manager *m) {
@@ -128,7 +128,7 @@ index bc9b7ec62..203a6a0a1 100644
                          r = q;
          }
 diff --git a/src/core/mount.c b/src/core/mount.c
-index c971330af..3ae0eb462 100644
+index c971330af2..3ae0eb4621 100644
 --- a/src/core/mount.c
 +++ b/src/core/mount.c
 @@ -617,7 +617,7 @@ static void mount_set_state(Mount *m, MountState state) {
@@ -141,7 +141,7 @@ index c971330af..3ae0eb462 100644
          MountState new_state = MOUNT_DEAD;
          int r;
 diff --git a/src/core/path.c b/src/core/path.c
-index e5ea79fec..51e36fa8b 100644
+index e5ea79fec7..51e36fa8be 100644
 --- a/src/core/path.c
 +++ b/src/core/path.c
 @@ -440,7 +440,12 @@ static void path_set_state(Path *p, PathState state) {
@@ -173,7 +173,7 @@ index e5ea79fec..51e36fa8b 100644
          }
  
 diff --git a/src/core/scope.c b/src/core/scope.c
-index b41db7872..ae6614fbf 100644
+index b41db7872c..ae6614fbf0 100644
 --- a/src/core/scope.c
 +++ b/src/core/scope.c
 @@ -173,7 +173,7 @@ static int scope_load(Unit *u) {
@@ -186,7 +186,7 @@ index b41db7872..ae6614fbf 100644
          int r;
  
 diff --git a/src/core/service.c b/src/core/service.c
-index 15e29be14..7781b4e62 100644
+index 15e29be149..7781b4e626 100644
 --- a/src/core/service.c
 +++ b/src/core/service.c
 @@ -879,7 +879,7 @@ static void service_set_state(Service *s, ServiceState state) {
@@ -199,7 +199,7 @@ index 15e29be14..7781b4e62 100644
          int r;
  
 diff --git a/src/core/slice.c b/src/core/slice.c
-index ae9819d01..61ff9d331 100644
+index ae9819d015..61ff9d3314 100644
 --- a/src/core/slice.c
 +++ b/src/core/slice.c
 @@ -153,7 +153,7 @@ static int slice_load(Unit *u) {
@@ -212,7 +212,7 @@ index ae9819d01..61ff9d331 100644
  
          assert(t);
 diff --git a/src/core/snapshot.c b/src/core/snapshot.c
-index b70c3beb6..b1d844877 100644
+index b70c3beb60..b1d8448771 100644
 --- a/src/core/snapshot.c
 +++ b/src/core/snapshot.c
 @@ -75,7 +75,7 @@ static int snapshot_load(Unit *u) {
@@ -225,7 +225,7 @@ index b70c3beb6..b1d844877 100644
  
          assert(s);
 diff --git a/src/core/socket.c b/src/core/socket.c
-index 88aae4815..760de0203 100644
+index 88aae4815b..760de0203d 100644
 --- a/src/core/socket.c
 +++ b/src/core/socket.c
 @@ -1326,7 +1326,7 @@ static void socket_set_state(Socket *s, SocketState state) {
@@ -238,7 +238,7 @@ index 88aae4815..760de0203 100644
          int r;
  
 diff --git a/src/core/swap.c b/src/core/swap.c
-index 5c19af5d9..369abf0f5 100644
+index 5c19af5d91..369abf0f53 100644
 --- a/src/core/swap.c
 +++ b/src/core/swap.c
 @@ -513,7 +513,7 @@ static void swap_set_state(Swap *s, SwapState state) {
@@ -251,7 +251,7 @@ index 5c19af5d9..369abf0f5 100644
          SwapState new_state = SWAP_DEAD;
          int r;
 diff --git a/src/core/target.c b/src/core/target.c
-index 33fb66bc3..2411a8e75 100644
+index 33fb66bc3f..2411a8e758 100644
 --- a/src/core/target.c
 +++ b/src/core/target.c
 @@ -107,7 +107,7 @@ static int target_load(Unit *u) {
@@ -264,7 +264,7 @@ index 33fb66bc3..2411a8e75 100644
  
          assert(t);
 diff --git a/src/core/timer.c b/src/core/timer.c
-index 45744c7de..48cf9c16a 100644
+index 45744c7de5..48cf9c16a8 100644
 --- a/src/core/timer.c
 +++ b/src/core/timer.c
 @@ -268,7 +268,12 @@ static void timer_set_state(Timer *t, TimerState state) {
@@ -296,7 +296,7 @@ index 45744c7de..48cf9c16a 100644
          }
  
 diff --git a/src/core/unit.c b/src/core/unit.c
-index a6558ee23..565455bd6 100644
+index a6558ee23b..565455bd63 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -2859,27 +2859,34 @@ int unit_add_node_link(Unit *u, const char *what, bool wants) {
@@ -344,7 +344,7 @@ index a6558ee23..565455bd6 100644
          return 0;
  }
 diff --git a/src/core/unit.h b/src/core/unit.h
-index 291bc77a7..7ebc489c8 100644
+index 291bc77a76..7ebc489c80 100644
 --- a/src/core/unit.h
 +++ b/src/core/unit.h
 @@ -307,8 +307,14 @@ struct UnitVTable {

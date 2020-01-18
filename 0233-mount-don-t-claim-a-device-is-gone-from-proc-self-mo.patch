@@ -18,7 +18,7 @@ Resolves: #1222517
  1 file changed, 27 insertions(+), 3 deletions(-)
 
 diff --git a/src/core/mount.c b/src/core/mount.c
-index fd4fb6f1b..fa63f2426 100644
+index fd4fb6f1b2..fa63f2426f 100644
 --- a/src/core/mount.c
 +++ b/src/core/mount.c
 @@ -1698,7 +1698,10 @@ fail:

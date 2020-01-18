@@ -20,7 +20,7 @@ Resolves: #1222517
  1 file changed, 27 insertions(+), 34 deletions(-)
 
 diff --git a/src/libsystemd/sd-daemon/sd-daemon.c b/src/libsystemd/sd-daemon/sd-daemon.c
-index 22a3a5347..1474321c9 100644
+index 22a3a5347a..1474321c95 100644
 --- a/src/libsystemd/sd-daemon/sd-daemon.c
 +++ b/src/libsystemd/sd-daemon/sd-daemon.c
 @@ -352,12 +352,10 @@ _public_ int sd_pid_notify_with_fds(pid_t pid, int unset_environment, const char

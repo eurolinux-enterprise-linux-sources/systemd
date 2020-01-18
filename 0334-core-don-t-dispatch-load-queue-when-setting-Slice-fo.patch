@@ -16,7 +16,7 @@ Resolves: #1343904
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/dbus-unit.c b/src/core/dbus-unit.c
-index 227915efc..49770bfda 100644
+index 227915efc2..49770bfda1 100644
 --- a/src/core/dbus-unit.c
 +++ b/src/core/dbus-unit.c
 @@ -930,10 +930,14 @@ static int bus_unit_set_transient_property(

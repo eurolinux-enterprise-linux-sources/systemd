@@ -24,7 +24,7 @@ https://bugzilla.redhat.com/show_bug.cgi?id=1185604
  1 file changed, 1 insertion(+)
 
 diff --git a/src/shared/selinux-util.c b/src/shared/selinux-util.c
-index a2233e0cf..a46ddf849 100644
+index a2233e0cfb..a46ddf8498 100644
 --- a/src/shared/selinux-util.c
 +++ b/src/shared/selinux-util.c
 @@ -117,6 +117,7 @@ void mac_selinux_finish(void) {

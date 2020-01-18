@@ -20,7 +20,7 @@ Resolves: #1274651
  1 file changed, 4 insertions(+)
 
 diff --git a/rules/60-persistent-storage.rules b/rules/60-persistent-storage.rules
-index 71ab97484..cc01acb16 100644
+index 71ab974844..cc01acb163 100644
 --- a/rules/60-persistent-storage.rules
 +++ b/rules/60-persistent-storage.rules
 @@ -22,6 +22,10 @@ TEST=="whole_disk", GOTO="persistent_storage_end"

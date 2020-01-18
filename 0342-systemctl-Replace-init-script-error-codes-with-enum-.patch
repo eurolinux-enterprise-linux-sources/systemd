@@ -14,7 +14,7 @@ Related: #1047466
  1 file changed, 24 insertions(+), 5 deletions(-)
 
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index 6079d60db..fdda174ae 100644
+index 6079d60dbf..fdda174ae7 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -75,6 +75,25 @@

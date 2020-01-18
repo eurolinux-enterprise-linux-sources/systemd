@@ -49,7 +49,7 @@ Related: #1331667
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
-index 1a5525e50..9eef290ca 100644
+index 1a5525e50f..9eef290ca7 100644
 --- a/src/core/dbus-manager.c
 +++ b/src/core/dbus-manager.c
 @@ -1875,8 +1875,10 @@ static int method_preset_all_unit_files(sd_bus *bus, sd_bus_message *message, vo

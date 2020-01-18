@@ -27,7 +27,7 @@ Related: #1318994
  3 files changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/src/journal/journald-native.c b/src/journal/journald-native.c
-index 851625de0..2c9cf6e7a 100644
+index 851625de04..2c9cf6e7a8 100644
 --- a/src/journal/journald-native.c
 +++ b/src/journal/journald-native.c
 @@ -457,5 +457,9 @@ int server_open_native_socket(Server*s) {
@@ -41,7 +41,7 @@ index 851625de0..2c9cf6e7a 100644
          return 0;
  }
 diff --git a/src/journal/journald-stream.c b/src/journal/journald-stream.c
-index 15a554c34..b8607144b 100644
+index 15a554c34d..b8607144b3 100644
 --- a/src/journal/journald-stream.c
 +++ b/src/journal/journald-stream.c
 @@ -448,7 +448,7 @@ int server_open_stdout_socket(Server *s) {
@@ -54,7 +54,7 @@ index 15a554c34..b8607144b 100644
                  return log_error_errno(r, "Failed to adjust priority of stdout server event source: %m");
  
 diff --git a/src/journal/journald-syslog.c b/src/journal/journald-syslog.c
-index 4e118aabc..8602b4a95 100644
+index 4e118aabc0..8602b4a95d 100644
 --- a/src/journal/journald-syslog.c
 +++ b/src/journal/journald-syslog.c
 @@ -421,6 +421,10 @@ int server_open_syslog_socket(Server *s) {

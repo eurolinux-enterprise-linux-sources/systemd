@@ -33,7 +33,7 @@ Resolves: #1222517
  1 file changed, 174 insertions(+), 101 deletions(-)
 
 diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
-index 12c869f5a..c26cc00f5 100644
+index 12c869f5af..c26cc00f51 100644
 --- a/src/journal/journalctl.c
 +++ b/src/journal/journalctl.c
 @@ -131,6 +131,7 @@ typedef struct boot_id_t {

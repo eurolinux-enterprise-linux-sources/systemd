@@ -17,7 +17,7 @@ Resolves: #1384014
  2 files changed, 37 insertions(+), 12 deletions(-)
 
 diff --git a/man/crypttab.xml b/man/crypttab.xml
-index 3e249ad23..7085a1623 100644
+index 3e249ad23e..7085a16234 100644
 --- a/man/crypttab.xml
 +++ b/man/crypttab.xml
 @@ -189,6 +189,19 @@
@@ -41,7 +41,7 @@ index 3e249ad23..7085a1623 100644
          <term><option>noauto</option></term>
  
 diff --git a/src/cryptsetup/cryptsetup-generator.c b/src/cryptsetup/cryptsetup-generator.c
-index d191def5f..49dc8f14b 100644
+index d191def5f8..49dc8f14b4 100644
 --- a/src/cryptsetup/cryptsetup-generator.c
 +++ b/src/cryptsetup/cryptsetup-generator.c
 @@ -60,7 +60,7 @@ static int create_disk(

@@ -25,7 +25,7 @@ Resolves: #1222517
  3 files changed, 37 insertions(+), 21 deletions(-)
 
 diff --git a/src/fstab-generator/fstab-generator.c b/src/fstab-generator/fstab-generator.c
-index 65ed20579..029eb1638 100644
+index 65ed205799..029eb16380 100644
 --- a/src/fstab-generator/fstab-generator.c
 +++ b/src/fstab-generator/fstab-generator.c
 @@ -250,10 +250,14 @@ static int add_mount(
@@ -78,7 +78,7 @@ index 65ed20579..029eb1638 100644
  
          /* Honour /etc/fstab only when that's enabled */
 diff --git a/src/shared/generator.c b/src/shared/generator.c
-index 7f16d5cbe..cd37812f8 100644
+index 7f16d5cbef..cd37812f86 100644
 --- a/src/shared/generator.c
 +++ b/src/shared/generator.c
 @@ -33,13 +33,13 @@
@@ -137,7 +137,7 @@ index 7f16d5cbe..cd37812f8 100644
          /* Allow configuration how long we wait for a device that
           * backs a mount point to show up. This is useful to support
 diff --git a/src/shared/generator.h b/src/shared/generator.h
-index 64bd28f59..6c3f38abb 100644
+index 64bd28f596..6c3f38abba 100644
 --- a/src/shared/generator.h
 +++ b/src/shared/generator.h
 @@ -23,7 +23,16 @@

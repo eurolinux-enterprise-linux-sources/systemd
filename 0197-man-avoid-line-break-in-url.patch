@@ -12,7 +12,7 @@ Resolves: #1222517
  1 file changed, 1 insertion(+), 2 deletions(-)
 
 diff --git a/man/os-release.xml b/man/os-release.xml
-index 8f4ab10fe..4f57323d4 100644
+index 8f4ab10fed..4f57323d49 100644
 --- a/man/os-release.xml
 +++ b/man/os-release.xml
 @@ -104,8 +104,7 @@

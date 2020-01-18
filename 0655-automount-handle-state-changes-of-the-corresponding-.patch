@@ -16,7 +16,7 @@ Resolves: #1596241
  1 file changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/src/core/automount.c b/src/core/automount.c
-index 08519e49c..f57782b9b 100644
+index 08519e49ca..f57782b9b8 100644
 --- a/src/core/automount.c
 +++ b/src/core/automount.c
 @@ -499,6 +499,7 @@ static int automount_send_ready(Automount *a, Set *tokens, int status) {

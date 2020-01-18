@@ -14,7 +14,7 @@ Related: #1597958
  delete mode 100644 rules/40-redhat-hotunplug.rules
 
 diff --git a/Makefile.am b/Makefile.am
-index 3995dcce8..40ebbe98e 100644
+index 3995dcce89..40ebbe98ee 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -3524,7 +3524,6 @@ dist_udevrules_DATA += \
@@ -27,7 +27,7 @@ index 3995dcce8..40ebbe98e 100644
  
 diff --git a/rules/40-redhat-hotunplug.rules b/rules/40-redhat-hotunplug.rules
 deleted file mode 100644
-index 3befdaffc..000000000
+index 3befdaffc8..0000000000
 --- a/rules/40-redhat-hotunplug.rules
 +++ /dev/null
 @@ -1,14 +0,0 @@

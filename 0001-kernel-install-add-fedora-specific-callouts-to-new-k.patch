@@ -12,7 +12,7 @@ Subject: [PATCH] kernel-install: add fedora specific callouts to
 diff --git a/src/kernel-install/kernel-install b/src/kernel-install/kernel-install
 old mode 100644
 new mode 100755
-index 3ae1d77e3..f1c74de27
+index 3ae1d77e33..f1c74de27e
 --- a/src/kernel-install/kernel-install
 +++ b/src/kernel-install/kernel-install
 @@ -71,6 +71,42 @@ fi

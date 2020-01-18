@@ -20,7 +20,7 @@ Related: #1465737
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/manager.c b/src/core/manager.c
-index 041fac46b..47b09e1e9 100644
+index 041fac46be..47b09e1e93 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -809,7 +809,7 @@ static int manager_connect_bus(Manager *m, bool reexecuting) {

@@ -64,7 +64,7 @@ Conflicts:
  51 files changed, 151 insertions(+), 151 deletions(-)
 
 diff --git a/man/busctl.xml b/man/busctl.xml
-index 251233bb9..cc1844b0a 100644
+index 251233bb96..cc1844b0a0 100644
 --- a/man/busctl.xml
 +++ b/man/busctl.xml
 @@ -288,7 +288,7 @@
@@ -86,7 +86,7 @@ index 251233bb9..cc1844b0a 100644
    </refsect1>
  </refentry>
 diff --git a/man/crypttab.xml b/man/crypttab.xml
-index aeacc5797..3e249ad23 100644
+index aeacc57973..3e249ad23e 100644
 --- a/man/crypttab.xml
 +++ b/man/crypttab.xml
 @@ -75,7 +75,7 @@
@@ -180,7 +180,7 @@ index aeacc5797..3e249ad23 100644
        <citerefentry project='man-pages'><refentrytitle>mke2fs</refentrytitle><manvolnum>8</manvolnum></citerefentry>
      </para>
 diff --git a/man/file-hierarchy.xml b/man/file-hierarchy.xml
-index e9c894f5c..364e13079 100644
+index e9c894f5c8..364e130790 100644
 --- a/man/file-hierarchy.xml
 +++ b/man/file-hierarchy.xml
 @@ -397,7 +397,7 @@
@@ -193,7 +193,7 @@ index e9c894f5c..364e13079 100644
          <literal>tmpfs</literal> file system. Since all users have
          write access to this directory, special care should be taken
 diff --git a/man/kernel-command-line.xml b/man/kernel-command-line.xml
-index 3741cf9cc..919bd1374 100644
+index 3741cf9cc2..919bd13745 100644
 --- a/man/kernel-command-line.xml
 +++ b/man/kernel-command-line.xml
 @@ -336,7 +336,7 @@
@@ -206,7 +206,7 @@ index 3741cf9cc..919bd1374 100644
            <citerefentry><refentrytitle>systemd-hibernate-resume-generator</refentrytitle><manvolnum>8</manvolnum></citerefentry>.</para>
          </listitem>
 diff --git a/man/locale.conf.xml b/man/locale.conf.xml
-index 48c0006db..2c32d1609 100644
+index 48c0006db2..2c32d16094 100644
 --- a/man/locale.conf.xml
 +++ b/man/locale.conf.xml
 @@ -91,7 +91,7 @@
@@ -239,7 +239,7 @@ index 48c0006db..2c32d1609 100644
          <citerefentry><refentrytitle>systemd-firstboot</refentrytitle><manvolnum>1</manvolnum></citerefentry>
        </para>
 diff --git a/man/localectl.xml b/man/localectl.xml
-index aae6e0629..7def047f6 100644
+index aae6e0629c..7def047f62 100644
 --- a/man/localectl.xml
 +++ b/man/localectl.xml
 @@ -124,7 +124,7 @@
@@ -266,7 +266,7 @@ index aae6e0629..7def047f6 100644
        <ulink url="http://www.x.org/releases/current/doc/xorg-docs/input/XKB-Config.html">
          The XKB Configuration Guide
 diff --git a/man/logind.conf.xml b/man/logind.conf.xml
-index ca2b18783..d02d57356 100644
+index ca2b18783c..d02d573565 100644
 --- a/man/logind.conf.xml
 +++ b/man/logind.conf.xml
 @@ -126,7 +126,7 @@
@@ -279,7 +279,7 @@ index ca2b18783..d02d57356 100644
  
        <varlistentry>
 diff --git a/man/machine-id.xml b/man/machine-id.xml
-index 83e0b26ce..92d67a386 100644
+index 83e0b26ced..92d67a3869 100644
 --- a/man/machine-id.xml
 +++ b/man/machine-id.xml
 @@ -75,7 +75,7 @@
@@ -301,7 +301,7 @@ index 83e0b26ce..92d67a386 100644
          <citerefentry><refentrytitle>machine-info</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
          <citerefentry><refentrytitle>os-release</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
 diff --git a/man/modules-load.d.xml b/man/modules-load.d.xml
-index 34a937db6..4b722aa12 100644
+index 34a937db68..4b722aa128 100644
 --- a/man/modules-load.d.xml
 +++ b/man/modules-load.d.xml
 @@ -94,7 +94,7 @@ virtio-net</programlisting>
@@ -314,7 +314,7 @@ index 34a937db6..4b722aa12 100644
    </refsect1>
  
 diff --git a/man/os-release.xml b/man/os-release.xml
-index 1b71a49d0..8f4ab10fe 100644
+index 1b71a49d05..8f4ab10fed 100644
 --- a/man/os-release.xml
 +++ b/man/os-release.xml
 @@ -316,7 +316,7 @@ BUG_REPORT_URL="https://bugzilla.redhat.com/"</programlisting>
@@ -327,7 +327,7 @@ index 1b71a49d0..8f4ab10fe 100644
          <citerefentry><refentrytitle>machine-id</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
          <citerefentry><refentrytitle>machine-info</refentrytitle><manvolnum>5</manvolnum></citerefentry>
 diff --git a/man/sd_bus_message_append.xml b/man/sd_bus_message_append.xml
-index 0c49a0c7c..11fa07c63 100644
+index 0c49a0c7c9..11fa07c636 100644
 --- a/man/sd_bus_message_append.xml
 +++ b/man/sd_bus_message_append.xml
 @@ -245,7 +245,7 @@ sd_bus_message_append(m, "ynqiuxtd", y, n, q, i, u, x, t, d);</programlisting>
@@ -340,7 +340,7 @@ index 0c49a0c7c..11fa07c63 100644
        <citerefentry><refentrytitle>machinectl</refentrytitle><manvolnum>1</manvolnum></citerefentry>
      </para>
 diff --git a/man/sd_bus_open_user.xml b/man/sd_bus_open_user.xml
-index e7a765962..2bbb01069 100644
+index e7a765962a..2bbb010696 100644
 --- a/man/sd_bus_open_user.xml
 +++ b/man/sd_bus_open_user.xml
 @@ -208,7 +208,7 @@ along with systemd; If not, see <http://www.gnu.org/licenses/>.
@@ -353,7 +353,7 @@ index e7a765962..2bbb01069 100644
        <citerefentry><refentrytitle>machinectl</refentrytitle><manvolnum>1</manvolnum></citerefentry>
      </para>
 diff --git a/man/sd_event_add_signal.xml b/man/sd_event_add_signal.xml
-index 0299aa5a5..7c8df7df8 100644
+index 0299aa5a53..7c8df7df8d 100644
 --- a/man/sd_event_add_signal.xml
 +++ b/man/sd_event_add_signal.xml
 @@ -86,7 +86,7 @@ along with systemd; If not, see <http://www.gnu.org/licenses/>.
@@ -375,7 +375,7 @@ index 0299aa5a5..7c8df7df8 100644
  
      <para>Only a single handler may be installed for a specific
 diff --git a/man/sd_journal_get_catalog.xml b/man/sd_journal_get_catalog.xml
-index 1dcbadd18..c19eb11b2 100644
+index 1dcbadd186..c19eb11b20 100644
 --- a/man/sd_journal_get_catalog.xml
 +++ b/man/sd_journal_get_catalog.xml
 @@ -130,7 +130,7 @@
@@ -388,7 +388,7 @@ index 1dcbadd18..c19eb11b2 100644
    </refsect1>
  
 diff --git a/man/sd_journal_get_cursor.xml b/man/sd_journal_get_cursor.xml
-index 2b7f443f2..a400d8b1b 100644
+index 2b7f443f29..a400d8b1b5 100644
 --- a/man/sd_journal_get_cursor.xml
 +++ b/man/sd_journal_get_cursor.xml
 @@ -84,7 +84,7 @@
@@ -401,7 +401,7 @@ index 2b7f443f2..a400d8b1b 100644
      <citerefentry project='man-pages'><refentrytitle>free</refentrytitle><manvolnum>3</manvolnum></citerefentry>.</para>
  
 diff --git a/man/sd_journal_print.xml b/man/sd_journal_print.xml
-index 068b10e7c..0cd0b45b9 100644
+index 068b10e7ca..0cd0b45b9a 100644
 --- a/man/sd_journal_print.xml
 +++ b/man/sd_journal_print.xml
 @@ -119,7 +119,7 @@
@@ -456,7 +456,7 @@ index 068b10e7c..0cd0b45b9 100644
    </refsect1>
  
 diff --git a/man/sysctl.d.xml b/man/sysctl.d.xml
-index 5a35cfe2c..8a131791a 100644
+index 5a35cfe2c8..8a131791a5 100644
 --- a/man/sysctl.d.xml
 +++ b/man/sysctl.d.xml
 @@ -57,7 +57,7 @@
@@ -482,7 +482,7 @@ index 5a35cfe2c..8a131791a 100644
    </refsect1>
  
 diff --git a/man/systemctl.xml b/man/systemctl.xml
-index 6f30474c3..07eb43165 100644
+index 6f30474c39..07eb43165e 100644
 --- a/man/systemctl.xml
 +++ b/man/systemctl.xml
 @@ -1703,9 +1703,9 @@ kobject-uevent 1 systemd-udevd-kernel.socket systemd-udevd.service
@@ -499,7 +499,7 @@ index 6f30474c3..07eb43165 100644
        </varlistentry>
      </variablelist>
 diff --git a/man/systemd-activate.xml b/man/systemd-activate.xml
-index e64894a28..cb68a79be 100644
+index e64894a28b..cb68a79be7 100644
 --- a/man/systemd-activate.xml
 +++ b/man/systemd-activate.xml
 @@ -165,7 +165,7 @@
@@ -512,7 +512,7 @@ index e64894a28..cb68a79be 100644
    </refsect1>
  </refentry>
 diff --git a/man/systemd-analyze.xml b/man/systemd-analyze.xml
-index 1ff81d3d5..198315052 100644
+index 1ff81d3d5a..198315052f 100644
 --- a/man/systemd-analyze.xml
 +++ b/man/systemd-analyze.xml
 @@ -145,7 +145,7 @@
@@ -534,7 +534,7 @@ index 1ff81d3d5..198315052 100644
          left-hand and the right-hand, respectively, nodes of a
          relationship.</para>
 diff --git a/man/systemd-cat.xml b/man/systemd-cat.xml
-index 38ddf66d2..9b1a8809d 100644
+index 38ddf66d27..9b1a8809dc 100644
 --- a/man/systemd-cat.xml
 +++ b/man/systemd-cat.xml
 @@ -171,7 +171,7 @@
@@ -547,7 +547,7 @@ index 38ddf66d2..9b1a8809d 100644
    </refsect1>
  
 diff --git a/man/systemd-cryptsetup-generator.xml b/man/systemd-cryptsetup-generator.xml
-index 1974cd7a2..b6270358e 100644
+index 1974cd7a2d..b6270358ea 100644
 --- a/man/systemd-cryptsetup-generator.xml
 +++ b/man/systemd-cryptsetup-generator.xml
 @@ -185,7 +185,7 @@
@@ -560,7 +560,7 @@ index 1974cd7a2..b6270358e 100644
      </para>
    </refsect1>
 diff --git a/man/systemd-cryptsetup@.service.xml b/man/systemd-cryptsetup@.service.xml
-index bd03637de..ea524851e 100644
+index bd03637deb..ea524851eb 100644
 --- a/man/systemd-cryptsetup@.service.xml
 +++ b/man/systemd-cryptsetup@.service.xml
 @@ -78,7 +78,7 @@
@@ -573,7 +573,7 @@ index bd03637de..ea524851e 100644
    </refsect1>
  
 diff --git a/man/systemd-efi-boot-generator.xml b/man/systemd-efi-boot-generator.xml
-index fd7ba7983..3431c3ce5 100644
+index fd7ba79837..3431c3ce5b 100644
 --- a/man/systemd-efi-boot-generator.xml
 +++ b/man/systemd-efi-boot-generator.xml
 @@ -62,7 +62,7 @@
@@ -595,7 +595,7 @@ index fd7ba7983..3431c3ce5 100644
    </refsect1>
  
 diff --git a/man/systemd-firstboot.xml b/man/systemd-firstboot.xml
-index 67d38ba31..67289daa2 100644
+index 67d38ba31f..67289daa26 100644
 --- a/man/systemd-firstboot.xml
 +++ b/man/systemd-firstboot.xml
 @@ -91,7 +91,7 @@
@@ -652,7 +652,7 @@ index 67d38ba31..67289daa2 100644
        <citerefentry><refentrytitle>hostnamectl</refentrytitle><manvolnum>1</manvolnum></citerefentry>
      </para>
 diff --git a/man/systemd-fstab-generator.xml b/man/systemd-fstab-generator.xml
-index 022efb413..bdc2dc1d0 100644
+index 022efb4130..bdc2dc1d0e 100644
 --- a/man/systemd-fstab-generator.xml
 +++ b/man/systemd-fstab-generator.xml
 @@ -54,7 +54,7 @@
@@ -674,7 +674,7 @@ index 022efb413..bdc2dc1d0 100644
        <citerefentry><refentrytitle>systemd.swap</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
        <citerefentry><refentrytitle>systemd-cryptsetup-generator</refentrytitle><manvolnum>8</manvolnum></citerefentry>
 diff --git a/man/systemd-gpt-auto-generator.xml b/man/systemd-gpt-auto-generator.xml
-index 8d2eaca4f..bcc64ec9b 100644
+index 8d2eaca4f6..bcc64ec9b5 100644
 --- a/man/systemd-gpt-auto-generator.xml
 +++ b/man/systemd-gpt-auto-generator.xml
 @@ -66,7 +66,7 @@
@@ -700,7 +700,7 @@ index 8d2eaca4f..bcc64ec9b 100644
    </refsect1>
  
 diff --git a/man/systemd-hibernate-resume-generator.xml b/man/systemd-hibernate-resume-generator.xml
-index a21782cbf..d811b9b55 100644
+index a21782cbf9..d811b9b551 100644
 --- a/man/systemd-hibernate-resume-generator.xml
 +++ b/man/systemd-hibernate-resume-generator.xml
 @@ -73,7 +73,7 @@
@@ -713,7 +713,7 @@ index a21782cbf..d811b9b55 100644
          supported.</para></listitem>
        </varlistentry>
 diff --git a/man/systemd-journald.service.xml b/man/systemd-journald.service.xml
-index 6b250b65e..8280d6c87 100644
+index 6b250b65e6..8280d6c874 100644
 --- a/man/systemd-journald.service.xml
 +++ b/man/systemd-journald.service.xml
 @@ -241,7 +241,7 @@
@@ -726,7 +726,7 @@ index 6b250b65e..8280d6c87 100644
        <command>pydoc systemd.journal</command>.
      </para>
 diff --git a/man/systemd-localed.service.xml b/man/systemd-localed.service.xml
-index 899916638..06aa78c0e 100644
+index 8999166383..06aa78c0e4 100644
 --- a/man/systemd-localed.service.xml
 +++ b/man/systemd-localed.service.xml
 @@ -64,7 +64,7 @@
@@ -753,7 +753,7 @@ index 899916638..06aa78c0e 100644
    </refsect1>
  
 diff --git a/man/systemd-nspawn.xml b/man/systemd-nspawn.xml
-index 4a936d326..65b4c2f29 100644
+index 4a936d326f..65b4c2f294 100644
 --- a/man/systemd-nspawn.xml
 +++ b/man/systemd-nspawn.xml
 @@ -598,7 +598,7 @@
@@ -775,7 +775,7 @@ index 4a936d326..65b4c2f29 100644
    </refsect1>
  
 diff --git a/man/systemd-quotacheck.service.xml b/man/systemd-quotacheck.service.xml
-index 2179f11e9..9d4976274 100644
+index 2179f11e95..9d4976274e 100644
 --- a/man/systemd-quotacheck.service.xml
 +++ b/man/systemd-quotacheck.service.xml
 @@ -86,7 +86,7 @@
@@ -788,7 +788,7 @@ index 2179f11e9..9d4976274 100644
      </para>
    </refsect1>
 diff --git a/man/systemd-remount-fs.service.xml b/man/systemd-remount-fs.service.xml
-index 7b88ac3f3..8e60e31b5 100644
+index 7b88ac3f3c..8e60e31b5c 100644
 --- a/man/systemd-remount-fs.service.xml
 +++ b/man/systemd-remount-fs.service.xml
 @@ -56,7 +56,7 @@
@@ -812,7 +812,7 @@ index 7b88ac3f3..8e60e31b5 100644
    </refsect1>
  
 diff --git a/man/systemd-socket-proxyd.xml b/man/systemd-socket-proxyd.xml
-index 1c78b656e..0b852e6bc 100644
+index 1c78b656e1..0b852e6bc1 100644
 --- a/man/systemd-socket-proxyd.xml
 +++ b/man/systemd-socket-proxyd.xml
 @@ -72,7 +72,7 @@
@@ -838,7 +838,7 @@ index 1c78b656e..0b852e6bc 100644
    </refsect1>
  </refentry>
 diff --git a/man/systemd-sysctl.service.xml b/man/systemd-sysctl.service.xml
-index f35a18a4d..d4c1a7ebe 100644
+index f35a18a4d4..d4c1a7ebe3 100644
 --- a/man/systemd-sysctl.service.xml
 +++ b/man/systemd-sysctl.service.xml
 @@ -56,11 +56,11 @@
@@ -867,7 +867,7 @@ index f35a18a4d..d4c1a7ebe 100644
    </refsect1>
  
 diff --git a/man/systemd-system.conf.xml b/man/systemd-system.conf.xml
-index c7bcfaee4..1b74ed38f 100644
+index c7bcfaee4d..1b74ed38f7 100644
 --- a/man/systemd-system.conf.xml
 +++ b/man/systemd-system.conf.xml
 @@ -172,7 +172,7 @@
@@ -880,7 +880,7 @@ index c7bcfaee4..1b74ed38f 100644
          others are removed. If the list of capabilities is prefixed
          with ~, all but the listed capabilities will be included, the
 diff --git a/man/systemd-update-utmp.service.xml b/man/systemd-update-utmp.service.xml
-index b842d2972..c8a9cb7c9 100644
+index b842d29721..c8a9cb7c90 100644
 --- a/man/systemd-update-utmp.service.xml
 +++ b/man/systemd-update-utmp.service.xml
 @@ -69,7 +69,7 @@
@@ -893,7 +893,7 @@ index b842d2972..c8a9cb7c9 100644
    </refsect1>
  
 diff --git a/man/systemd-vconsole-setup.service.xml b/man/systemd-vconsole-setup.service.xml
-index 59bb5e4e8..7c6ed0899 100644
+index 59bb5e4e8c..7c6ed08997 100644
 --- a/man/systemd-vconsole-setup.service.xml
 +++ b/man/systemd-vconsole-setup.service.xml
 @@ -57,9 +57,9 @@
@@ -920,7 +920,7 @@ index 59bb5e4e8..7c6ed0899 100644
      </para>
    </refsect1>
 diff --git a/man/systemd.automount.xml b/man/systemd.automount.xml
-index 3db65d988..b5b5885cd 100644
+index 3db65d988d..b5b5885cdf 100644
 --- a/man/systemd.automount.xml
 +++ b/man/systemd.automount.xml
 @@ -96,7 +96,7 @@
@@ -944,7 +944,7 @@ index 3db65d988..b5b5885cd 100644
        </para>
    </refsect1>
 diff --git a/man/systemd.exec.xml b/man/systemd.exec.xml
-index fdb157864..56b53e601 100644
+index fdb1578641..56b53e6015 100644
 --- a/man/systemd.exec.xml
 +++ b/man/systemd.exec.xml
 @@ -663,7 +663,7 @@
@@ -1020,7 +1020,7 @@ index fdb157864..56b53e601 100644
        </varlistentry>
  
 diff --git a/man/systemd.generator.xml b/man/systemd.generator.xml
-index ccb698752..9b39e732e 100644
+index ccb698752a..9b39e732e3 100644
 --- a/man/systemd.generator.xml
 +++ b/man/systemd.generator.xml
 @@ -333,7 +333,7 @@ find $dir</programlisting>
@@ -1033,7 +1033,7 @@ index ccb698752..9b39e732e 100644
        <citerefentry><refentrytitle>systemd-gpt-auto-generator</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
        <citerefentry><refentrytitle>systemd-hibernate-resume-generator</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
 diff --git a/man/systemd.journal-fields.xml b/man/systemd.journal-fields.xml
-index 1fd46de31..7d6c5c715 100644
+index 1fd46de31f..7d6c5c715f 100644
 --- a/man/systemd.journal-fields.xml
 +++ b/man/systemd.journal-fields.xml
 @@ -134,7 +134,7 @@
@@ -1046,7 +1046,7 @@ index 1fd46de31..7d6c5c715 100644
  
        </varlistentry>
 diff --git a/man/systemd.kill.xml b/man/systemd.kill.xml
-index c974e2248..e57f0e724 100644
+index c974e22489..e57f0e7242 100644
 --- a/man/systemd.kill.xml
 +++ b/man/systemd.kill.xml
 @@ -135,7 +135,7 @@
@@ -1068,7 +1068,7 @@ index c974e2248..e57f0e724 100644
    </refsect1>
  
 diff --git a/man/systemd.mount.xml b/man/systemd.mount.xml
-index 5cbde8b84..fcb9a4416 100644
+index 5cbde8b84c..fcb9a44161 100644
 --- a/man/systemd.mount.xml
 +++ b/man/systemd.mount.xml
 @@ -68,7 +68,7 @@
@@ -1135,7 +1135,7 @@ index 5cbde8b84..fcb9a4416 100644
          <citerefentry><refentrytitle>systemd.directives</refentrytitle><manvolnum>7</manvolnum></citerefentry>
        </para>
 diff --git a/man/systemd.network.xml b/man/systemd.network.xml
-index 24f8416ef..97386271d 100644
+index 24f8416ef9..97386271d6 100644
 --- a/man/systemd.network.xml
 +++ b/man/systemd.network.xml
 @@ -286,7 +286,7 @@
@@ -1175,7 +1175,7 @@ index 24f8416ef..97386271d 100644
              given, it is derived from the <literal>Address</literal>
              key.</para>
 diff --git a/man/systemd.path.xml b/man/systemd.path.xml
-index 08a7ec897..d02bc92ae 100644
+index 08a7ec8975..d02bc92ae6 100644
 --- a/man/systemd.path.xml
 +++ b/man/systemd.path.xml
 @@ -74,7 +74,7 @@
@@ -1197,7 +1197,7 @@ index 08a7ec897..d02bc92ae 100644
        </para>
    </refsect1>
 diff --git a/man/systemd.socket.xml b/man/systemd.socket.xml
-index 3938345fa..2f541937f 100644
+index 3938345fac..2f541937f8 100644
 --- a/man/systemd.socket.xml
 +++ b/man/systemd.socket.xml
 @@ -265,7 +265,7 @@
@@ -1339,7 +1339,7 @@ index 3938345fa..2f541937f 100644
        </varlistentry>
  
 diff --git a/man/systemd.swap.xml b/man/systemd.swap.xml
-index 23b9c712e..5016f453d 100644
+index 23b9c712ed..5016f453d5 100644
 --- a/man/systemd.swap.xml
 +++ b/man/systemd.swap.xml
 @@ -69,7 +69,7 @@
@@ -1388,7 +1388,7 @@ index 23b9c712e..5016f453d 100644
          <citerefentry><refentrytitle>systemd.directives</refentrytitle><manvolnum>7</manvolnum></citerefentry>
        </para>
 diff --git a/man/systemd.unit.xml b/man/systemd.unit.xml
-index a452f87ba..c2e374a94 100644
+index a452f87baf..c2e374a94e 100644
 --- a/man/systemd.unit.xml
 +++ b/man/systemd.unit.xml
 @@ -826,7 +826,7 @@
@@ -1410,7 +1410,7 @@ index a452f87ba..c2e374a94 100644
    </refsect1>
  
 diff --git a/man/systemd.xml b/man/systemd.xml
-index 9b92140e6..d006b0bb9 100644
+index 9b92140e6b..d006b0bb99 100644
 --- a/man/systemd.xml
 +++ b/man/systemd.xml
 @@ -1012,9 +1012,9 @@
@@ -1435,7 +1435,7 @@ index 9b92140e6..d006b0bb9 100644
        <citerefentry><refentrytitle>journalctl</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
        <citerefentry><refentrytitle>systemd-notify</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
 diff --git a/man/vconsole.conf.xml b/man/vconsole.conf.xml
-index 17bea8b68..27196d44e 100644
+index 17bea8b682..27196d44e9 100644
 --- a/man/vconsole.conf.xml
 +++ b/man/vconsole.conf.xml
 @@ -129,9 +129,9 @@ FONT=eurlatgr</programlisting>

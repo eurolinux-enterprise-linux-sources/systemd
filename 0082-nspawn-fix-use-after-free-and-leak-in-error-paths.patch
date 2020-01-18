@@ -11,7 +11,7 @@ CID #1257765.
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/nspawn/nspawn.c b/src/nspawn/nspawn.c
-index 7724df96b..78bd58483 100644
+index 7724df96bd..78bd584834 100644
 --- a/src/nspawn/nspawn.c
 +++ b/src/nspawn/nspawn.c
 @@ -3627,7 +3627,7 @@ int main(int argc, char *argv[]) {

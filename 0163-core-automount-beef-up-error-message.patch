@@ -14,7 +14,7 @@ Resolves: #1222517
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/automount.c b/src/core/automount.c
-index e4c79415d..b391f6198 100644
+index e4c79415d1..b391f6198e 100644
 --- a/src/core/automount.c
 +++ b/src/core/automount.c
 @@ -734,7 +734,8 @@ static int automount_dispatch_io(sd_event_source *s, int fd, uint32_t events, vo

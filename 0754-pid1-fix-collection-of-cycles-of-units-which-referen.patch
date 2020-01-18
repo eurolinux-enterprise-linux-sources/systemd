@@ -1,0 +1,76 @@
+From 98774bdfb6d40e5b7d41b86238ee2d98ff12cb69 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Tue, 13 Feb 2018 14:37:11 +0100
+Subject: [PATCH] pid1: fix collection of cycles of units which reference one
+ another
+
+A .socket will reference a .service unit, by registering a UnitRef with the
+.service unit. If this .service unit has the .socket unit listed in Wants or
+Sockets or such, a cycle will be created. We would not free this cycle
+properly, because we treated any unit with non-empty refs as uncollectable. To
+solve this issue, treats refs with UnitRef in u->refs_by_target similarly to
+the refs in u->dependencies, and check if the "other" unit is known to be
+needed. If it is not needed, do not treat the reference from it as preventing
+the unit we are looking at from being freed.
+
+(cherry picked from commit 2641f02e23ac7d5385db7f932aff221a063f245e)
+(cherry picked from commit 703cc4991049cdf3ad3506e432cda982b3b3b007)
+
+Resolves: #1729228
+---
+ src/core/manager.c | 14 ++++++++++++++
+ src/core/unit.c    |  9 +++++----
+ 2 files changed, 19 insertions(+), 4 deletions(-)
+
+diff --git a/src/core/manager.c b/src/core/manager.c
+index 9dfdd67860..fdbb3c0fd9 100644
+--- a/src/core/manager.c
++++ b/src/core/manager.c
+@@ -888,6 +888,20 @@ static void unit_gc_sweep(Unit *u, unsigned gc_marker) {
+                         is_bad = false;
+         }
+ 
++        if (u->refs_by_target) {
++                const UnitRef *ref;
++
++                LIST_FOREACH(refs_by_target, ref, u->refs_by_target) {
++                        unit_gc_sweep(ref->source, gc_marker);
++
++                        if (ref->source->gc_marker == gc_marker + GC_OFFSET_GOOD)
++                                goto good;
++
++                        if (ref->source->gc_marker != gc_marker + GC_OFFSET_BAD)
++                                is_bad = false;
++                }
++        }
++
+         if (is_bad)
+                 goto bad;
+ 
+diff --git a/src/core/unit.c b/src/core/unit.c
+index 5376ef862f..2204be26d2 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -288,7 +288,11 @@ bool unit_may_gc(Unit *u) {
+ 
+         /* Checks whether the unit is ready to be unloaded for garbage collection.
+          * Returns true when the unit may be collected, and false if there's some
+-         * reason to keep it loaded. */
++         * reason to keep it loaded.
++         *
++         * References from other units are *not* checked here. Instead, this is done
++         * in unit_gc_sweep(), but using markers to properly collect dependency loops.
++         */
+ 
+         if (u->job)
+                 return false;
+@@ -315,9 +319,6 @@ bool unit_may_gc(Unit *u) {
+         if (u->no_gc)
+                 return false;
+ 
+-        if (u->refs_by_target)
+-                return false;
+-
+         if (UNIT_VTABLE(u)->may_gc && !UNIT_VTABLE(u)->may_gc(u))
+                 return false;
+ 

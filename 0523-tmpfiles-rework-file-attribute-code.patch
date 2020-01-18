@@ -29,7 +29,7 @@ Related: #1299714
  1 file changed, 114 insertions(+), 93 deletions(-)
 
 diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
-index c8c56c722..800e620bc 100644
+index c8c56c722d..800e620bcf 100644
 --- a/src/tmpfiles/tmpfiles.c
 +++ b/src/tmpfiles/tmpfiles.c
 @@ -92,8 +92,8 @@ typedef enum ItemType {

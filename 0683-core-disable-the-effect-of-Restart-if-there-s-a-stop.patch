@@ -1,0 +1,35 @@
+From 33de2536b02351fecdae931b19e9980d0cecffbb Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Sat, 26 Aug 2017 15:07:23 +0200
+Subject: [PATCH] core: disable the effect of Restart= if there's a stop job
+ pending for a service (#6581)
+
+We shouldn't undo the job already enqueued, under any circumstances.
+
+Fixes: #6504
+(cherry picked from commit 0f52f8e552f869269f02f0359c2d1019cc39f15a)
+
+Resolves: #1626382
+---
+ src/core/service.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/core/service.c b/src/core/service.c
+index 8303a1e7ee..4d542ad947 100644
+--- a/src/core/service.c
++++ b/src/core/service.c
+@@ -1271,8 +1271,14 @@ static int cgroup_good(Service *s) {
+ 
+ static void service_enter_dead(Service *s, ServiceResult f, bool allow_restart) {
+         int r;
++
+         assert(s);
+ 
++        /* If there's a stop job queued before we enter the DEAD state, we shouldn't act on Restart=, in order to not
++         * undo what has already been enqueued. */
++        if (unit_stop_pending(UNIT(s)))
++                allow_restart = false;
++
+         if (f != SERVICE_SUCCESS)
+                 s->result = f;
+ 

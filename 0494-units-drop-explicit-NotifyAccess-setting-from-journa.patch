@@ -18,7 +18,7 @@ Resolves: #1444356
  1 file changed, 1 deletion(-)
 
 diff --git a/units/systemd-journald.service.in b/units/systemd-journald.service.in
-index 8575912bb..c85c34932 100644
+index 8575912bbd..c85c349327 100644
 --- a/units/systemd-journald.service.in
 +++ b/units/systemd-journald.service.in
 @@ -19,7 +19,6 @@ Sockets=systemd-journald.socket

@@ -34,7 +34,7 @@ Resolves: #1222517
  1 file changed, 1 insertion(+)
 
 diff --git a/src/login/logind-dbus.c b/src/login/logind-dbus.c
-index 8b0bafd49..fb84e92e5 100644
+index 8b0bafd49e..fb84e92e5d 100644
 --- a/src/login/logind-dbus.c
 +++ b/src/login/logind-dbus.c
 @@ -2124,6 +2124,7 @@ int match_job_removed(sd_bus *bus, sd_bus_message *message, void *userdata, sd_b

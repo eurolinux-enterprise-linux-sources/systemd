@@ -14,7 +14,7 @@ Resolves: #1222517
  1 file changed, 5 deletions(-)
 
 diff --git a/man/journalctl.xml b/man/journalctl.xml
-index 770cf9bb2..08de0ff06 100644
+index 770cf9bb29..08de0ff068 100644
 --- a/man/journalctl.xml
 +++ b/man/journalctl.xml
 @@ -817,11 +817,6 @@

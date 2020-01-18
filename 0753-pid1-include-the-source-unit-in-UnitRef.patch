@@ -1,0 +1,276 @@
+From c6da3d5d824f7b125b3fd95a961eca98db7febf7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Tue, 13 Feb 2018 13:12:43 +0100
+Subject: [PATCH] pid1: include the source unit in UnitRef
+
+No functional change.
+
+The source unit manages the reference. It allocates the UnitRef structure and
+registers it in the target unit, and then the reference must be destroyed
+before the source unit is destroyed. Thus, is should be OK to include the
+pointer to the source unit, it should be live as long as the reference exists.
+
+v2:
+- rename refs to refs_by_target
+
+(cherry picked from commit 7f7d01ed5804afef220ebdb29f22d8177d0d3a5c)
+(cherry picked from commit ff80bfd94181327a5f8e0fbd70b9b7afe0c5545c)
+
+Related: #1729228
+---
+ src/core/busname.c       |  2 +-
+ src/core/dbus-manager.c  |  2 +-
+ src/core/dbus-unit.c     |  2 +-
+ src/core/load-fragment.c |  6 +++---
+ src/core/service.c       |  2 +-
+ src/core/slice.c         |  2 +-
+ src/core/socket.c        |  4 ++--
+ src/core/unit.c          | 35 ++++++++++++++++++-----------------
+ src/core/unit.h          | 12 ++++++------
+ 9 files changed, 34 insertions(+), 33 deletions(-)
+
+diff --git a/src/core/busname.c b/src/core/busname.c
+index a5e659049d..97886f1e05 100644
+--- a/src/core/busname.c
++++ b/src/core/busname.c
+@@ -175,7 +175,7 @@ static int busname_add_extras(BusName *n) {
+                         if (r < 0)
+                                 return r;
+ 
+-                        unit_ref_set(&n->service, x);
++                        unit_ref_set(&n->service, u, x);
+                 }
+ 
+                 r = unit_add_two_dependencies(u, UNIT_BEFORE, UNIT_TRIGGERS, UNIT_DEREF(n->service), true);
+diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
+index 1766163b33..8267d44e1a 100644
+--- a/src/core/dbus-manager.c
++++ b/src/core/dbus-manager.c
+@@ -649,7 +649,7 @@ static int transient_unit_from_message(
+             u->fragment_path ||
+             u->source_path ||
+             !strv_isempty(u->dropin_paths) ||
+-            u->refs ||
++            u->refs_by_target ||
+             set_size(u->dependencies[UNIT_REFERENCED_BY]) > 0)
+                 return sd_bus_error_setf(error, BUS_ERROR_UNIT_EXISTS, "Unit %s already exists.", name);
+ 
+diff --git a/src/core/dbus-unit.c b/src/core/dbus-unit.c
+index f0f75e01b0..77073308c8 100644
+--- a/src/core/dbus-unit.c
++++ b/src/core/dbus-unit.c
+@@ -967,7 +967,7 @@ static int bus_unit_set_transient_property(
+                                 return -EINVAL;
+ 
+                         if (mode != UNIT_CHECK) {
+-                                unit_ref_set(&u->slice, slice);
++                                unit_ref_set(&u->slice, u, slice);
+                                 unit_write_drop_in_private_format(u, mode, name, "Slice=%s\n", s);
+                         }
+                 }
+diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
+index f3d0851fe2..1721fea8f3 100644
+--- a/src/core/load-fragment.c
++++ b/src/core/load-fragment.c
+@@ -1836,7 +1836,7 @@ int config_parse_socket_service(
+                 return 0;
+         }
+ 
+-        unit_ref_set(&s->service, x);
++        unit_ref_set(&s->service, UNIT(s), x);
+ 
+         return 0;
+ }
+@@ -2006,7 +2006,7 @@ int config_parse_busname_service(
+                 return 0;
+         }
+ 
+-        unit_ref_set(&n->service, x);
++        unit_ref_set(&n->service, UNIT(n), x);
+ 
+         return 0;
+ }
+@@ -2933,7 +2933,7 @@ int config_parse_unit_slice(
+                 return 0;
+         }
+ 
+-        unit_ref_set(&u->slice, slice);
++        unit_ref_set(&u->slice, u, slice);
+         return 0;
+ }
+ 
+diff --git a/src/core/service.c b/src/core/service.c
+index 69ec916f2d..eaa588863f 100644
+--- a/src/core/service.c
++++ b/src/core/service.c
+@@ -3299,7 +3299,7 @@ int service_set_socket_fd(Service *s, int fd, Socket *sock, bool selinux_context
+         s->socket_fd = fd;
+         s->socket_fd_selinux_context_net = selinux_context_net;
+ 
+-        unit_ref_set(&s->accept_socket, UNIT(sock));
++        unit_ref_set(&s->accept_socket, UNIT(s), UNIT(sock));
+ 
+         return unit_add_two_dependencies(UNIT(sock), UNIT_BEFORE, UNIT_TRIGGERS, UNIT(s), false);
+ }
+diff --git a/src/core/slice.c b/src/core/slice.c
+index 1cce3e1217..0985a65286 100644
+--- a/src/core/slice.c
++++ b/src/core/slice.c
+@@ -76,7 +76,7 @@ static int slice_add_parent_slice(Slice *s) {
+         if (r < 0)
+                 return r;
+ 
+-        unit_ref_set(&UNIT(s)->slice, parent);
++        unit_ref_set(&UNIT(s)->slice, UNIT(s), parent);
+         return 0;
+ }
+ 
+diff --git a/src/core/socket.c b/src/core/socket.c
+index 3e4cdd467f..8489575de6 100644
+--- a/src/core/socket.c
++++ b/src/core/socket.c
+@@ -208,7 +208,7 @@ int socket_instantiate_service(Socket *s) {
+                 return r;
+ 
+         u->no_gc = true;
+-        unit_ref_set(&s->service, u);
++        unit_ref_set(&s->service, UNIT(s), u);
+ 
+         return unit_add_two_dependencies(UNIT(s), UNIT_BEFORE, UNIT_TRIGGERS, u, false);
+ }
+@@ -313,7 +313,7 @@ static int socket_add_extras(Socket *s) {
+                         if (r < 0)
+                                 return r;
+ 
+-                        unit_ref_set(&s->service, x);
++                        unit_ref_set(&s->service, u, x);
+                 }
+ 
+                 r = unit_add_two_dependencies(u, UNIT_BEFORE, UNIT_TRIGGERS, UNIT_DEREF(s->service), true);
+diff --git a/src/core/unit.c b/src/core/unit.c
+index 1b8ec9a20e..5376ef862f 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -315,7 +315,7 @@ bool unit_may_gc(Unit *u) {
+         if (u->no_gc)
+                 return false;
+ 
+-        if (u->refs)
++        if (u->refs_by_target)
+                 return false;
+ 
+         if (UNIT_VTABLE(u)->may_gc && !UNIT_VTABLE(u)->may_gc(u))
+@@ -553,9 +553,8 @@ void unit_free(Unit *u) {
+         condition_free_list(u->asserts);
+ 
+         unit_ref_unset(&u->slice);
+-
+-        while (u->refs)
+-                unit_ref_unset(u->refs);
++        while (u->refs_by_target)
++                unit_ref_unset(u->refs_by_target);
+ 
+         free(u);
+ }
+@@ -737,8 +736,8 @@ int unit_merge(Unit *u, Unit *other) {
+                 return r;
+ 
+         /* Redirect all references */
+-        while (other->refs)
+-                unit_ref_set(other->refs, u);
++        while (other->refs_by_target)
++                unit_ref_set(other->refs_by_target, other->refs_by_target->source, u);
+ 
+         /* Merge dependencies */
+         for (d = 0; d < _UNIT_DEPENDENCY_MAX; d++)
+@@ -2493,7 +2492,7 @@ int unit_add_default_slice(Unit *u, CGroupContext *c) {
+         if (r < 0)
+                 return r;
+ 
+-        unit_ref_set(&u->slice, slice);
++        unit_ref_set(&u->slice, u, slice);
+         return 0;
+ }
+ 
+@@ -3130,30 +3129,32 @@ int unit_get_unit_file_preset(Unit *u) {
+         return u->unit_file_preset;
+ }
+ 
+-Unit* unit_ref_set(UnitRef *ref, Unit *u) {
++Unit* unit_ref_set(UnitRef *ref, Unit *source, Unit *target) {
+         assert(ref);
+-        assert(u);
++        assert(source);
++        assert(target);
+ 
+-        if (ref->unit)
++        if (ref->target)
+                 unit_ref_unset(ref);
+ 
+-        ref->unit = u;
+-        LIST_PREPEND(refs, u->refs, ref);
+-        return u;
++        ref->source = source;
++        ref->target = target;
++        LIST_PREPEND(refs_by_target, target->refs_by_target, ref);
++        return target;
+ }
+ 
+ void unit_ref_unset(UnitRef *ref) {
+         assert(ref);
+ 
+-        if (!ref->unit)
++        if (!ref->target)
+                 return;
+ 
+         /* We are about to drop a reference to the unit, make sure the garbage collection has a look at it as it might
+          * be unreferenced now. */
+-        unit_add_to_gc_queue(ref->unit);
++        unit_add_to_gc_queue(ref->target);
+ 
+-        LIST_REMOVE(refs, ref->unit->refs, ref);
+-        ref->unit = NULL;
++        LIST_REMOVE(refs_by_target, ref->target->refs_by_target, ref);
++        ref->source = ref->target = NULL;
+ }
+ 
+ int unit_patch_contexts(Unit *u) {
+diff --git a/src/core/unit.h b/src/core/unit.h
+index 3f411a1793..a6e21d60ce 100644
+--- a/src/core/unit.h
++++ b/src/core/unit.h
+@@ -84,8 +84,8 @@ struct UnitRef {
+          * that we can merge two units if necessary and correct all
+          * references to them */
+ 
+-        Unit* unit;
+-        LIST_FIELDS(UnitRef, refs);
++        Unit *source, *target;
++        LIST_FIELDS(UnitRef, refs_by_target);
+ };
+ 
+ struct Unit {
+@@ -125,7 +125,7 @@ struct Unit {
+         char *job_timeout_reboot_arg;
+ 
+         /* References to this */
+-        LIST_HEAD(UnitRef, refs);
++        LIST_HEAD(UnitRef, refs_by_target);
+ 
+         /* Conditions to check */
+         LIST_HEAD(Condition, conditions);
+@@ -591,11 +591,11 @@ void unit_trigger_notify(Unit *u);
+ UnitFileState unit_get_unit_file_state(Unit *u);
+ int unit_get_unit_file_preset(Unit *u);
+ 
+-Unit* unit_ref_set(UnitRef *ref, Unit *u);
++Unit* unit_ref_set(UnitRef *ref, Unit *source, Unit *target);
+ void unit_ref_unset(UnitRef *ref);
+ 
+-#define UNIT_DEREF(ref) ((ref).unit)
+-#define UNIT_ISSET(ref) (!!(ref).unit)
++#define UNIT_DEREF(ref) ((ref).target)
++#define UNIT_ISSET(ref) (!!(ref).target)
+ 
+ int unit_patch_contexts(Unit *u);
+ 

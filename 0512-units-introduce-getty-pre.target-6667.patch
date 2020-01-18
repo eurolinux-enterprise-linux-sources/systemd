@@ -26,7 +26,7 @@ Resolves: #1173080
  create mode 100644 units/getty-pre.target
 
 diff --git a/Makefile.am b/Makefile.am
-index e9ceac98a..7c58fd050 100644
+index e9ceac98a4..7c58fd0504 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -462,6 +462,7 @@ dist_systemunit_DATA = \
@@ -38,7 +38,7 @@ index e9ceac98a..7c58fd050 100644
  	units/kexec.target \
  	units/local-fs.target \
 diff --git a/man/systemd.special.xml b/man/systemd.special.xml
-index 553197d66..eb464f9f8 100644
+index 553197d66e..eb464f9f81 100644
 --- a/man/systemd.special.xml
 +++ b/man/systemd.special.xml
 @@ -61,6 +61,7 @@
@@ -69,7 +69,7 @@ index 553197d66..eb464f9f8 100644
          <listitem>
 diff --git a/units/getty-pre.target b/units/getty-pre.target
 new file mode 100644
-index 000000000..f6c78b6c2
+index 0000000000..f6c78b6c2e
 --- /dev/null
 +++ b/units/getty-pre.target
 @@ -0,0 +1,11 @@
@@ -85,7 +85,7 @@ index 000000000..f6c78b6c2
 +Documentation=man:systemd.special(7) man:systemd-getty-generator(8)
 +Documentation=http://0pointer.de/blog/projects/serial-console.html
 diff --git a/units/getty@.service.m4 b/units/getty@.service.m4
-index 46164ab9d..ad4bf2103 100644
+index 46164ab9d8..ad4bf21034 100644
 --- a/units/getty@.service.m4
 +++ b/units/getty@.service.m4
 @@ -9,7 +9,7 @@
@@ -98,7 +98,7 @@ index 46164ab9d..ad4bf2103 100644
  After=rc-local.service
  )m4_dnl
 diff --git a/units/serial-getty@.service.m4 b/units/serial-getty@.service.m4
-index 4522d0d2b..6802333f7 100644
+index 4522d0d2be..6802333f7b 100644
 --- a/units/serial-getty@.service.m4
 +++ b/units/serial-getty@.service.m4
 @@ -10,7 +10,7 @@ Description=Serial Getty on %I

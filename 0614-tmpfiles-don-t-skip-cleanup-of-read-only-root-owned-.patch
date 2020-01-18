@@ -10,7 +10,7 @@ Resolves: #1533638
  1 file changed, 8 insertions(+), 4 deletions(-)
 
 diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
-index ddb274fce..5212d72f5 100644
+index ddb274fcec..5212d72f56 100644
 --- a/src/tmpfiles/tmpfiles.c
 +++ b/src/tmpfiles/tmpfiles.c
 @@ -367,6 +367,7 @@ static int dir_cleanup(

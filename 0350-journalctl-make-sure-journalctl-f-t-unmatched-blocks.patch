@@ -28,7 +28,7 @@ Related: #1350232
  1 file changed, 6 insertions(+), 2 deletions(-)
 
 diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
-index 904aae99e..2688d8b2e 100644
+index 904aae99ed..2688d8b2e9 100644
 --- a/src/journal/journalctl.c
 +++ b/src/journal/journalctl.c
 @@ -2142,8 +2142,12 @@ int main(int argc, char *argv[]) {

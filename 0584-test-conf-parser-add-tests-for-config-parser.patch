@@ -17,7 +17,7 @@ Resolves: #1503106
  create mode 100644 src/test/test-conf-parser.c
 
 diff --git a/Makefile.am b/Makefile.am
-index c4a96e1fd..8c73326fa 100644
+index c4a96e1fd1..8c73326fa8 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -1416,6 +1416,7 @@ tests += \
@@ -43,7 +43,7 @@ index c4a96e1fd..8c73326fa 100644
  .PHONY: coverage lcov-run lcov-report coverage-sync
 diff --git a/src/test/test-conf-parser.c b/src/test/test-conf-parser.c
 new file mode 100644
-index 000000000..4052d0095
+index 0000000000..4052d0095e
 --- /dev/null
 +++ b/src/test/test-conf-parser.c
 @@ -0,0 +1,155 @@

@@ -1,0 +1,29 @@
+From a781c22627a108d2fdcfaf428f6fefca122636a9 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Mon, 22 Jan 2018 21:11:04 +0100
+Subject: [PATCH] tmpfiles: fix check for figuring out whether to call chmod()
+
+No need to call chown() if everything matches already.
+
+(cherry picked from commit dc2335669afddc767eea2757f8d7dfc7a8f927fa)
+
+Related: #1620110
+---
+ src/tmpfiles/tmpfiles.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
+index 663f6c8b2d..1adcb74e68 100644
+--- a/src/tmpfiles/tmpfiles.c
++++ b/src/tmpfiles/tmpfiles.c
+@@ -655,8 +655,8 @@ static int path_set_perms(Item *i, const char *path) {
+                 }
+         }
+ 
+-        if ((i->uid != st.st_uid || i->gid != st.st_gid) &&
+-            (i->uid_set || i->gid_set)) {
++        if ((i->uid_set && i->uid != st.st_uid) ||
++            (i->gid_set && i->gid != st.st_gid)) {
+                 log_debug("Changing \"%s\" to owner "UID_FMT":"GID_FMT,
+                           path,
+                           i->uid_set ? i->uid : UID_INVALID,

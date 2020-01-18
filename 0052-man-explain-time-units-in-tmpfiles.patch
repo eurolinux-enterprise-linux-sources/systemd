@@ -10,7 +10,7 @@ https://bugzilla.redhat.com/show_bug.cgi?id=1195294
  1 file changed, 14 insertions(+), 15 deletions(-)
 
 diff --git a/man/tmpfiles.d.xml b/man/tmpfiles.d.xml
-index 8815bf997..4bd0fcf75 100644
+index 8815bf9970..4bd0fcf751 100644
 --- a/man/tmpfiles.d.xml
 +++ b/man/tmpfiles.d.xml
 @@ -443,23 +443,22 @@

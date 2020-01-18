@@ -11,7 +11,7 @@ Resolves: #1082179
  1 file changed, 4 insertions(+), 3 deletions(-)
 
 diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
-index 7058788ef..964f849ee 100644
+index 7058788efa..964f849ee0 100644
 --- a/src/journal/journalctl.c
 +++ b/src/journal/journalctl.c
 @@ -1090,10 +1090,11 @@ static int add_boot(sd_journal *j) {

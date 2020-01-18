@@ -10,7 +10,7 @@ Resolves: #1135599
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/socket.c b/src/core/socket.c
-index 760de0203..7022e77b5 100644
+index 760de0203d..7022e77b53 100644
 --- a/src/core/socket.c
 +++ b/src/core/socket.c
 @@ -833,7 +833,7 @@ static void socket_apply_socket_options(Socket *s, int fd) {

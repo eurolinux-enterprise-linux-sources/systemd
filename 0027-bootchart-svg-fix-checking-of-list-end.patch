@@ -11,7 +11,7 @@ If we have less samples than expected, systemd-bootchart will crash.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/bootchart/svg.c b/src/bootchart/svg.c
-index e111fa9cc..144177cd4 100644
+index e111fa9cce..144177cd47 100644
 --- a/src/bootchart/svg.c
 +++ b/src/bootchart/svg.c
 @@ -1170,7 +1170,7 @@ static void svg_ps_bars(void) {

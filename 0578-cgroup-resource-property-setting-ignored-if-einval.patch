@@ -18,7 +18,7 @@ Cherry-picked from: d53d94743c5e5e3a4a6, 3fdf9ad
  9 files changed, 205 insertions(+), 158 deletions(-)
 
 diff --git a/man/systemd.resource-control.xml b/man/systemd.resource-control.xml
-index f507c6748..6ab17e8cb 100644
+index f507c67487..6ab17e8cb9 100644
 --- a/man/systemd.resource-control.xml
 +++ b/man/systemd.resource-control.xml
 @@ -118,10 +118,11 @@
@@ -46,7 +46,7 @@ index f507c6748..6ab17e8cb 100644
          url="https://www.kernel.org/doc/Documentation/cgroups/blkio-controller.txt">blkio-controller.txt</ulink>.
          The available IO bandwidth is split up among all units within
 diff --git a/src/core/cgroup.c b/src/core/cgroup.c
-index d4a8f9cbe..0779fa555 100644
+index d4a8f9cbe3..0779fa5552 100644
 --- a/src/core/cgroup.c
 +++ b/src/core/cgroup.c
 @@ -35,14 +35,16 @@ void cgroup_context_init(CGroupContext *c) {
@@ -172,7 +172,7 @@ index d4a8f9cbe..0779fa555 100644
              c->blockio_device_bandwidths)
                  mask |= CGROUP_BLKIO;
 diff --git a/src/core/cgroup.h b/src/core/cgroup.h
-index 8af3eaa3a..870f39c52 100644
+index 8af3eaa3ae..870f39c520 100644
 --- a/src/core/cgroup.h
 +++ b/src/core/cgroup.h
 @@ -58,7 +58,7 @@ struct CGroupDeviceAllow {
@@ -214,7 +214,7 @@ index 8af3eaa3a..870f39c52 100644
  
  #include "unit.h"
 diff --git a/src/core/dbus-cgroup.c b/src/core/dbus-cgroup.c
-index fa76c60c1..ffeeb5aa9 100644
+index fa76c60c1f..ffeeb5aa9a 100644
 --- a/src/core/dbus-cgroup.c
 +++ b/src/core/dbus-cgroup.c
 @@ -133,34 +133,16 @@ static int property_get_device_allow(
@@ -436,7 +436,7 @@ index fa76c60c1..ffeeb5aa9 100644
                          fflush(f);
                          unit_write_drop_in_private(u, mode, name, buf);
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index a10e1903a..da58bcc5c 100644
+index a10e1903a4..da58bcc5c9 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -2951,26 +2951,19 @@ int config_parse_cpu_shares(
@@ -561,7 +561,7 @@ index a10e1903a..da58bcc5c 100644
          LIST_PREPEND(device_weights, c->blockio_device_weights, w);
          return 0;
 diff --git a/src/core/unit.c b/src/core/unit.c
-index 6a2ad6ed3..8c0fde878 100644
+index 6a2ad6ed38..8c0fde8784 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -1178,8 +1178,8 @@ static int unit_add_startup_units(Unit *u) {
@@ -576,7 +576,7 @@ index 6a2ad6ed3..8c0fde878 100644
  
          r = set_put(u->manager->startup_units, u);
 diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
-index 263457427..cbf1eccf7 100644
+index 2634574279..cbf1eccf77 100644
 --- a/src/libsystemd/sd-bus/bus-util.c
 +++ b/src/libsystemd/sd-bus/bus-util.c
 @@ -23,20 +23,23 @@
@@ -637,7 +637,7 @@ index 263457427..cbf1eccf7 100644
                          log_error("Failed to parse %s value %s.", field, eq);
                          return -EINVAL;
 diff --git a/src/shared/cgroup-util.c b/src/shared/cgroup-util.c
-index c5d9e4bb5..f67b53b4d 100644
+index c5d9e4bb58..f67b53b4de 100644
 --- a/src/shared/cgroup-util.c
 +++ b/src/shared/cgroup-util.c
 @@ -1795,3 +1795,44 @@ int cg_kernel_controllers(Set *controllers) {
@@ -686,7 +686,7 @@ index c5d9e4bb5..f67b53b4d 100644
 +        return 0;
 +}
 diff --git a/src/shared/cgroup-util.h b/src/shared/cgroup-util.h
-index 31bd8d311..615c1f03e 100644
+index 31bd8d311f..615c1f03e3 100644
 --- a/src/shared/cgroup-util.h
 +++ b/src/shared/cgroup-util.h
 @@ -39,6 +39,30 @@ typedef enum CGroupControllerMask {

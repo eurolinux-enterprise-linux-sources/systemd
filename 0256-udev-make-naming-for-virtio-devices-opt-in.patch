@@ -12,7 +12,7 @@ Resolves: #1269216
  2 files changed, 20 insertions(+), 5 deletions(-)
 
 diff --git a/src/udev/udev-builtin-net_id.c b/src/udev/udev-builtin-net_id.c
-index ddd83d4f1..ffd6ea416 100644
+index ddd83d4f1b..ffd6ea4166 100644
 --- a/src/udev/udev-builtin-net_id.c
 +++ b/src/udev/udev-builtin-net_id.c
 @@ -281,14 +281,29 @@ out:
@@ -48,7 +48,7 @@ index ddd83d4f1..ffd6ea416 100644
          if (!parent)
                  return -ENOENT;
 diff --git a/src/udev/udevd.c b/src/udev/udevd.c
-index 87a3f69e9..21e7e7f9a 100644
+index 87a3f69e90..21e7e7f9a9 100644
 --- a/src/udev/udevd.c
 +++ b/src/udev/udevd.c
 @@ -1003,10 +1003,10 @@ static void kernel_cmdline_options(struct udev *udev) {

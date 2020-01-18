@@ -14,7 +14,7 @@ Resolves: #1054477
  create mode 100644 rules/73-idrac.rules
 
 diff --git a/Makefile.am b/Makefile.am
-index b0e4b5a42..9e64d6f98 100644
+index b0e4b5a42a..9e64d6f988 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -3567,7 +3567,8 @@ dist_udevrules_DATA += \
@@ -29,7 +29,7 @@ index b0e4b5a42..9e64d6f98 100644
  	rules/99-systemd.rules
 diff --git a/rules/73-idrac.rules b/rules/73-idrac.rules
 new file mode 100644
-index 000000000..d67fc425b
+index 0000000000..d67fc425b1
 --- /dev/null
 +++ b/rules/73-idrac.rules
 @@ -0,0 +1,6 @@

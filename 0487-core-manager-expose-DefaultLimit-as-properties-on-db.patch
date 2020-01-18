@@ -16,7 +16,7 @@ Resolves: #1427927
  3 files changed, 56 insertions(+)
 
 diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
-index 9d4f63377..d34ed042f 100644
+index 9d4f633774..d34ed042f6 100644
 --- a/src/core/dbus-manager.c
 +++ b/src/core/dbus-manager.c
 @@ -2049,6 +2049,22 @@ const sd_bus_vtable bus_manager_vtable[] = {
@@ -43,7 +43,7 @@ index 9d4f63377..d34ed042f 100644
  
          SD_BUS_METHOD("GetUnit", "s", "o", method_get_unit, SD_BUS_VTABLE_UNPRIVILEGED),
 diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
-index f46fa2bbf..263457427 100644
+index f46fa2bbf3..2634574279 100644
 --- a/src/libsystemd/sd-bus/bus-util.c
 +++ b/src/libsystemd/sd-bus/bus-util.c
 @@ -1937,3 +1937,42 @@ int bus_deserialize_and_dump_unit_file_changes(sd_bus_message *m, bool quiet, Un
@@ -90,7 +90,7 @@ index f46fa2bbf..263457427 100644
 +        return sd_bus_message_append(reply, "t", u);
 +}
 diff --git a/src/libsystemd/sd-bus/bus-util.h b/src/libsystemd/sd-bus/bus-util.h
-index 8c8846c6e..d5f4e9750 100644
+index 8c8846c6ee..d5f4e9750d 100644
 --- a/src/libsystemd/sd-bus/bus-util.h
 +++ b/src/libsystemd/sd-bus/bus-util.h
 @@ -214,3 +214,4 @@ int bus_wait_for_jobs_one(BusWaitForJobs *d, const char *path, bool quiet);

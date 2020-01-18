@@ -14,7 +14,7 @@ Resolves: #1222517
  1 file changed, 9 insertions(+), 3 deletions(-)
 
 diff --git a/src/update-done/update-done.c b/src/update-done/update-done.c
-index 561963e5e..cb5cd6f4a 100644
+index 561963e5eb..cb5cd6f4ab 100644
 --- a/src/update-done/update-done.c
 +++ b/src/update-done/update-done.c
 @@ -36,9 +36,15 @@ static int apply_timestamp(const char *path, struct timespec *ts) {

@@ -11,7 +11,7 @@ Resolves: #1142369
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/manager.c b/src/core/manager.c
-index bde17ce0b..bb5050303 100644
+index bde17ce0be..bb5050303c 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -1328,8 +1328,12 @@ int manager_load_unit_prepare(

@@ -16,7 +16,7 @@ Related: #1404657, #1471230
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/test/test-exec-deserialization.py b/test/test-exec-deserialization.py
-index b974b1c13..859778a7a 100755
+index b974b1c133..859778a7a8 100755
 --- a/test/test-exec-deserialization.py
 +++ b/test/test-exec-deserialization.py
 @@ -1,4 +1,4 @@

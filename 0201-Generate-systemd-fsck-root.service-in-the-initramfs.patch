@@ -24,7 +24,7 @@ Resolves: #1222517
  1 file changed, 59 insertions(+), 4 deletions(-)
 
 diff --git a/src/shared/generator.c b/src/shared/generator.c
-index cd37812f8..148a0b077 100644
+index cd37812f86..148a0b077b 100644
 --- a/src/shared/generator.c
 +++ b/src/shared/generator.c
 @@ -29,8 +29,51 @@

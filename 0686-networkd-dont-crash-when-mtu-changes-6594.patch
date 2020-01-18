@@ -1,0 +1,40 @@
+From 583aea0f48640611f0c1d5da9dec8d3759521ce9 Mon Sep 17 00:00:00 2001
+From: Andrew Jeddeloh <andrewjeddeloh@gmail.com>
+Date: Thu, 31 Aug 2017 01:58:39 -0700
+Subject: [PATCH] networkd: dont crash when mtu changes (#6594)
+
+Prevent networkd from crashing when UseMTU is used. Many drivers will
+bring the link down and then back up to configure a new MTU. Networkd
+will also asynchonously send rtnl messages to configure the link and may
+receive responses after the link has gone down and come back up (which
+networkd will handle and set the lease and network to NULL.
+
+This changes the behavior to instead return if this is the case instead
+of crashing via assert.
+
+(cherry picked from commit 0c9b15a38a558d8f84257455ee24174221069e9e)
+
+Related: #1663365
+---
+ src/network/networkd-dhcp4.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/src/network/networkd-dhcp4.c b/src/network/networkd-dhcp4.c
+index 295e44fdd7..a47286af6b 100644
+--- a/src/network/networkd-dhcp4.c
++++ b/src/network/networkd-dhcp4.c
+@@ -57,8 +57,12 @@ static int link_set_dhcp_routes(Link *link) {
+         int r, n, i;
+ 
+         assert(link);
+-        assert(link->dhcp_lease);
+-        assert(link->network);
++
++        if (!link->dhcp_lease) /* link went down while we configured the IP addresses? */
++                return 0;
++
++        if (!link->network) /* link went down while we configured the IP addresses? */
++                return 0;
+ 
+         if (!link->network->dhcp_routes)
+                 return 0;

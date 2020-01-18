@@ -21,7 +21,7 @@ Resolves: #1421181
  4 files changed, 100 insertions(+), 15 deletions(-)
 
 diff --git a/src/core/execute.c b/src/core/execute.c
-index 59340ec05..863babd76 100644
+index 59340ec051..863babd761 100644
 --- a/src/core/execute.c
 +++ b/src/core/execute.c
 @@ -1305,6 +1305,7 @@ static int exec_child(
@@ -61,7 +61,7 @@ index 59340ec05..863babd76 100644
                                  *exit_status = EXIT_CHROOT;
                                  return -errno;
 diff --git a/src/core/namespace.c b/src/core/namespace.c
-index 00495c144..574746273 100644
+index 00495c1446..5747462736 100644
 --- a/src/core/namespace.c
 +++ b/src/core/namespace.c
 @@ -44,6 +44,7 @@
@@ -228,7 +228,7 @@ index 00495c144..574746273 100644
  
          return 0;
 diff --git a/src/core/namespace.h b/src/core/namespace.h
-index 42b92e780..00ab22bf2 100644
+index 42b92e7803..00ab22bf2e 100644
 --- a/src/core/namespace.h
 +++ b/src/core/namespace.h
 @@ -41,7 +41,8 @@ typedef enum ProtectSystem {
@@ -242,7 +242,7 @@ index 42b92e780..00ab22bf2 100644
                      char **inaccessible_dirs,
                      const char *tmp_dir,
 diff --git a/src/test/test-ns.c b/src/test/test-ns.c
-index 7cd7b7715..72a0004e3 100644
+index 7cd7b77153..72a0004e3e 100644
 --- a/src/test/test-ns.c
 +++ b/src/test/test-ns.c
 @@ -42,10 +42,12 @@ int main(int argc, char *argv[]) {

@@ -13,7 +13,7 @@ Related: #1331667
  1 file changed, 1 insertion(+)
 
 diff --git a/src/shared/ptyfwd.c b/src/shared/ptyfwd.c
-index 31274a141..88b3f4e3c 100644
+index 31274a1418..88b3f4e3c4 100644
 --- a/src/shared/ptyfwd.c
 +++ b/src/shared/ptyfwd.c
 @@ -388,6 +388,7 @@ PTYForward *pty_forward_free(PTYForward *f) {

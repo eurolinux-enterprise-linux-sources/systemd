@@ -13,7 +13,7 @@ Related: #1350756
  2 files changed, 5 insertions(+), 2 deletions(-)
 
 diff --git a/src/udev/udevadm-hwdb.c b/src/udev/udevadm-hwdb.c
-index d65e40c01..201e2a0cd 100644
+index d65e40c011..201e2a0cd2 100644
 --- a/src/udev/udevadm-hwdb.c
 +++ b/src/udev/udevadm-hwdb.c
 @@ -26,6 +26,8 @@
@@ -41,7 +41,7 @@ index d65e40c01..201e2a0cd 100644
  
          if (test) {
 diff --git a/src/udev/udevadm.c b/src/udev/udevadm.c
-index 56cd0cd4e..d05a26e78 100644
+index 56cd0cd4ec..d05a26e788 100644
 --- a/src/udev/udevadm.c
 +++ b/src/udev/udevadm.c
 @@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {

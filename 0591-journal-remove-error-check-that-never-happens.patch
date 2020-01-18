@@ -15,7 +15,7 @@ Related: #1465759
  1 file changed, 3 insertions(+), 9 deletions(-)
 
 diff --git a/src/journal/sd-journal.c b/src/journal/sd-journal.c
-index 72f312b67..3749f9e89 100644
+index 72f312b67c..3749f9e895 100644
 --- a/src/journal/sd-journal.c
 +++ b/src/journal/sd-journal.c
 @@ -1487,7 +1487,7 @@ static int add_root_directory(sd_journal *j, const char *p) {

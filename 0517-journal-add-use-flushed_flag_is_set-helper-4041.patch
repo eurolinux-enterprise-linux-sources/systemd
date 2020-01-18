@@ -13,7 +13,7 @@ Related: #1364092
  1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index 3e9412d57..96ffda4ec 100644
+index 3e9412d577..96ffda4ec9 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -917,6 +917,9 @@ finish:

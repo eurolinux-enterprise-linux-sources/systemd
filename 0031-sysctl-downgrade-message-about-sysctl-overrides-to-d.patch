@@ -12,7 +12,7 @@ overrides.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/sysctl/sysctl.c b/src/sysctl/sysctl.c
-index d007c932c..b6945eda5 100644
+index d007c932c6..b6945eda54 100644
 --- a/src/sysctl/sysctl.c
 +++ b/src/sysctl/sysctl.c
 @@ -176,7 +176,7 @@ found:

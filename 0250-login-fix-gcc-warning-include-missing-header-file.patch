@@ -9,7 +9,7 @@ Related: #1264073
  1 file changed, 1 insertion(+)
 
 diff --git a/src/login/user-sessions.c b/src/login/user-sessions.c
-index d1d429c0d..9710524da 100644
+index d1d429c0d2..9710524daf 100644
 --- a/src/login/user-sessions.c
 +++ b/src/login/user-sessions.c
 @@ -26,6 +26,7 @@

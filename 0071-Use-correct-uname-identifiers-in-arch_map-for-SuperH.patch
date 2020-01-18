@@ -11,7 +11,7 @@ https://bugs.freedesktop.org/show_bug.cgi?id=89421
  1 file changed, 6 insertions(+), 2 deletions(-)
 
 diff --git a/src/shared/architecture.c b/src/shared/architecture.c
-index 34c5a53fa..884abdd3e 100644
+index 34c5a53fa9..884abdd3ea 100644
 --- a/src/shared/architecture.c
 +++ b/src/shared/architecture.c
 @@ -108,8 +108,12 @@ int uname_architecture(void) {

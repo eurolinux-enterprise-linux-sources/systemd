@@ -12,7 +12,7 @@ Related: #1331667
  1 file changed, 4 insertions(+), 5 deletions(-)
 
 diff --git a/src/libsystemd/sd-bus/bus-message.c b/src/libsystemd/sd-bus/bus-message.c
-index 295930303..c8402a23a 100644
+index 2959303033..c8402a23a9 100644
 --- a/src/libsystemd/sd-bus/bus-message.c
 +++ b/src/libsystemd/sd-bus/bus-message.c
 @@ -441,7 +441,7 @@ int bus_message_from_header(

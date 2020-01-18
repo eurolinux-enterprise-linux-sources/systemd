@@ -11,7 +11,7 @@ as we can.
  1 file changed, 25 insertions(+), 8 deletions(-)
 
 diff --git a/src/udev/udev-builtin-net_id.c b/src/udev/udev-builtin-net_id.c
-index 99caa0a2a..6a5ada688 100644
+index 99caa0a2ab..6a5ada6883 100644
 --- a/src/udev/udev-builtin-net_id.c
 +++ b/src/udev/udev-builtin-net_id.c
 @@ -35,7 +35,7 @@

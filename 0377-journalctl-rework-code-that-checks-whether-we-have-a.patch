@@ -19,7 +19,7 @@ Related: #1318994
  3 files changed, 119 insertions(+), 105 deletions(-)
 
 diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
-index 6ba884779..f60e6415f 100644
+index 6ba8847798..f60e6415f8 100644
 --- a/src/journal/journalctl.c
 +++ b/src/journal/journalctl.c
 @@ -1680,61 +1680,76 @@ static int verify(sd_journal *j) {
@@ -187,7 +187,7 @@ index 6ba884779..f60e6415f 100644
  
          return r;
 diff --git a/src/shared/acl-util.c b/src/shared/acl-util.c
-index e67e9acb6..d18a02f50 100644
+index e67e9acb6a..d18a02f503 100644
 --- a/src/shared/acl-util.c
 +++ b/src/shared/acl-util.c
 @@ -82,17 +82,18 @@ int calc_acl_mask_if_needed(acl_t *acl_p) {
@@ -325,7 +325,7 @@ index e67e9acb6..d18a02f50 100644
  
  int parse_acl(char *text, acl_t *acl_access, acl_t *acl_default, bool want_mask) {
 diff --git a/src/shared/acl-util.h b/src/shared/acl-util.h
-index fdb90063f..c8bcc266d 100644
+index fdb90063fa..c8bcc266d0 100644
 --- a/src/shared/acl-util.h
 +++ b/src/shared/acl-util.h
 @@ -32,7 +32,7 @@

@@ -1,0 +1,52 @@
+From b1759ccd2f83bf75871333524cffb4c5b312ea93 Mon Sep 17 00:00:00 2001
+From: Frantisek Sumsal <fsumsal@redhat.com>
+Date: Fri, 15 Feb 2019 18:13:22 +0100
+Subject: [PATCH] tests: run `udevadm settle` after `fdisk`
+
+This makes the script wait for the newly created partition to
+show up before trying to put a filesystem on it, which should
+prevent the tests from failing with the following error:
+```
+Command (m for help): Building a new DOS disklabel with disk identifier 0x614565d4.
+
+Command (m for help): Partition type:
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended
+Select (default p): Partition number (1-4, default 1): First sector (2048-819199, default 2048): Using default value 2048
+Last sector, +sectors or +size{K,M,G} (2048-819199, default 819199): Partition 1 of type Linux and of size 290 MiB is set
+
+Command (m for help): Partition type:
+   p   primary (1 primary, 0 extended, 3 free)
+   e   extended
+Select (default p): Partition number (2-4, default 2): First sector (595968-819199, default 595968): Using default value 595968
+Last sector, +sectors or +size{K,M,G} (595968-819199, default 819199): Partition 2 of type Linux and of size 50 MiB is set
+
+Command (m for help): The partition table has been altered!
+
+Calling ioctl() to re-read partition table.
+Syncing disks.
+/dev/loop1p1: No such file or directory
+Usage: mkfs.xfs
+<snip>
+mount: /dev/loop1p1 is write-protected, mounting read-only
+mount: unknown filesystem type '(null)'
+```
+
+Based on 053edc5b04d8130a344eb1746f4b14a9823ac3ad
+---
+ test/test-functions | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/test/test-functions b/test/test-functions
+index def16d3277..78e725d5b9 100644
+--- a/test/test-functions
++++ b/test/test-functions
+@@ -160,7 +160,7 @@ p
+ w
+ q
+ EOF
+-    partprobe "$LOOPDEV"
++    udevadm settle
+     mkfs.xfs -L systemd "${LOOPDEV}p1"
+ }
+ 

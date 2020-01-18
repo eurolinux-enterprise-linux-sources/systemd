@@ -16,7 +16,7 @@ Resolves: #1421658
  1 file changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/service.c b/src/core/service.c
-index 6e7baa76c..84e00573f 100644
+index 6e7baa76c6..84e00573f3 100644
 --- a/src/core/service.c
 +++ b/src/core/service.c
 @@ -1563,7 +1563,15 @@ static void service_enter_start(Service *s) {

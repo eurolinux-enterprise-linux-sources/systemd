@@ -21,7 +21,7 @@ Resolves: #1222517
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/shared/install.c b/src/shared/install.c
-index b62065be5..aa197e91b 100644
+index b62065be5c..aa197e91b9 100644
 --- a/src/shared/install.c
 +++ b/src/shared/install.c
 @@ -2265,7 +2265,7 @@ int unit_file_get_list(

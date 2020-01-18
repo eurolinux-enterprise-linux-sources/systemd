@@ -13,7 +13,7 @@ Subject: [PATCH] man: link to fd.o for dbus stuff
  5 files changed, 17 insertions(+), 4 deletions(-)
 
 diff --git a/man/busctl.xml b/man/busctl.xml
-index cc1844b0a..807fc78e8 100644
+index cc1844b0a0..807fc78e8f 100644
 --- a/man/busctl.xml
 +++ b/man/busctl.xml
 @@ -465,7 +465,7 @@ o "/org/freedesktop/systemd1/job/42684"</programlisting>
@@ -26,7 +26,7 @@ index cc1844b0a..807fc78e8 100644
        <ulink url="https://code.google.com/p/d-bus/">kdbus</ulink>,
        <citerefentry><refentrytitle>sd-bus</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 diff --git a/man/custom-html.xsl b/man/custom-html.xsl
-index 32299db71..706b95a1c 100644
+index 32299db710..706b95a1c4 100644
 --- a/man/custom-html.xsl
 +++ b/man/custom-html.xsl
 @@ -91,6 +91,19 @@
@@ -50,7 +50,7 @@ index 32299db71..706b95a1c 100644
    <!-- the ID is output in the block.object call for refsect1 -->
    <h2>
 diff --git a/man/systemd-bus-proxyd.xml b/man/systemd-bus-proxyd.xml
-index 2c7764047..e0efe9985 100644
+index 2c7764047b..e0efe99854 100644
 --- a/man/systemd-bus-proxyd.xml
 +++ b/man/systemd-bus-proxyd.xml
 @@ -101,7 +101,7 @@ along with systemd; If not, see <http://www.gnu.org/licenses/>.
@@ -63,7 +63,7 @@ index 2c7764047..e0efe9985 100644
        <ulink url="https://code.google.com/p/d-bus/">kdbus</ulink>
      </para>
 diff --git a/man/systemd-bus-proxyd@.service.xml b/man/systemd-bus-proxyd@.service.xml
-index 141b43f6d..dc4f07ff1 100644
+index 141b43f6d9..dc4f07ff1b 100644
 --- a/man/systemd-bus-proxyd@.service.xml
 +++ b/man/systemd-bus-proxyd@.service.xml
 @@ -73,7 +73,7 @@
@@ -76,7 +76,7 @@ index 141b43f6d..dc4f07ff1 100644
        <ulink url="https://code.google.com/p/d-bus/">kdbus</ulink>
      </para>
 diff --git a/man/systemd-machine-id-setup.xml b/man/systemd-machine-id-setup.xml
-index 22bad3e5f..182717f52 100644
+index 22bad3e5f4..182717f524 100644
 --- a/man/systemd-machine-id-setup.xml
 +++ b/man/systemd-machine-id-setup.xml
 @@ -122,7 +122,7 @@

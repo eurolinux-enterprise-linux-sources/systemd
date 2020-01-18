@@ -1,0 +1,36 @@
+From e290169c17a7ca56aa0fce25879656b8e598e1de Mon Sep 17 00:00:00 2001
+From: ettavolt <ettavolt@gmail.com>
+Date: Mon, 4 Sep 2017 16:36:52 +0300
+Subject: [PATCH] 6647 - use path_startswith("/dev") in cryptsetup (#6732)
+
+For both key and partition paths.
+
+(cherry picked from commit 048dd629c4590eefb2ebd6a316c7350ed3a6ff19)
+
+Resolves: #1664695
+---
+ src/cryptsetup/cryptsetup-generator.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/cryptsetup/cryptsetup-generator.c b/src/cryptsetup/cryptsetup-generator.c
+index 7b90d26156..b2edbfe298 100644
+--- a/src/cryptsetup/cryptsetup-generator.c
++++ b/src/cryptsetup/cryptsetup-generator.c
+@@ -215,7 +215,7 @@ static int create_disk(
+ 
+                         if (!path_equal(uu, "/dev/null")) {
+ 
+-                                if (is_device_path(uu)) {
++                                if (path_startswith(uu, "/dev/")) {
+                                         _cleanup_free_ char *dd;
+ 
+                                         dd = unit_name_from_path(uu, ".device");
+@@ -229,7 +229,7 @@ static int create_disk(
+                 }
+         }
+ 
+-        if (is_device_path(u))
++        if (path_startswith(u, "/dev/"))
+                 fprintf(f,
+                         "BindsTo=%s\n"
+                         "After=%s\n"

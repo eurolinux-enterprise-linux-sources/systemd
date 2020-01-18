@@ -20,7 +20,7 @@ Related: #1337244
  7 files changed, 187 insertions(+), 12 deletions(-)
 
 diff --git a/man/systemd.resource-control.xml b/man/systemd.resource-control.xml
-index 217105ee5..f507c6748 100644
+index 217105ee5a..f507c67487 100644
 --- a/man/systemd.resource-control.xml
 +++ b/man/systemd.resource-control.xml
 @@ -221,15 +221,12 @@
@@ -46,7 +46,7 @@ index 217105ee5..f507c6748 100644
            <para>Implies <literal>TasksAccounting=true</literal>. The
            system default for this setting may be controlled with
 diff --git a/src/core/dbus-cgroup.c b/src/core/dbus-cgroup.c
-index a4465dc7a..fa76c60c1 100644
+index a4465dc7aa..fa76c60c1f 100644
 --- a/src/core/dbus-cgroup.c
 +++ b/src/core/dbus-cgroup.c
 @@ -694,6 +694,8 @@ int bus_cgroup_set_property(
@@ -86,7 +86,7 @@ index a4465dc7a..fa76c60c1 100644
          }
  
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index c1ffee2c7..411475024 100644
+index c1ffee2c7e..4114750244 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -3089,9 +3089,18 @@ int config_parse_tasks_max(
@@ -112,7 +112,7 @@ index c1ffee2c7..411475024 100644
          }
  
 diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
-index ed0849b63..f46fa2bbf 100644
+index ed0849b638..f46fa2bbf3 100644
 --- a/src/libsystemd/sd-bus/bus-util.c
 +++ b/src/libsystemd/sd-bus/bus-util.c
 @@ -1409,7 +1409,26 @@ int bus_append_unit_property_assignment(sd_bus_message *m, const char *assignmen
@@ -143,7 +143,7 @@ index ed0849b63..f46fa2bbf 100644
                  uint64_t u;
  
 diff --git a/src/shared/util.c b/src/shared/util.c
-index cadaddee3..bbb457759 100644
+index cadaddee32..bbb4577590 100644
 --- a/src/shared/util.c
 +++ b/src/shared/util.c
 @@ -94,6 +94,7 @@
@@ -242,7 +242,7 @@ index cadaddee3..bbb457759 100644
 +        return m / max;
 +}
 diff --git a/src/shared/util.h b/src/shared/util.h
-index 12afcc342..f1b6c348f 100644
+index 12afcc3429..f1b6c348f8 100644
 --- a/src/shared/util.h
 +++ b/src/shared/util.h
 @@ -1098,3 +1098,8 @@ typedef enum ExtractFlags {
@@ -255,7 +255,7 @@ index 12afcc342..f1b6c348f 100644
 +uint64_t system_tasks_max(void);
 +uint64_t system_tasks_max_scale(uint64_t v, uint64_t max);
 diff --git a/src/test/test-util.c b/src/test/test-util.c
-index 9ae347b43..971f97d7c 100644
+index 9ae347b434..971f97d7c3 100644
 --- a/src/test/test-util.c
 +++ b/src/test/test-util.c
 @@ -1530,6 +1530,43 @@ static void test_shell_maybe_quote(void) {

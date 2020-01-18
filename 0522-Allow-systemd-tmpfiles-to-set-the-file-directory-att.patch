@@ -15,7 +15,7 @@ Related: #1299714
  1 file changed, 150 insertions(+)
 
 diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
-index ed35b8cf0..c8c56c722 100644
+index ed35b8cf0d..c8c56c722d 100644
 --- a/src/tmpfiles/tmpfiles.c
 +++ b/src/tmpfiles/tmpfiles.c
 @@ -40,6 +40,7 @@

@@ -15,7 +15,7 @@ Resolves: #1279034
  1 file changed, 1 insertion(+)
 
 diff --git a/test/sysv-generator-test.py b/test/sysv-generator-test.py
-index e716d705c..153786417 100644
+index e716d705c0..153786417a 100644
 --- a/test/sysv-generator-test.py
 +++ b/test/sysv-generator-test.py
 @@ -60,6 +60,7 @@ class SysvGeneratorTest(unittest.TestCase):

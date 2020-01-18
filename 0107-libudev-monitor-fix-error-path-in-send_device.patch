@@ -11,7 +11,7 @@ Return -errno rather than -1 in case sendmsg() fails.
  1 file changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/src/libudev/libudev-monitor.c b/src/libudev/libudev-monitor.c
-index 3f1fee7f7..d0486e3d1 100644
+index 3f1fee7f7e..d0486e3d1e 100644
 --- a/src/libudev/libudev-monitor.c
 +++ b/src/libudev/libudev-monitor.c
 @@ -749,12 +749,20 @@ int udev_monitor_send_device(struct udev_monitor *udev_monitor,

@@ -10,7 +10,7 @@ Related: #1318994
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/journal/cat.c b/src/journal/cat.c
-index 79706b692..ed467b078 100644
+index 79706b692d..ed467b0785 100644
 --- a/src/journal/cat.c
 +++ b/src/journal/cat.c
 @@ -96,7 +96,7 @@ static int parse_argv(int argc, char *argv[]) {

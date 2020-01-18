@@ -23,7 +23,7 @@ Related: #1506256
  8 files changed, 12 deletions(-)
 
 diff --git a/src/core/automount.c b/src/core/automount.c
-index 679fe071e..08519e49c 100644
+index 679fe071e7..08519e49ca 100644
 --- a/src/core/automount.c
 +++ b/src/core/automount.c
 @@ -1126,7 +1126,6 @@ const UnitVTable automount_vtable = {
@@ -35,7 +35,7 @@ index 679fe071e..08519e49c 100644
                  .finished_stop_job = {
                          [JOB_DONE]       = "Unset automount %s.",
 diff --git a/src/core/busname.c b/src/core/busname.c
-index f626ba96d..a5e659049 100644
+index f626ba96d0..a5e659049d 100644
 --- a/src/core/busname.c
 +++ b/src/core/busname.c
 @@ -1064,13 +1064,10 @@ const UnitVTable busname_vtable = {
@@ -53,7 +53,7 @@ index f626ba96d..a5e659049 100644
          },
  };
 diff --git a/src/core/mount.c b/src/core/mount.c
-index f726d9659..0dc67dde6 100644
+index f726d96591..0dc67dde69 100644
 --- a/src/core/mount.c
 +++ b/src/core/mount.c
 @@ -1978,7 +1978,6 @@ const UnitVTable mount_vtable = {
@@ -65,7 +65,7 @@ index f726d9659..0dc67dde6 100644
                  },
                  .finished_stop_job = {
 diff --git a/src/core/service.c b/src/core/service.c
-index 9622ce11f..8303a1e7e 100644
+index 9622ce11ff..8303a1e7ee 100644
 --- a/src/core/service.c
 +++ b/src/core/service.c
 @@ -3398,13 +3398,10 @@ const UnitVTable service_vtable = {
@@ -83,7 +83,7 @@ index 9622ce11f..8303a1e7e 100644
          },
  };
 diff --git a/src/core/slice.c b/src/core/slice.c
-index 9154558b7..1cce3e121 100644
+index 9154558b7b..1cce3e1217 100644
 --- a/src/core/slice.c
 +++ b/src/core/slice.c
 @@ -299,7 +299,6 @@ const UnitVTable slice_vtable = {
@@ -95,7 +95,7 @@ index 9154558b7..1cce3e121 100644
                  .finished_stop_job = {
                          [JOB_DONE]       = "Removed slice %s.",
 diff --git a/src/core/socket.c b/src/core/socket.c
-index 771af0d24..efefe7ce5 100644
+index 771af0d241..efefe7ce5d 100644
 --- a/src/core/socket.c
 +++ b/src/core/socket.c
 @@ -2736,7 +2736,6 @@ const UnitVTable socket_vtable = {
@@ -107,7 +107,7 @@ index 771af0d24..efefe7ce5 100644
                  },
                  .finished_stop_job = {
 diff --git a/src/core/swap.c b/src/core/swap.c
-index 984be2d9a..e71de4e65 100644
+index 984be2d9a9..e71de4e657 100644
 --- a/src/core/swap.c
 +++ b/src/core/swap.c
 @@ -1525,7 +1525,6 @@ const UnitVTable swap_vtable = {
@@ -119,7 +119,7 @@ index 984be2d9a..e71de4e65 100644
                  },
                  .finished_stop_job = {
 diff --git a/src/core/target.c b/src/core/target.c
-index 2411a8e75..45248ad02 100644
+index 2411a8e758..45248ad025 100644
 --- a/src/core/target.c
 +++ b/src/core/target.c
 @@ -231,7 +231,6 @@ const UnitVTable target_vtable = {

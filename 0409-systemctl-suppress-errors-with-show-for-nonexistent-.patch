@@ -26,7 +26,7 @@ Resolves: #1380259
  1 file changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index 0644784a5..a578897d9 100644
+index 0644784a55..a578897d9e 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -4272,12 +4272,14 @@ static int show_one(

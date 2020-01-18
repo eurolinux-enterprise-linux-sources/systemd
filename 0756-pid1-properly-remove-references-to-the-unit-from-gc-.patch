@@ -1,0 +1,79 @@
+From 019b19130bcba9d88c0328b40f2639e6ebbb513c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Tue, 13 Feb 2018 23:57:43 +0100
+Subject: [PATCH] pid1: properly remove references to the unit from gc queue
+ during final cleanup
+
+When various references to the unit were dropped during cleanup in unit_free(),
+add_to_gc_queue() could be called on this unit. If the unit was previously in
+the gc queue (at the time when unit_free() was called on it), this wouldn't
+matter, because it'd have in_gc_queue still set even though it was already
+removed from the queue. But if it wasn't set, then the unit could be added to
+the queue. Then after unit_free() would deallocate the unit, we would be left
+with a dangling pointer in gc_queue.
+
+A unit could be added to the gc queue in two places called from unit_free():
+in the job_install calls, and in unit_ref_unset(). The first was OK, because
+it was above the LIST_REMOVE(gc_queue,...) call, but the second was not, because
+it was after that. Move the all LIST_REMOVE() calls down.
+
+(cherry picked from commit 1bdf2790025e661e41894129eb390bb032b88585)
+(cherry picked from commit 8f1df942e2237124f7559176081af7ac631d3422)
+
+Related: #1729228
+---
+ src/core/unit.c | 34 +++++++++++++++++-----------------
+ 1 file changed, 17 insertions(+), 17 deletions(-)
+
+diff --git a/src/core/unit.c b/src/core/unit.c
+index 63f00acc0a..def36a0930 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -506,23 +506,6 @@ void unit_free(Unit *u) {
+         for (d = 0; d < _UNIT_DEPENDENCY_MAX; d++)
+                 bidi_set_free(u, u->dependencies[d]);
+ 
+-        if (u->type != _UNIT_TYPE_INVALID)
+-                LIST_REMOVE(units_by_type, u->manager->units_by_type[u->type], u);
+-
+-        if (u->in_load_queue)
+-                LIST_REMOVE(load_queue, u->manager->load_queue, u);
+-
+-        if (u->in_dbus_queue)
+-                LIST_REMOVE(dbus_queue, u->manager->dbus_unit_queue, u);
+-
+-        if (u->in_cleanup_queue)
+-                LIST_REMOVE(cleanup_queue, u->manager->cleanup_queue, u);
+-
+-        if (u->in_gc_queue) {
+-                LIST_REMOVE(gc_queue, u->manager->gc_queue, u);
+-                u->manager->n_in_gc_queue--;
+-        }
+-
+         if (u->in_target_deps_queue)
+                 LIST_REMOVE(target_deps_queue, u->manager->target_deps_queue, u);
+ 
+@@ -543,6 +526,23 @@ void unit_free(Unit *u) {
+         while (u->refs_by_target)
+                 unit_ref_unset(u->refs_by_target);
+ 
++        if (u->type != _UNIT_TYPE_INVALID)
++                LIST_REMOVE(units_by_type, u->manager->units_by_type[u->type], u);
++
++        if (u->in_load_queue)
++                LIST_REMOVE(load_queue, u->manager->load_queue, u);
++
++        if (u->in_dbus_queue)
++                LIST_REMOVE(dbus_queue, u->manager->dbus_unit_queue, u);
++
++        if (u->in_cleanup_queue)
++                LIST_REMOVE(cleanup_queue, u->manager->cleanup_queue, u);
++
++        if (u->in_gc_queue) {
++                LIST_REMOVE(gc_queue, u->manager->gc_queue, u);
++                u->manager->n_in_gc_queue--;
++        }
++
+         condition_free_list(u->conditions);
+         condition_free_list(u->asserts);
+ 

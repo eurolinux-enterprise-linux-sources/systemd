@@ -32,7 +32,7 @@ Resolves: #1477757
  delete mode 100644 units/remote-cryptsetup-pre.target
 
 diff --git a/Makefile.am b/Makefile.am
-index 13c93f485..f06bc29c2 100644
+index 13c93f485e..f06bc29c25 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -4864,8 +4864,7 @@ systemgenerator_PROGRAMS += \
@@ -46,7 +46,7 @@ index 13c93f485..f06bc29c2 100644
  systemd_cryptsetup_SOURCES = \
  	src/cryptsetup/cryptsetup.c
 diff --git a/man/crypttab.xml b/man/crypttab.xml
-index 7085a1623..a9197ab40 100644
+index 7085a16234..a9197ab40e 100644
 --- a/man/crypttab.xml
 +++ b/man/crypttab.xml
 @@ -196,7 +196,7 @@
@@ -59,7 +59,7 @@ index 7085a1623..a9197ab40 100644
          <filename>cryptsetup-pre.target</filename> and
          <filename>cryptsetup.target</filename>.</para></listitem>
 diff --git a/man/systemd.special.xml b/man/systemd.special.xml
-index 5529d3bf7..e04f08bd3 100644
+index 5529d3bf7e..e04f08bd37 100644
 --- a/man/systemd.special.xml
 +++ b/man/systemd.special.xml
 @@ -81,7 +81,6 @@
@@ -104,7 +104,7 @@ index 5529d3bf7..e04f08bd3 100644
            all remote mounts pulls it in via a
            <varname>Wants=</varname> type dependency. If the unit wants
 diff --git a/src/cryptsetup/cryptsetup-generator.c b/src/cryptsetup/cryptsetup-generator.c
-index 49dc8f14b..82a280d86 100644
+index 49dc8f14b4..82a280d865 100644
 --- a/src/cryptsetup/cryptsetup-generator.c
 +++ b/src/cryptsetup/cryptsetup-generator.c
 @@ -114,7 +114,7 @@ static int create_disk(
@@ -118,7 +118,7 @@ index 49dc8f14b..82a280d86 100644
                  fprintf(f,
 diff --git a/units/remote-cryptsetup-pre.target b/units/remote-cryptsetup-pre.target
 deleted file mode 100644
-index a375e6188..000000000
+index a375e61889..0000000000
 --- a/units/remote-cryptsetup-pre.target
 +++ /dev/null
 @@ -1,15 +0,0 @@
@@ -138,7 +138,7 @@ index a375e6188..000000000
 -After=network.target network-online.target
 -Wants=network-online.target
 diff --git a/units/remote-cryptsetup.target b/units/remote-cryptsetup.target
-index c306d521f..d485b0672 100644
+index c306d521f7..d485b06726 100644
 --- a/units/remote-cryptsetup.target
 +++ b/units/remote-cryptsetup.target
 @@ -8,7 +8,7 @@

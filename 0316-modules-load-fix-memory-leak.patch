@@ -27,7 +27,7 @@ Related: #1331667
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/modules-load/modules-load.c b/src/modules-load/modules-load.c
-index 5f678789c..bab9246a3 100644
+index 5f678789ce..bab9246a3e 100644
 --- a/src/modules-load/modules-load.c
 +++ b/src/modules-load/modules-load.c
 @@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {

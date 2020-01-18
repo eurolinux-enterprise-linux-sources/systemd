@@ -14,7 +14,7 @@ Resolves: #1222517
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/man/kernel-command-line.xml b/man/kernel-command-line.xml
-index 919bd1374..eb7372702 100644
+index 919bd13745..eb73727027 100644
 --- a/man/kernel-command-line.xml
 +++ b/man/kernel-command-line.xml
 @@ -295,7 +295,7 @@

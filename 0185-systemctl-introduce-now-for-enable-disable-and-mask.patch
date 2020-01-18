@@ -24,7 +24,7 @@ Resolves: #1233081
  8 files changed, 114 insertions(+), 72 deletions(-)
 
 diff --git a/Makefile.am b/Makefile.am
-index 604eaf2f1..d3fb398fe 100644
+index 604eaf2f17..d3fb398fe5 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -5253,6 +5253,7 @@ machinectl_LDADD = \
@@ -36,7 +36,7 @@ index 604eaf2f1..d3fb398fe 100644
  
  rootbin_PROGRAMS += \
 diff --git a/man/systemctl.xml b/man/systemctl.xml
-index 3c4c9cb92..44ec0d7bc 100644
+index 3c4c9cb92c..44ec0d7bcf 100644
 --- a/man/systemctl.xml
 +++ b/man/systemctl.xml
 @@ -455,6 +455,18 @@
@@ -101,7 +101,7 @@ index 3c4c9cb92..44ec0d7bc 100644
          </varlistentry>
  
 diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
-index 2e6d88962..fff00d9f9 100644
+index 2e6d889620..fff00d9f93 100644
 --- a/src/libsystemd/sd-bus/bus-util.c
 +++ b/src/libsystemd/sd-bus/bus-util.c
 @@ -1849,7 +1849,7 @@ int bus_wait_for_jobs_add(BusWaitForJobs *d, const char *path) {
@@ -125,7 +125,7 @@ index 2e6d88962..fff00d9f9 100644
          if (r < 0)
                  return bus_log_parse_error(r);
 diff --git a/src/libsystemd/sd-bus/bus-util.h b/src/libsystemd/sd-bus/bus-util.h
-index e8a97cef9..21db98228 100644
+index e8a97cef9e..21db982280 100644
 --- a/src/libsystemd/sd-bus/bus-util.h
 +++ b/src/libsystemd/sd-bus/bus-util.h
 @@ -24,6 +24,7 @@
@@ -143,7 +143,7 @@ index e8a97cef9..21db98228 100644
 -int bus_deserialize_and_dump_unit_file_changes(sd_bus_message *m, bool quiet);
 +int bus_deserialize_and_dump_unit_file_changes(sd_bus_message *m, bool quiet, UnitFileChange **changes, unsigned *n_changes);
 diff --git a/src/machine/machinectl.c b/src/machine/machinectl.c
-index 9f8c68b18..f1910709d 100644
+index 9f8c68b184..f1910709d2 100644
 --- a/src/machine/machinectl.c
 +++ b/src/machine/machinectl.c
 @@ -1709,7 +1709,7 @@ static int enable_machine(int argc, char *argv[], void *userdata) {
@@ -156,7 +156,7 @@ index 9f8c68b18..f1910709d 100644
                  return r;
  
 diff --git a/src/shared/install.c b/src/shared/install.c
-index efd489ec0..b62065be5 100644
+index efd489ec08..b62065be5c 100644
 --- a/src/shared/install.c
 +++ b/src/shared/install.c
 @@ -113,51 +113,6 @@ static int get_config_path(UnitFileScope scope, bool runtime, const char *root_d
@@ -342,7 +342,7 @@ index efd489ec0..b62065be5 100644
          return 0;
  }
 diff --git a/src/shared/install.h b/src/shared/install.h
-index 3ca39397e..d729e6ed1 100644
+index 3ca39397e6..d729e6ed15 100644
 --- a/src/shared/install.h
 +++ b/src/shared/install.h
 @@ -112,6 +112,7 @@ UnitFileState unit_file_get_state(
@@ -354,7 +354,7 @@ index 3ca39397e..d729e6ed1 100644
  
  int unit_file_query_preset(UnitFileScope scope, const char *root_dir, const char *name);
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index 089c25f83..9898694d7 100644
+index 089c25f83f..9898694d75 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -138,6 +138,7 @@ static char *arg_host = NULL;

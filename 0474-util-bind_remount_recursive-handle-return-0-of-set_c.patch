@@ -14,7 +14,7 @@ Resolves: #1433687
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/shared/util.c b/src/shared/util.c
-index 3e13cc1fd..cadaddee3 100644
+index 3e13cc1fdb..cadaddee32 100644
 --- a/src/shared/util.c
 +++ b/src/shared/util.c
 @@ -7327,7 +7327,7 @@ int bind_remount_recursive(const char *prefix, bool ro) {

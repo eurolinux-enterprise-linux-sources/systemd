@@ -1,0 +1,108 @@
+From bac7488e06e379628653fb2f3ece0a30414ff84e Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Mon, 22 Jan 2018 21:03:53 +0100
+Subject: [PATCH] tmpfiles: change ownership of symlinks too
+
+Ownership is supported for symlinks, too, only file modes are not.
+Support that too.
+
+Fixes: #7509
+(cherry picked from commit 51207ca134716a0dee5fd763a6c39204be849eb1)
+
+Resolves: #1620110
+---
+ src/shared/macro.h      |  7 +++++++
+ src/tmpfiles/tmpfiles.c | 41 +++++++++++++++++++++--------------------
+ 2 files changed, 28 insertions(+), 20 deletions(-)
+
+diff --git a/src/shared/macro.h b/src/shared/macro.h
+index 7a57f4e5b1..26df270d51 100644
+--- a/src/shared/macro.h
++++ b/src/shared/macro.h
+@@ -125,6 +125,13 @@ static inline unsigned long ALIGN_POWER2(unsigned long u) {
+ 
+ #define ELEMENTSOF(x) (sizeof(x)/sizeof((x)[0]))
+ 
++/*
++ * STRLEN - return the length of a string literal, minus the trailing NUL byte.
++ *          Contrary to strlen(), this is a constant expression.
++ * @x: a string literal.
++ */
++#define STRLEN(x) (sizeof(""x"") - 1)
++
+ /*
+  * container_of - cast a member of a structure out to the containing structure
+  * @ptr: the pointer to the member.
+diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
+index 0b17b5908e..663f6c8b2d 100644
+--- a/src/tmpfiles/tmpfiles.c
++++ b/src/tmpfiles/tmpfiles.c
+@@ -591,6 +591,7 @@ finish:
+ }
+ 
+ static int path_set_perms(Item *i, const char *path) {
++        char fn[STRLEN("/proc/self/fd/") + DECIMAL_STR_MAX(int)];
+         _cleanup_close_ int fd = -1;
+         struct stat st;
+ 
+@@ -624,14 +625,12 @@ static int path_set_perms(Item *i, const char *path) {
+         if (i->type == EMPTY_DIRECTORY && !S_ISDIR(st.st_mode))
+                 return log_error_errno(EEXIST, "'%s' already exists and is not a directory. ", path);
+ 
+-        if (S_ISLNK(st.st_mode))
+-                log_debug("Skipping mode an owner fix for symlink %s.", path);
+-        else {
+-                char fn[strlen("/proc/self/fd/") + DECIMAL_STR_MAX(int)];
+-                xsprintf(fn, "/proc/self/fd/%i", fd);
++        xsprintf(fn, "/proc/self/fd/%i", fd);
+ 
+-                /* not using i->path directly because it may be a glob */
+-                if (i->mode_set) {
++        if (i->mode_set) {
++                if (S_ISLNK(st.st_mode))
++                        log_debug("Skipping mode fix for symlink %s.", path);
++                else {
+                         mode_t m = i->mode;
+ 
+                         if (i->mask_perms) {
+@@ -646,25 +645,27 @@ static int path_set_perms(Item *i, const char *path) {
+                         }
+ 
+                         if (m == (st.st_mode & 07777))
+-                                log_debug("\"%s\" has right mode %o", path, st.st_mode);
++                                log_debug("\"%s\" has correct mode %o already.", path, st.st_mode);
+                         else {
+-                                log_debug("chmod \"%s\" to mode %o", path, m);
++                                log_debug("Changing \"%s\" to mode %o.", path, m);
++
+                                 if (chmod(fn, m) < 0)
+                                         return log_error_errno(errno, "chmod(%s) failed: %m", path);
+                         }
+                 }
++        }
+ 
+-                if ((i->uid != st.st_uid || i->gid != st.st_gid) &&
+-                    (i->uid_set || i->gid_set)) {
+-                        log_debug("chown \"%s\" to "UID_FMT"."GID_FMT,
+-                                  path,
+-                                  i->uid_set ? i->uid : UID_INVALID,
+-                                  i->gid_set ? i->gid : GID_INVALID);
+-                        if (chown(fn,
+-                                  i->uid_set ? i->uid : UID_INVALID,
+-                                  i->gid_set ? i->gid : GID_INVALID) < 0)
+-                        return log_error_errno(errno, "chown(%s) failed: %m", path);
+-                }
++        if ((i->uid != st.st_uid || i->gid != st.st_gid) &&
++            (i->uid_set || i->gid_set)) {
++                log_debug("Changing \"%s\" to owner "UID_FMT":"GID_FMT,
++                          path,
++                          i->uid_set ? i->uid : UID_INVALID,
++                          i->gid_set ? i->gid : GID_INVALID);
++
++                if (chown(fn,
++                          i->uid_set ? i->uid : UID_INVALID,
++                          i->gid_set ? i->gid : GID_INVALID) < 0)
++                        return log_error_errno(errno, "chown() of %s via %s failed: %m", path, fn);
+         }
+ 
+         fd = safe_close(fd);

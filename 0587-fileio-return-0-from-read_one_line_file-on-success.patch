@@ -13,7 +13,7 @@ Resolves: #1503106
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/src/shared/fileio.c b/src/shared/fileio.c
-index 4880a4941..65a0753c2 100644
+index 4880a4941f..65a0753c24 100644
 --- a/src/shared/fileio.c
 +++ b/src/shared/fileio.c
 @@ -109,6 +109,7 @@ int write_string_file_atomic(const char *fn, const char *line) {

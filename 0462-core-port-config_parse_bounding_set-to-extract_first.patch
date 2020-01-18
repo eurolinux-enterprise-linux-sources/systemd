@@ -10,7 +10,7 @@ Resolves: #1387398
  1 file changed, 18 insertions(+), 11 deletions(-)
 
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index 6fc4d745d..4830d7ad6 100644
+index 6fc4d745d5..4830d7ad6f 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -1028,10 +1028,10 @@ int config_parse_bounding_set(const char *unit,

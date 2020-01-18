@@ -13,7 +13,7 @@ Related: #1404657, #1471230
  create mode 100755 test/test-exec-deserialization.py
 
 diff --git a/Makefile.am b/Makefile.am
-index f06bc29c2..c4a96e1fd 100644
+index f06bc29c25..c4a96e1fd1 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -5711,7 +5711,8 @@ EXTRA_DIST += \
@@ -28,7 +28,7 @@ index f06bc29c2..c4a96e1fd 100644
  	src/network/networkd-network-gperf.c \
 diff --git a/test/test-exec-deserialization.py b/test/test-exec-deserialization.py
 new file mode 100755
-index 000000000..b974b1c13
+index 0000000000..b974b1c133
 --- /dev/null
 +++ b/test/test-exec-deserialization.py
 @@ -0,0 +1,192 @@

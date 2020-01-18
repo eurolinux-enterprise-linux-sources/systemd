@@ -11,7 +11,7 @@ They are now useful for any fs used for journal storage.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/README b/README
-index ac2a81c0c..ffc2cf9f2 100644
+index ac2a81c0cc..ffc2cf9f20 100644
 --- a/README
 +++ b/README
 @@ -78,8 +78,8 @@ REQUIREMENTS:

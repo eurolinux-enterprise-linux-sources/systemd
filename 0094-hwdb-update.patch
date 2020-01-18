@@ -12,7 +12,7 @@ Subject: [PATCH] hwdb: update
  4 files changed, 1060 insertions(+), 334 deletions(-)
 
 diff --git a/hwdb/20-OUI.hwdb b/hwdb/20-OUI.hwdb
-index 6976bdf64..deb323d34 100644
+index 6976bdf649..deb323d34c 100644
 --- a/hwdb/20-OUI.hwdb
 +++ b/hwdb/20-OUI.hwdb
 @@ -28829,7 +28829,7 @@ OUI:0013EB*
@@ -844,7 +844,7 @@ index 6976bdf64..deb323d34 100644
   ID_OUI_FROM_DATABASE=HBC-radiomatic
  
 diff --git a/hwdb/20-pci-vendor-model.hwdb b/hwdb/20-pci-vendor-model.hwdb
-index 6c2208887..3b35b26e5 100644
+index 6c22088873..3b35b26e59 100644
 --- a/hwdb/20-pci-vendor-model.hwdb
 +++ b/hwdb/20-pci-vendor-model.hwdb
 @@ -4361,6 +4361,9 @@ pci:v00001002d0000665Csv00001787sd00002329*
@@ -2631,7 +2631,7 @@ index 6c2208887..3b35b26e5 100644
   ID_VENDOR_FROM_DATABASE=JusonTech Corporation
  
 diff --git a/hwdb/20-sdio-vendor-model.hwdb b/hwdb/20-sdio-vendor-model.hwdb
-index 626d673c4..9cf34b2a3 100644
+index 626d673c4d..9cf34b2a39 100644
 --- a/hwdb/20-sdio-vendor-model.hwdb
 +++ b/hwdb/20-sdio-vendor-model.hwdb
 @@ -80,6 +80,36 @@ sdio:c*v02D0*
@@ -2672,7 +2672,7 @@ index 626d673c4..9cf34b2a3 100644
   ID_VENDOR_FROM_DATABASE=SyChip Inc.
  
 diff --git a/hwdb/20-usb-vendor-model.hwdb b/hwdb/20-usb-vendor-model.hwdb
-index 94e0269ce..8867531a3 100644
+index 94e0269ce7..8867531a31 100644
 --- a/hwdb/20-usb-vendor-model.hwdb
 +++ b/hwdb/20-usb-vendor-model.hwdb
 @@ -503,6 +503,9 @@ usb:v03F0p0217*

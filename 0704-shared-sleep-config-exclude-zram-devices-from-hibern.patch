@@ -1,0 +1,52 @@
+From 8fc26bd114d2aa997da261ac7c488d4c25116af3 Mon Sep 17 00:00:00 2001
+From: Andrew Jorgensen <ajorgens@amazon.com>
+Date: Wed, 25 Jul 2018 08:06:57 -0700
+Subject: [PATCH] shared/sleep-config: exclude zram devices from hibernation
+ candidates
+
+On a host with sufficiently large zram but with no actual swap, logind will
+respond to CanHibernate() with yes. With this patch, it will correctly respond
+no, unless there are other swap devices to consider.
+
+(cherry picked from commit 411ae92b407bd7b4549b205ad754bcd0e3dfd81f)
+
+Resolves: #1609816
+---
+ src/shared/sleep-config.c | 17 ++++++++++++++---
+ 1 file changed, 14 insertions(+), 3 deletions(-)
+
+diff --git a/src/shared/sleep-config.c b/src/shared/sleep-config.c
+index 1064fd5cbd..c4334652fc 100644
+--- a/src/shared/sleep-config.c
++++ b/src/shared/sleep-config.c
+@@ -25,6 +25,7 @@
+ #include "sleep-config.h"
+ #include "fileio.h"
+ #include "log.h"
++#include "path-util.h"
+ #include "strv.h"
+ #include "util.h"
+ 
+@@ -202,9 +203,19 @@ static int hibernation_partition_size(size_t *size, size_t *used) {
+                         continue;
+                 }
+ 
+-                if (streq(type, "partition") && endswith(dev, "\\040(deleted)")) {
+-                        log_warning("Ignoring deleted swapfile '%s'.", dev);
+-                        continue;
++                if (streq(type, "partition")) {
++                        const char *fn;
++
++                        if (endswith(dev, "\\040(deleted)")) {
++                                log_warning("Ignoring deleted swapfile '%s'.", dev);
++                                continue;
++                        }
++
++                        fn = path_startswith(dev, "/dev/");
++                        if (fn && startswith(fn, "zram")) {
++                                log_debug("Ignoring compressed ram swap device '%s'.", dev);
++                                continue;
++                        }
+                 }
+ 
+                 *size = size_field;

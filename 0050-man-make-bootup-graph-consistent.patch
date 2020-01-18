@@ -9,7 +9,7 @@ Subject: [PATCH] man: make bootup graph consistent
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/man/bootup.xml b/man/bootup.xml
-index d97d55023..b92057af2 100644
+index d97d550236..b92057af29 100644
 --- a/man/bootup.xml
 +++ b/man/bootup.xml
 @@ -134,7 +134,7 @@

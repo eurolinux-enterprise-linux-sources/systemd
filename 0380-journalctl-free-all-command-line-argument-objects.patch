@@ -12,7 +12,7 @@ Related: #1318994
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
-index 31da357c1..92ee3fb27 100644
+index 31da357c1b..92ee3fb27d 100644
 --- a/src/journal/journalctl.c
 +++ b/src/journal/journalctl.c
 @@ -39,7 +39,6 @@

@@ -14,7 +14,7 @@ Related: #1230190
  2 files changed, 8 insertions(+), 11 deletions(-)
 
 diff --git a/src/core/selinux-access.c b/src/core/selinux-access.c
-index 18888747f..ce4f39459 100644
+index 18888747f2..ce4f394596 100644
 --- a/src/core/selinux-access.c
 +++ b/src/core/selinux-access.c
 @@ -240,7 +240,7 @@ int mac_selinux_generic_access_check(
@@ -27,7 +27,7 @@ index 18888747f..ce4f39459 100644
                  r = sd_bus_error_setf(error, SD_BUS_ERROR_ACCESS_DENIED, "SELinux policy denies access.");
  
 diff --git a/src/libsystemd/sd-bus/bus-creds.c b/src/libsystemd/sd-bus/bus-creds.c
-index ea8a619c5..5b87fa950 100644
+index ea8a619c5a..5b87fa950a 100644
 --- a/src/libsystemd/sd-bus/bus-creds.c
 +++ b/src/libsystemd/sd-bus/bus-creds.c
 @@ -698,21 +698,18 @@ int bus_creds_add_more(sd_bus_creds *c, uint64_t mask, pid_t pid, pid_t tid) {

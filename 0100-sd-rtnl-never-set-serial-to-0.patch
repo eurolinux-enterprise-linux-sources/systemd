@@ -14,7 +14,7 @@ Suggested by Richard Maw.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/libsystemd/sd-rtnl/sd-rtnl.c b/src/libsystemd/sd-rtnl/sd-rtnl.c
-index 7cdcc5d96..5df39e117 100644
+index 7cdcc5d96a..5df39e1177 100644
 --- a/src/libsystemd/sd-rtnl/sd-rtnl.c
 +++ b/src/libsystemd/sd-rtnl/sd-rtnl.c
 @@ -262,7 +262,7 @@ static void rtnl_seal_message(sd_rtnl *rtnl, sd_rtnl_message *m) {

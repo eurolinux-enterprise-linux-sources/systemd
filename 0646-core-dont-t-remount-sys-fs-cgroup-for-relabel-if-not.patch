@@ -30,7 +30,7 @@ Fixes #7901.
  1 file changed, 30 insertions(+), 5 deletions(-)
 
 diff --git a/src/core/mount-setup.c b/src/core/mount-setup.c
-index 7a2cae4a3..ed493cbe3 100644
+index 7a2cae4a39..ed493cbe36 100644
 --- a/src/core/mount-setup.c
 +++ b/src/core/mount-setup.c
 @@ -25,6 +25,8 @@

@@ -15,7 +15,7 @@ Related: #1506256
  1 file changed, 3 insertions(+), 10 deletions(-)
 
 diff --git a/src/core/unit.c b/src/core/unit.c
-index a33cbdf73..22d9beed7 100644
+index a33cbdf73f..22d9beed76 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -1332,10 +1332,9 @@ _pure_ static const char* unit_get_status_message_format(Unit *u, JobType t) {

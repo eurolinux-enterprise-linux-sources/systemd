@@ -1,0 +1,83 @@
+From a4f13a2fdf5cf1650edbb02ac0393c6815ef472c Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Tue, 7 Apr 2015 16:03:45 +0200
+Subject: [PATCH] path-util: fix more path_is_mount e792e890f fallout
+
+(cherry picked from commit da00518b3f3a8b08d521c4b72068eafa2db566cc)
+
+Resolves: #1279231
+---
+ src/core/automount.c      |  6 ++----
+ src/nspawn/nspawn.c       |  2 +-
+ src/shared/cgroup-util.c  |  6 ++++--
+ src/test/test-path-util.c | 10 ++++++++--
+ 4 files changed, 15 insertions(+), 9 deletions(-)
+
+diff --git a/src/core/automount.c b/src/core/automount.c
+index 7b9c4aaf1d..2d6f5f3a77 100644
+--- a/src/core/automount.c
++++ b/src/core/automount.c
+@@ -789,10 +789,8 @@ static int automount_start(Unit *u) {
+         assert(a);
+         assert(a->state == AUTOMOUNT_DEAD || a->state == AUTOMOUNT_FAILED);
+ 
+-        if (path_is_mount_point(a->where, false)) {
+-                log_unit_error(u->id,
+-                               "Path %s is already a mount point, refusing start for %s",
+-                               a->where, u->id);
++        if (path_is_mount_point(a->where, false) > 0) {
++                log_unit_error(u->id, "Path %s is already a mount point, refusing start for %s", a->where, u->id);
+                 return -EEXIST;
+         }
+ 
+diff --git a/src/nspawn/nspawn.c b/src/nspawn/nspawn.c
+index ee2e1832f1..e7ecee8674 100644
+--- a/src/nspawn/nspawn.c
++++ b/src/nspawn/nspawn.c
+@@ -864,7 +864,7 @@ static int mount_all(const char *dest) {
+                         return log_oom();
+ 
+                 t = path_is_mount_point(where, true);
+-                if (t < 0) {
++                if (t < 0 && t != -ENOENT) {
+                         log_error_errno(t, "Failed to detect whether %s is a mount point: %m", where);
+ 
+                         if (r == 0)
+diff --git a/src/shared/cgroup-util.c b/src/shared/cgroup-util.c
+index 4585450b39..f1bed8a25a 100644
+--- a/src/shared/cgroup-util.c
++++ b/src/shared/cgroup-util.c
+@@ -489,8 +489,10 @@ int cg_get_path(const char *controller, const char *path, const char *suffix, ch
+                 int r;
+ 
+                 r = path_is_mount_point("/sys/fs/cgroup", false);
+-                if (r <= 0)
+-                        return r < 0 ? r : -ENOENT;
++                if (r < 0)
++                        return r;
++                if (r == 0)
++                        return -ENOENT;
+ 
+                 /* Cache this to save a few stat()s */
+                 good = true;
+diff --git a/src/test/test-path-util.c b/src/test/test-path-util.c
+index aee1f4e036..aebfa3821d 100644
+--- a/src/test/test-path-util.c
++++ b/src/test/test-path-util.c
+@@ -86,8 +86,14 @@ static void test_path(void) {
+         test_parent("/aa///file...", "/aa///");
+         test_parent("file.../", NULL);
+ 
+-        assert_se(path_is_mount_point("/", true));
+-        assert_se(path_is_mount_point("/", false));
++        assert_se(path_is_mount_point("/", true) > 0);
++        assert_se(path_is_mount_point("/", false) > 0);
++
++        assert_se(path_is_mount_point("/proc", true) > 0);
++        assert_se(path_is_mount_point("/proc", false) > 0);
++
++        assert_se(path_is_mount_point("/sys", true) > 0);
++        assert_se(path_is_mount_point("/sys", false) > 0);
+ 
+         {
+                 char p1[] = "aaa/bbb////ccc";

@@ -18,7 +18,7 @@ Resolves: #1343648
  2 files changed, 7 insertions(+), 2 deletions(-)
 
 diff --git a/Makefile.am b/Makefile.am
-index b0a34b212..3848338a2 100644
+index b0a34b212d..3848338a23 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -3752,6 +3752,7 @@ systemd_hwdb_SOURCES = \
@@ -30,7 +30,7 @@ index b0a34b212..3848338a2 100644
  	libsystemd-internal.la \
  	libudev-internal.la
 diff --git a/src/hwdb/hwdb.c b/src/hwdb/hwdb.c
-index 4539673ea..8e5d6cc86 100644
+index 4539673ead..8e5d6cc869 100644
 --- a/src/hwdb/hwdb.c
 +++ b/src/hwdb/hwdb.c
 @@ -34,6 +34,8 @@

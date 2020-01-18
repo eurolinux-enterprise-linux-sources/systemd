@@ -14,7 +14,7 @@ Related: #1472439
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/test/test-path-util.c b/src/test/test-path-util.c
-index a4fec07e7..aee1f4e03 100644
+index a4fec07e7c..aee1f4e036 100644
 --- a/src/test/test-path-util.c
 +++ b/src/test/test-path-util.c
 @@ -157,7 +157,7 @@ static void test_path_is_mount_point(void) {

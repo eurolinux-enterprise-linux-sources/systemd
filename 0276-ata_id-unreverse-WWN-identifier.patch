@@ -15,7 +15,7 @@ Resolves: #1273306
  1 file changed, 12 insertions(+), 2 deletions(-)
 
 diff --git a/src/udev/ata_id/ata_id.c b/src/udev/ata_id/ata_id.c
-index b6f28c6f5..4adec4496 100644
+index b6f28c6f53..4adec44960 100644
 --- a/src/udev/ata_id/ata_id.c
 +++ b/src/udev/ata_id/ata_id.c
 @@ -638,10 +638,20 @@ int main(int argc, char *argv[])

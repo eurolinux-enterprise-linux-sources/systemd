@@ -28,7 +28,7 @@ Resolves: #1511565
  6 files changed, 201 insertions(+), 22 deletions(-)
 
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index daeecd519..a810829b2 100644
+index daeecd5191..a810829b24 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -67,6 +67,8 @@
@@ -211,7 +211,7 @@ index daeecd519..a810829b2 100644
          if (s->rate_limit)
                  journal_rate_limit_free(s->rate_limit);
 diff --git a/src/journal/journald-server.h b/src/journal/journald-server.h
-index b29410778..e59ff35e2 100644
+index b294107788..e59ff35e22 100644
 --- a/src/journal/journald-server.h
 +++ b/src/journal/journald-server.h
 @@ -27,12 +27,15 @@
@@ -282,7 +282,7 @@ index b29410778..e59ff35e2 100644
  #define N_IOVEC_META_FIELDS 20
  #define N_IOVEC_KERNEL_FIELDS 64
 diff --git a/src/journal/journald-stream.c b/src/journal/journald-stream.c
-index 4d6b7ad18..9118d1a31 100644
+index 4d6b7ad189..9118d1a318 100644
 --- a/src/journal/journald-stream.c
 +++ b/src/journal/journald-stream.c
 @@ -80,6 +80,7 @@ struct StdoutStream {
@@ -393,7 +393,7 @@ index 4d6b7ad18..9118d1a31 100644
 +
 +}
 diff --git a/src/journal/journald-stream.h b/src/journal/journald-stream.h
-index 94bf955d7..fd8c94fb6 100644
+index 94bf955d78..fd8c94fb65 100644
 --- a/src/journal/journald-stream.h
 +++ b/src/journal/journald-stream.h
 @@ -21,9 +21,12 @@
@@ -410,7 +410,7 @@ index 94bf955d7..fd8c94fb6 100644
  void stdout_stream_free(StdoutStream *s);
 +void stdout_stream_send_notify(StdoutStream *s);
 diff --git a/src/journal/journald.c b/src/journal/journald.c
-index 15bbcbe3d..b7ba2b6ec 100644
+index 15bbcbe3de..b7ba2b6ec5 100644
 --- a/src/journal/journald.c
 +++ b/src/journal/journald.c
 @@ -64,10 +64,6 @@ int main(int argc, char *argv[]) {
@@ -436,7 +436,7 @@ index 15bbcbe3d..b7ba2b6ec 100644
  
          return r < 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 diff --git a/units/systemd-journald.service.in b/units/systemd-journald.service.in
-index 0d1ea61fe..c94c0bfba 100644
+index 0d1ea61fe8..c94c0bfba1 100644
 --- a/units/systemd-journald.service.in
 +++ b/units/systemd-journald.service.in
 @@ -22,7 +22,6 @@ RestartSec=0

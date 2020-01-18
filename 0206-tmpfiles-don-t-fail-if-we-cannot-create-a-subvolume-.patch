@@ -14,7 +14,7 @@ Resolves: #1222517
  1 file changed, 11 insertions(+), 6 deletions(-)
 
 diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
-index 73a9c9d5b..d0e6567d8 100644
+index 73a9c9d5b6..d0e6567d8a 100644
 --- a/src/tmpfiles/tmpfiles.c
 +++ b/src/tmpfiles/tmpfiles.c
 @@ -1002,20 +1002,25 @@ static int create_item(Item *i) {

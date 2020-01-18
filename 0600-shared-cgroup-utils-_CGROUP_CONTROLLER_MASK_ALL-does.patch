@@ -14,7 +14,7 @@ Resolves: #1532586
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/shared/cgroup-util.h b/src/shared/cgroup-util.h
-index 615c1f03e..b6f28c5c2 100644
+index 615c1f03e3..b6f28c5c2f 100644
 --- a/src/shared/cgroup-util.h
 +++ b/src/shared/cgroup-util.h
 @@ -36,7 +36,7 @@ typedef enum CGroupControllerMask {

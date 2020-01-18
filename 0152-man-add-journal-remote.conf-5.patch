@@ -15,7 +15,7 @@ Resolves: #1222517
  create mode 100644 man/journal-remote.conf.xml
 
 diff --git a/Makefile-man.am b/Makefile-man.am
-index ac6f69af7..084df754a 100644
+index ac6f69af70..084df754a2 100644
 --- a/Makefile-man.am
 +++ b/Makefile-man.am
 @@ -1358,14 +1358,20 @@ endif
@@ -49,7 +49,7 @@ index ac6f69af7..084df754a 100644
  	man/kernel-command-line.xml \
 diff --git a/man/journal-remote.conf.xml b/man/journal-remote.conf.xml
 new file mode 100644
-index 000000000..a7b222718
+index 0000000000..a7b2227182
 --- /dev/null
 +++ b/man/journal-remote.conf.xml
 @@ -0,0 +1,114 @@
@@ -168,7 +168,7 @@ index 000000000..a7b222718
 +
 +</refentry>
 diff --git a/man/systemd-journal-remote.xml b/man/systemd-journal-remote.xml
-index 2687662a1..d5bda635c 100644
+index 2687662a14..d5bda635c4 100644
 --- a/man/systemd-journal-remote.xml
 +++ b/man/systemd-journal-remote.xml
 @@ -310,6 +310,7 @@ systemd-journal-remote --url http://some.host:19531/

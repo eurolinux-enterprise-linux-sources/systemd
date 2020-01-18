@@ -13,7 +13,7 @@ introduced in v3.9 and NDA_PORT, NDA_VNI and NDA_IFINDEX in v3.10
  2 files changed, 19 insertions(+), 1 deletion(-)
 
 diff --git a/configure.ac b/configure.ac
-index 3201428c4..081ed0f6e 100644
+index 3201428c44..081ed0f6eb 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -334,7 +334,8 @@ AC_CHECK_DECLS([IFLA_INET6_ADDR_GEN_MODE,
@@ -35,7 +35,7 @@ index 3201428c4..081ed0f6e 100644
  
  # This makes sure pkg.m4 is available.
 diff --git a/src/shared/missing.h b/src/shared/missing.h
-index 8cb0b2c96..6ef4dbdf4 100644
+index 8cb0b2c96e..6ef4dbdf43 100644
 --- a/src/shared/missing.h
 +++ b/src/shared/missing.h
 @@ -35,6 +35,7 @@

@@ -1,0 +1,75 @@
+From d7eac3e0ae20510e2737dc4e23975391fef5ece3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Michal=20Koutn=C3=BD?= <mkoutny@suse.com>
+Date: Tue, 16 Jan 2018 19:22:46 +0100
+Subject: [PATCH] core/timer: Prevent timer looping when unit cannot start
+
+When a unit job finishes early (e.g. when fork(2) fails) triggered unit goes
+through states
+        stopped->failed (or failed->failed),
+in case a ExecStart= command fails unit passes through
+        stopped->starting->failed.
+
+The former transition doesn't result in unit active/inactive timestamp being
+updated and timer (OnUnitActiveSec= or OnUnitInactiveSec=) would use an expired
+timestamp triggering immediately again (repeatedly).
+
+This patch exploits timer's last trigger timestamp to ensure the timer isn't
+triggered more frequently than OnUnitActiveSec=/OnUnitInactiveSec= period.
+
+Steps to reproduce:
+
+0) Create sample units:
+
+cat >~/.config/systemd/user/looper.service <<EOD
+[Service]
+ExecStart=/usr/bin/sleep 2
+EOD
+
+cat >~/.config/systemd/user/looper.timer <<EOD
+[Timer]
+AccuracySec=5
+OnUnitActiveSec=5
+EOD
+
+1) systemctl --user daemon-reload
+
+2) systemctl --user start looper.timer
+   # to have first activation timestamp/sentinel
+   systemctl --user start looper.service
+
+o  Observe the service is being regularly triggered.
+
+3) systemctl set-property user@$UID.service TasksMax=2
+
+o  Observe the tight looping as long as the looper.service cannot be started.
+
+Ref: #5969
+
+(cherry picked from commit 204d140c4def364c47d36226e4514a7e077fa196)
+(cherry picked from commit fe81f6f734ee46a4877df6dda6e31cdc24c00a3c)
+
+Resolves: #1729230
+---
+ src/core/timer.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/core/timer.c b/src/core/timer.c
+index d32b007c7c..1d4868643a 100644
+--- a/src/core/timer.c
++++ b/src/core/timer.c
+@@ -416,6 +416,7 @@ static void timer_enter_waiting(Timer *t, bool initial) {
+ 
+                                 if (base <= 0)
+                                         continue;
++                                base = MAX(base, t->last_trigger.monotonic);
+ 
+                                 break;
+ 
+@@ -428,6 +429,7 @@ static void timer_enter_waiting(Timer *t, bool initial) {
+ 
+                                 if (base <= 0)
+                                         continue;
++                                base = MAX(base, t->last_trigger.monotonic);
+ 
+                                 break;
+ 

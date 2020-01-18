@@ -9,7 +9,7 @@ Subject: [PATCH] journalctl: update hint now that we set ACL everywhere
  1 file changed, 11 insertions(+), 14 deletions(-)
 
 diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
-index 55c778633..12c869f5a 100644
+index 55c7786331..12c869f5af 100644
 --- a/src/journal/journalctl.c
 +++ b/src/journal/journalctl.c
 @@ -1542,10 +1542,17 @@ static int access_check_var_log_journal(sd_journal *j) {

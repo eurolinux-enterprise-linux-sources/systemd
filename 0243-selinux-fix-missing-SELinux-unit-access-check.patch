@@ -16,7 +16,7 @@ Resolves: #1185120
  1 file changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/src/core/selinux-access.c b/src/core/selinux-access.c
-index 91460b8af..f11247c09 100644
+index 91460b8af9..f11247c092 100644
 --- a/src/core/selinux-access.c
 +++ b/src/core/selinux-access.c
 @@ -272,12 +272,12 @@ int mac_selinux_unit_access_check_strv(char **units,

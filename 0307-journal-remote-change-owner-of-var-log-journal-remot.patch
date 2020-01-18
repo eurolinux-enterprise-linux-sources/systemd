@@ -11,7 +11,7 @@ Resolves: #1327303
  1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/tmpfiles.d/systemd-remote.conf b/tmpfiles.d/systemd-remote.conf
-index 1b8973a88..e19230f64 100644
+index 1b8973a889..e19230f648 100644
 --- a/tmpfiles.d/systemd-remote.conf
 +++ b/tmpfiles.d/systemd-remote.conf
 @@ -7,5 +7,7 @@

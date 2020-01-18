@@ -52,7 +52,7 @@ Resolves: #1283579
  5 files changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/src/core/mount.c b/src/core/mount.c
-index 1f1a41ab6..23f63ce32 100644
+index 1f1a41ab66..23f63ce32c 100644
 --- a/src/core/mount.c
 +++ b/src/core/mount.c
 @@ -321,7 +321,7 @@ static int mount_add_device_links(Mount *m) {
@@ -65,7 +65,7 @@ index 1f1a41ab6..23f63ce32 100644
                  return r;
  
 diff --git a/src/core/socket.c b/src/core/socket.c
-index 7022e77b5..bc677a20f 100644
+index 7022e77b53..bc677a20f8 100644
 --- a/src/core/socket.c
 +++ b/src/core/socket.c
 @@ -267,7 +267,7 @@ static int socket_add_device_link(Socket *s) {
@@ -78,7 +78,7 @@ index 7022e77b5..bc677a20f 100644
  
  static int socket_add_default_dependencies(Socket *s) {
 diff --git a/src/core/swap.c b/src/core/swap.c
-index 369abf0f5..34a2c406d 100644
+index 369abf0f53..34a2c406d8 100644
 --- a/src/core/swap.c
 +++ b/src/core/swap.c
 @@ -201,7 +201,7 @@ static int swap_add_device_links(Swap *s) {
@@ -91,7 +91,7 @@ index 369abf0f5..34a2c406d 100644
                  /* File based swap devices need to be ordered after
                   * systemd-remount-fs.service, since they might need a
 diff --git a/src/core/unit.c b/src/core/unit.c
-index fa17567dd..ae47a2876 100644
+index fa17567dd3..ae47a28765 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -2823,7 +2823,7 @@ int unit_deserialize(Unit *u, FILE *f, FDSet *fds) {
@@ -113,7 +113,7 @@ index fa17567dd..ae47a2876 100644
                  return r;
  
 diff --git a/src/core/unit.h b/src/core/unit.h
-index 7ebc489c8..0eebc0b89 100644
+index 7ebc489c80..0eebc0b891 100644
 --- a/src/core/unit.h
 +++ b/src/core/unit.h
 @@ -548,7 +548,7 @@ void unit_serialize_item_format(Unit *u, FILE *f, const char *key, const char *v

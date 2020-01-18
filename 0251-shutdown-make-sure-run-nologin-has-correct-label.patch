@@ -11,7 +11,7 @@ Related: #1264073
  1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/src/shutdownd/shutdownd.c b/src/shutdownd/shutdownd.c
-index 701882b96..e1917a626 100644
+index 701882b96d..e1917a626f 100644
 --- a/src/shutdownd/shutdownd.c
 +++ b/src/shutdownd/shutdownd.c
 @@ -39,6 +39,8 @@

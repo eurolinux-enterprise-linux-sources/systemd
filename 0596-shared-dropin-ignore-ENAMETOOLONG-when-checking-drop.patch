@@ -17,7 +17,7 @@ Resolves: #1489095
  1 file changed, 6 insertions(+), 2 deletions(-)
 
 diff --git a/src/shared/dropin.c b/src/shared/dropin.c
-index d1baad619..b674d307a 100644
+index d1baad6192..b674d307a2 100644
 --- a/src/shared/dropin.c
 +++ b/src/shared/dropin.c
 @@ -129,8 +129,12 @@ static int iterate_dir(

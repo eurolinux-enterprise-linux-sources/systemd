@@ -9,7 +9,7 @@ Read /etc/sysctl.conf as the last file, overwriting everything.
  1 file changed, 4 insertions(+)
 
 diff --git a/src/sysctl/sysctl.c b/src/sysctl/sysctl.c
-index 275a5b74a..d007c932c 100644
+index 275a5b74ae..d007c932c6 100644
 --- a/src/sysctl/sysctl.c
 +++ b/src/sysctl/sysctl.c
 @@ -320,6 +320,10 @@ int main(int argc, char *argv[]) {
