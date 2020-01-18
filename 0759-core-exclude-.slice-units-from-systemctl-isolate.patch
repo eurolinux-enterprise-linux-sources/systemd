@@ -1,0 +1,39 @@
+From 7230c4c85173a100f1cc484485fe87d79622cb91 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Thu, 18 Feb 2016 22:51:23 +0100
+Subject: [PATCH] core: exclude .slice units from "systemctl isolate"
+
+Fixes: #1969
+(cherry picked from commit 1b4cd0cf11feb7d41f2eff17f86fa55b31bb6841)
+
+Resolves: #1751130
+---
+ src/core/slice.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/src/core/slice.c b/src/core/slice.c
+index 0985a65286..b0769205f6 100644
+--- a/src/core/slice.c
++++ b/src/core/slice.c
+@@ -36,6 +36,13 @@ static const UnitActiveState state_translation_table[_SLICE_STATE_MAX] = {
+         [SLICE_ACTIVE] = UNIT_ACTIVE
+ };
+ 
++static void slice_init(Unit *u) {
++        assert(u);
++        assert(u->load_state == UNIT_STUB);
++
++        u->ignore_on_isolate = true;
++}
++
+ static void slice_set_state(Slice *t, SliceState state) {
+         SliceState old_state;
+         assert(t);
+@@ -274,6 +281,7 @@ const UnitVTable slice_vtable = {
+         .no_instances = true,
+         .can_transient = true,
+ 
++        .init = slice_init,
+         .load = slice_load,
+ 
+         .coldplug = slice_coldplug,
