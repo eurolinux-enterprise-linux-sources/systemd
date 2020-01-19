@@ -11,7 +11,7 @@ They were removed in commit 798d3a52 ("Reindent man pages to 2ch").
  1 file changed, 6 insertions(+), 5 deletions(-)
 
 diff --git a/man/machinectl.xml b/man/machinectl.xml
-index 9b07af422..640cb8b7d 100644
+index 9b07af4226..640cb8b7d6 100644
 --- a/man/machinectl.xml
 +++ b/man/machinectl.xml
 @@ -715,11 +715,12 @@

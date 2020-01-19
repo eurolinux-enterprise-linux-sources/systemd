@@ -19,7 +19,7 @@ Resolves: #1227396
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/src/journal/journald-syslog.c b/src/journal/journald-syslog.c
-index 7d545ca31..ba80941d7 100644
+index 7d545ca31d..ba80941d7b 100644
 --- a/src/journal/journald-syslog.c
 +++ b/src/journal/journald-syslog.c
 @@ -232,7 +232,8 @@ size_t syslog_parse_identifier(const char **buf, char **identifier, char **pid)

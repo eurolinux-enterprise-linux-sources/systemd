@@ -9,7 +9,7 @@ Resolves: #1553076
  1 file changed, 6 deletions(-)
 
 diff --git a/man/udevadm.xml b/man/udevadm.xml
-index 8ef9e23aa..99eae387f 100644
+index 8ef9e23aa2..99eae387f5 100644
 --- a/man/udevadm.xml
 +++ b/man/udevadm.xml
 @@ -187,12 +187,6 @@

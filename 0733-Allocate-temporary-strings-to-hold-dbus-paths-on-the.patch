@@ -1,4 +1,4 @@
-From f0ee84481e7dd822fb5864de3e46c8d85400ee8e Mon Sep 17 00:00:00 2001
+From 8f77b455f768d1f95971cedd8d4903f249f683bf Mon Sep 17 00:00:00 2001
 From: Riccardo Schirone <rschiron@redhat.com>
 Date: Mon, 4 Feb 2019 14:29:28 +0100
 Subject: [PATCH] Allocate temporary strings to hold dbus paths on the heap
@@ -7,13 +7,13 @@ Paths are limited to BUS_PATH_SIZE_MAX but the maximum size is anyway too big
 to be allocated on the stack, so let's switch to the heap where there is a
 clear way to understand if the allocation fails.
 
-Resolves: #1667870
+Resolves: #1667871
 ---
  src/libsystemd/sd-bus/bus-objects.c | 58 +++++++++++++++++++++++------
  1 file changed, 46 insertions(+), 12 deletions(-)
 
 diff --git a/src/libsystemd/sd-bus/bus-objects.c b/src/libsystemd/sd-bus/bus-objects.c
-index fc6c22328..8df73bdf4 100644
+index fc6c223283..8df73bdf4c 100644
 --- a/src/libsystemd/sd-bus/bus-objects.c
 +++ b/src/libsystemd/sd-bus/bus-objects.c
 @@ -1104,7 +1104,8 @@ static int object_manager_serialize_path_and_fallbacks(

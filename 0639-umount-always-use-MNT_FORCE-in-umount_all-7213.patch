@@ -36,7 +36,7 @@ Resolves: #1571098
  1 file changed, 11 insertions(+), 5 deletions(-)
 
 diff --git a/src/core/umount.c b/src/core/umount.c
-index 3eec0d459..91d67c06c 100644
+index 3eec0d4592..91d67c06ca 100644
 --- a/src/core/umount.c
 +++ b/src/core/umount.c
 @@ -377,7 +377,9 @@ static int mount_points_list_umount(MountPoint **head, bool *changed, bool log_e

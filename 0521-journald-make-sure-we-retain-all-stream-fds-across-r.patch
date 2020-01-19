@@ -21,7 +21,7 @@ Related: #1359939
  1 file changed, 1 insertion(+)
 
 diff --git a/units/systemd-journald.service.in b/units/systemd-journald.service.in
-index c85c34932..0d1ea61fe 100644
+index c85c349327..0d1ea61fe8 100644
 --- a/units/systemd-journald.service.in
 +++ b/units/systemd-journald.service.in
 @@ -20,6 +20,7 @@ ExecStart=@rootlibexecdir@/systemd-journald

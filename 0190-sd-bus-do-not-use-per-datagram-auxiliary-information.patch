@@ -20,7 +20,7 @@ Related: #1230190
  1 file changed, 12 insertions(+), 58 deletions(-)
 
 diff --git a/src/libsystemd/sd-bus/bus-socket.c b/src/libsystemd/sd-bus/bus-socket.c
-index 52883fa8c..abd9ece01 100644
+index 52883fa8cd..abd9ece016 100644
 --- a/src/libsystemd/sd-bus/bus-socket.c
 +++ b/src/libsystemd/sd-bus/bus-socket.c
 @@ -501,9 +501,7 @@ static int bus_socket_read_auth(sd_bus *b) {

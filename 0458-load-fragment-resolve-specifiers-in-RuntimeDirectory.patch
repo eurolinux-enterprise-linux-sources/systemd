@@ -10,7 +10,7 @@ Resolves: #1428110
  1 file changed, 11 insertions(+), 3 deletions(-)
 
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index c450fe2c7..6fc4d745d 100644
+index c450fe2c72..6fc4d745d5 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -3384,6 +3384,7 @@ int config_parse_runtime_directory(

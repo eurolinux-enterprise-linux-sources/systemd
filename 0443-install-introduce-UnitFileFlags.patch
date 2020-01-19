@@ -19,7 +19,7 @@ Related: #1413041
  7 files changed, 135 insertions(+), 113 deletions(-)
 
 diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
-index c2067c099..5b40aa20f 100644
+index c2067c099a..5b40aa20f0 100644
 --- a/src/core/dbus-manager.c
 +++ b/src/core/dbus-manager.c
 @@ -41,6 +41,11 @@
@@ -183,7 +183,7 @@ index c2067c099..5b40aa20f 100644
                  return r;
  
 diff --git a/src/core/main.c b/src/core/main.c
-index 820cbc3e5..a0df1e5ce 100644
+index 820cbc3e53..a0df1e5cec 100644
 --- a/src/core/main.c
 +++ b/src/core/main.c
 @@ -1658,7 +1658,7 @@ int main(int argc, char *argv[]) {
@@ -196,7 +196,7 @@ index 820cbc3e5..a0df1e5ce 100644
                                  log_warning_errno(r, "Failed to populate /etc with preset unit settings, ignoring: %m");
                          else
 diff --git a/src/shared/install.c b/src/shared/install.c
-index 62bdf674c..b3df6b35c 100644
+index 62bdf674c9..b3df6b35c9 100644
 --- a/src/shared/install.c
 +++ b/src/shared/install.c
 @@ -1549,10 +1549,9 @@ static int install_context_mark_for_removal(
@@ -455,7 +455,7 @@ index 62bdf674c..b3df6b35c 100644
  
  static void unit_file_list_free_one(UnitFileList *f) {
 diff --git a/src/shared/install.h b/src/shared/install.h
-index 7e40445d3..c961b53d0 100644
+index 7e40445d36..c961b53d08 100644
 --- a/src/shared/install.h
 +++ b/src/shared/install.h
 @@ -66,6 +66,11 @@ typedef enum UnitFileChangeType {
@@ -499,7 +499,7 @@ index 7e40445d3..c961b53d0 100644
  int unit_file_lookup_state(UnitFileScope scope, const char *root_dir,const LookupPaths *paths, const char *name, UnitFileState *ret);
  int unit_file_get_state(UnitFileScope scope, const char *root_dir, const char *filename, UnitFileState *ret);
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index 1e1009f38..e0dbf0fda 100644
+index 1e1009f388..e0dbf0fda9 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -165,6 +165,11 @@ static int daemon_reload(sd_bus *bus, char **args);
@@ -575,7 +575,7 @@ index 1e1009f38..e0dbf0fda 100644
                          log_error_errno(r, "Operation failed: %m");
                          goto finish;
 diff --git a/src/test/test-install-root.c b/src/test/test-install-root.c
-index 667c3748c..cb417d4c1 100644
+index 667c3748c5..cb417d4c19 100644
 --- a/src/test/test-install-root.c
 +++ b/src/test/test-install-root.c
 @@ -62,7 +62,7 @@ static void test_basic_mask_and_enable(const char *root) {
@@ -830,7 +830,7 @@ index 667c3748c..cb417d4c1 100644
          assert_se(n_changes > 0);
  
 diff --git a/src/test/test-install.c b/src/test/test-install.c
-index 08a1faf2c..0cae0e794 100644
+index 08a1faf2c4..0cae0e794e 100644
 --- a/src/test/test-install.c
 +++ b/src/test/test-install.c
 @@ -73,12 +73,12 @@ int main(int argc, char* argv[]) {

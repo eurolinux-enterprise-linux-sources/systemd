@@ -1,0 +1,26 @@
+From edaaf538a500811d5457f9c3a8e1ea4c8283806e Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Tue, 11 Dec 2018 10:39:01 +0100
+Subject: [PATCH] tmpfiles: 'e' is supposed to operate on directory only
+
+(cherry picked from commit d460ba18e777128c19343b067574ecac399f3afc)
+
+Related: #1641764
+---
+ src/tmpfiles/tmpfiles.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
+index f7fa2e40fa..20bc465d23 100644
+--- a/src/tmpfiles/tmpfiles.c
++++ b/src/tmpfiles/tmpfiles.c
+@@ -621,6 +621,9 @@ static int path_set_perms(Item *i, const char *path) {
+         if (fstatat(fd, "", &st, AT_EMPTY_PATH) < 0)
+                 return log_error_errno(errno, "Failed to fstat() file %s: %m", path);
+ 
++        if (i->type == EMPTY_DIRECTORY && !S_ISDIR(st.st_mode))
++                return log_error_errno(EEXIST, "'%s' already exists and is not a directory. ", path);
++
+         if (S_ISLNK(st.st_mode))
+                 log_debug("Skipping mode an owner fix for symlink %s.", path);
+         else {

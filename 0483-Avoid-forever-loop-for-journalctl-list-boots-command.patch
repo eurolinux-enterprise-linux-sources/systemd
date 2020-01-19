@@ -21,7 +21,7 @@ Related: #1294516
  1 file changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
-index 723854a2e..c771cff8b 100644
+index 723854a2e9..c771cff8b8 100644
 --- a/src/journal/journalctl.c
 +++ b/src/journal/journalctl.c
 @@ -1039,7 +1039,7 @@ static int get_boots(

@@ -38,7 +38,7 @@ Resolves: #1511043
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/cryptsetup/cryptsetup.c b/src/cryptsetup/cryptsetup.c
-index 5dedb073e..c57d2b294 100644
+index 5dedb073e4..c57d2b2948 100644
 --- a/src/cryptsetup/cryptsetup.c
 +++ b/src/cryptsetup/cryptsetup.c
 @@ -342,7 +342,7 @@ static int get_password(const char *vol, const char *src, usec_t until, bool acc

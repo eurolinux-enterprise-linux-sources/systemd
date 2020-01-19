@@ -1,4 +1,4 @@
-From 8ed83533ae34ad1836fa82f70c08eb075aa8578f Mon Sep 17 00:00:00 2001
+From 82fb8420a53abded9d25502be8ab92d544b860a7 Mon Sep 17 00:00:00 2001
 From: Jan Synacek <jsynacek@redhat.com>
 Date: Wed, 30 Jan 2019 10:20:57 +0100
 Subject: [PATCH] rules: fix memory hotplug rule so systemd-detect-virt does
@@ -6,13 +6,13 @@ Subject: [PATCH] rules: fix memory hotplug rule so systemd-detect-virt does
 
 Fixes a bug introduced in commit c50b7bcbebcfebfce3a7e7fb77f88f4b590fb2b5.
 
-Resolves: #1701230
+Resolves: #1666612
 ---
  rules/40-redhat.rules | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/rules/40-redhat.rules b/rules/40-redhat.rules
-index 1b10e173d..2c690e522 100644
+index 1b10e173d6..2c690e522e 100644
 --- a/rules/40-redhat.rules
 +++ b/rules/40-redhat.rules
 @@ -4,7 +4,8 @@

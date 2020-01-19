@@ -14,7 +14,7 @@ Resolves: #1409659
  3 files changed, 27 insertions(+), 16 deletions(-)
 
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index 7c69061f4..7e67e055e 100644
+index 7c69061f47..7e67e055e3 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -1294,7 +1294,7 @@ int server_process_datagram(sd_event_source *es, int fd, uint32_t revents, void
@@ -27,7 +27,7 @@ index 7c69061f4..7e67e055e 100644
                          log_warning("Got file descriptors via syslog socket. Ignoring.");
  
 diff --git a/src/journal/journald-syslog.c b/src/journal/journald-syslog.c
-index b499a0d38..01d2bf69f 100644
+index b499a0d381..01d2bf69f4 100644
 --- a/src/journal/journald-syslog.c
 +++ b/src/journal/journald-syslog.c
 @@ -109,7 +109,7 @@ static void forward_syslog_iovec(Server *s, const struct iovec *iovec, unsigned
@@ -121,7 +121,7 @@ index b499a0d38..01d2bf69f 100644
                  IOVEC_SET_STRING(iovec[n++], message);
  
 diff --git a/src/journal/journald-syslog.h b/src/journal/journald-syslog.h
-index 3774ebdf0..e593be99a 100644
+index 3774ebdf05..e593be99ab 100644
 --- a/src/journal/journald-syslog.h
 +++ b/src/journal/journald-syslog.h
 @@ -29,7 +29,7 @@ size_t syslog_parse_identifier(const char **buf, char **identifier, char **pid);

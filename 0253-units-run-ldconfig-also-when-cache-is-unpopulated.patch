@@ -10,7 +10,7 @@ Resolves: #1265539
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/units/ldconfig.service b/units/ldconfig.service
-index 43c145b72..8600b1327 100644
+index 43c145b726..8600b13275 100644
 --- a/units/ldconfig.service
 +++ b/units/ldconfig.service
 @@ -12,7 +12,8 @@ DefaultDependencies=no

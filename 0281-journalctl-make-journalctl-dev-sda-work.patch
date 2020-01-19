@@ -23,7 +23,7 @@ Resolves: #947636
  2 files changed, 97 insertions(+), 24 deletions(-)
 
 diff --git a/Makefile.am b/Makefile.am
-index 2645f66bc..255937643 100644
+index 2645f66bc1..255937643e 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -4245,7 +4245,8 @@ journalctl_LDADD = \
@@ -37,7 +37,7 @@ index 2645f66bc..255937643 100644
  if HAVE_ACL
  journalctl_LDADD += \
 diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
-index 836d7d214..3db1cd24e 100644
+index 836d7d2141..3db1cd24ef 100644
 --- a/src/journal/journalctl.c
 +++ b/src/journal/journalctl.c
 @@ -63,6 +63,8 @@

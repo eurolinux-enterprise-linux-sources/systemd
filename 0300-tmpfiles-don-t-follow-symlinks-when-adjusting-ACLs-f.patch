@@ -11,7 +11,7 @@ Resolves: #1296288
  1 file changed, 74 insertions(+), 38 deletions(-)
 
 diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
-index d0e6567d8..64c733aaa 100644
+index d0e6567d8a..64c733aaa0 100644
 --- a/src/tmpfiles/tmpfiles.c
 +++ b/src/tmpfiles/tmpfiles.c
 @@ -570,51 +570,69 @@ finish:

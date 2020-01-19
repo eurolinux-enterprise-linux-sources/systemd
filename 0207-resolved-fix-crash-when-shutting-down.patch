@@ -23,7 +23,7 @@ Resolves: #1222517
  6 files changed, 19 insertions(+), 18 deletions(-)
 
 diff --git a/src/resolve/resolved-dns-cache.c b/src/resolve/resolved-dns-cache.c
-index 33ca4d1a4..874207cfb 100644
+index 33ca4d1a45..874207cfb8 100644
 --- a/src/resolve/resolved-dns-cache.c
 +++ b/src/resolve/resolved-dns-cache.c
 @@ -93,9 +93,7 @@ void dns_cache_flush(DnsCache *c) {
@@ -38,7 +38,7 @@ index 33ca4d1a4..874207cfb 100644
  
  static void dns_cache_remove(DnsCache *c, DnsResourceKey *key) {
 diff --git a/src/resolve/resolved-dns-server.c b/src/resolve/resolved-dns-server.c
-index caf06fe45..9a62a6325 100644
+index caf06fe450..9a62a63258 100644
 --- a/src/resolve/resolved-dns-server.c
 +++ b/src/resolve/resolved-dns-server.c
 @@ -78,23 +78,24 @@ DnsServer* dns_server_free(DnsServer *s)  {
@@ -74,7 +74,7 @@ index caf06fe45..9a62a6325 100644
  
          return NULL;
 diff --git a/src/resolve/resolved-link.c b/src/resolve/resolved-link.c
-index f94e4bb6f..27d9129e0 100644
+index f94e4bb6f0..27d9129e00 100644
 --- a/src/resolve/resolved-link.c
 +++ b/src/resolve/resolved-link.c
 @@ -68,13 +68,13 @@ Link *link_free(Link *l) {
@@ -95,7 +95,7 @@ index f94e4bb6f..27d9129e0 100644
          return NULL;
  }
 diff --git a/src/resolve/resolved-manager.c b/src/resolve/resolved-manager.c
-index b5ad70161..7c253aa13 100644
+index b5ad701611..7c253aa13f 100644
 --- a/src/resolve/resolved-manager.c
 +++ b/src/resolve/resolved-manager.c
 @@ -536,11 +536,11 @@ Manager *manager_free(Manager *m) {
@@ -113,7 +113,7 @@ index b5ad70161..7c253aa13 100644
          hashmap_free(m->dns_transactions);
  
 diff --git a/src/shared/prioq.c b/src/shared/prioq.c
-index 8af4c51c2..b89888be0 100644
+index 8af4c51c2f..b89888be0e 100644
 --- a/src/shared/prioq.c
 +++ b/src/shared/prioq.c
 @@ -45,12 +45,14 @@ Prioq *prioq_new(compare_func_t compare_func) {
@@ -134,7 +134,7 @@ index 8af4c51c2..b89888be0 100644
  
  int prioq_ensure_allocated(Prioq **q, compare_func_t compare_func) {
 diff --git a/src/shared/prioq.h b/src/shared/prioq.h
-index d836b36cd..1c044b135 100644
+index d836b36cd9..1c044b135c 100644
 --- a/src/shared/prioq.h
 +++ b/src/shared/prioq.h
 @@ -28,7 +28,7 @@ typedef struct Prioq Prioq;

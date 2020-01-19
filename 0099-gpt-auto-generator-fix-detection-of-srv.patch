@@ -10,7 +10,7 @@ https://bugs.freedesktop.org/show_bug.cgi?id=89226
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/gpt-auto-generator/gpt-auto-generator.c b/src/gpt-auto-generator/gpt-auto-generator.c
-index 7d5a6c650..cceeeb845 100644
+index 7d5a6c6508..cceeeb845c 100644
 --- a/src/gpt-auto-generator/gpt-auto-generator.c
 +++ b/src/gpt-auto-generator/gpt-auto-generator.c
 @@ -549,7 +549,7 @@ static int enumerate_partitions(dev_t devnum) {

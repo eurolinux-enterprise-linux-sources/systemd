@@ -16,7 +16,7 @@ Resolves: #1501017
  1 file changed, 30 insertions(+)
 
 diff --git a/src/journal/journald-native.c b/src/journal/journald-native.c
-index 2c9cf6e7a..fdb1a38dd 100644
+index 2c9cf6e7a8..fdb1a38ddc 100644
 --- a/src/journal/journald-native.c
 +++ b/src/journal/journald-native.c
 @@ -23,6 +23,7 @@

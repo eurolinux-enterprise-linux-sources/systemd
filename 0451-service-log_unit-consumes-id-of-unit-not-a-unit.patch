@@ -10,7 +10,7 @@ Related: #1421658
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/service.c b/src/core/service.c
-index 84e00573f..3bd6c3338 100644
+index 84e00573f3..3bd6c33381 100644
 --- a/src/core/service.c
 +++ b/src/core/service.c
 @@ -1567,7 +1567,7 @@ static void service_enter_start(Service *s) {

@@ -16,7 +16,7 @@ state directly, so the Context parameter can be removed.
  1 file changed, 18 insertions(+), 32 deletions(-)
 
 diff --git a/src/timedate/timedated.c b/src/timedate/timedated.c
-index c3113b081..f87514936 100644
+index c3113b081e..f875149364 100644
 --- a/src/timedate/timedated.c
 +++ b/src/timedate/timedated.c
 @@ -280,39 +280,26 @@ static int context_read_ntp(Context *c, sd_bus *bus) {

@@ -15,7 +15,7 @@ Resolves: #1285642
  3 files changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/man/journald.conf.xml b/man/journald.conf.xml
-index 2cbe58bc1..c4f71e887 100644
+index 2cbe58bc15..c4f71e8873 100644
 --- a/man/journald.conf.xml
 +++ b/man/journald.conf.xml
 @@ -302,7 +302,7 @@
@@ -28,7 +28,7 @@ index 2cbe58bc1..c4f71e887 100644
          <literal>systemd.journald.forward_to_syslog=</literal>,
          <literal>systemd.journald.forward_to_kmsg=</literal>,
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index f13147f65..6a35ebbde 100644
+index f13147f659..6a35ebbde0 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -1470,6 +1470,7 @@ int server_init(Server *s) {
@@ -40,7 +40,7 @@ index f13147f65..6a35ebbde 100644
  
          s->max_file_usec = DEFAULT_MAX_FILE_USEC;
 diff --git a/src/journal/journald.conf b/src/journal/journald.conf
-index 47eefe91c..3907dfb7f 100644
+index 47eefe91c1..3907dfb7ff 100644
 --- a/src/journal/journald.conf
 +++ b/src/journal/journald.conf
 @@ -27,7 +27,7 @@

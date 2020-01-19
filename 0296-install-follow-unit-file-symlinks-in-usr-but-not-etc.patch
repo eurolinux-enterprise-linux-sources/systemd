@@ -86,7 +86,7 @@ Resolves: #1159308
  create mode 100644 src/test/test-install-root.c
 
 diff --git a/Makefile.am b/Makefile.am
-index 3af720bda..3a09e0a62 100644
+index 3af720bdae..3a09e0a62b 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -1427,7 +1427,8 @@ tests += \
@@ -116,7 +116,7 @@ index 3af720bda..3a09e0a62 100644
  	libsystemd-core.la
  
 diff --git a/man/systemctl.xml b/man/systemctl.xml
-index c6f584278..2d0678d18 100644
+index c6f5842786..2d0678d18d 100644
 --- a/man/systemctl.xml
 +++ b/man/systemctl.xml
 @@ -905,10 +905,11 @@ kobject-uevent 1 systemd-udevd-kernel.socket systemd-udevd.service
@@ -148,7 +148,7 @@ index c6f584278..2d0678d18 100644
                </tgroup>
              </table>
 diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
-index 1ec350e03..faa124d92 100644
+index 1ec350e034..faa124d926 100644
 --- a/src/core/dbus-manager.c
 +++ b/src/core/dbus-manager.c
 @@ -1530,9 +1530,9 @@ static int method_get_unit_file_state(sd_bus *bus, sd_bus_message *message, void
@@ -165,7 +165,7 @@ index 1ec350e03..faa124d92 100644
          return sd_bus_reply_method_return(message, "s", unit_file_state_to_string(state));
  }
 diff --git a/src/core/dbus-unit.c b/src/core/dbus-unit.c
-index 625d21ab8..227915efc 100644
+index 625d21ab8b..227915efc2 100644
 --- a/src/core/dbus-unit.c
 +++ b/src/core/dbus-unit.c
 @@ -919,7 +919,7 @@ static int bus_unit_set_transient_property(
@@ -187,7 +187,7 @@ index 625d21ab8..227915efc 100644
  
                          if (mode != UNIT_CHECK) {
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index ec4cf4eef..70c09188a 100644
+index ec4cf4eefa..70c09188a3 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -3409,7 +3409,7 @@ static int open_follow(char **filename, FILE **_f, Set *names, char **_final) {
@@ -200,7 +200,7 @@ index ec4cf4eef..70c09188a 100644
                          id = set_get(names, name);
                          if (!id) {
 diff --git a/src/core/manager.c b/src/core/manager.c
-index 7483a96ec..bde17ce0b 100644
+index 7483a96ec6..bde17ce0be 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -1328,7 +1328,7 @@ int manager_load_unit_prepare(
@@ -213,7 +213,7 @@ index 7483a96ec..bde17ce0b 100644
  
          ret = manager_get_unit(m, name);
 diff --git a/src/core/snapshot.c b/src/core/snapshot.c
-index b1d844877..f222ec232 100644
+index b1d8448771..f222ec232f 100644
 --- a/src/core/snapshot.c
 +++ b/src/core/snapshot.c
 @@ -201,7 +201,7 @@ int snapshot_create(Manager *m, const char *name, bool cleanup, sd_bus_error *e,
@@ -226,7 +226,7 @@ index b1d844877..f222ec232 100644
  
                  if (unit_name_to_type(name) != UNIT_SNAPSHOT)
 diff --git a/src/core/unit.c b/src/core/unit.c
-index 4fb2fd300..db5aa987e 100644
+index 4fb2fd3001..db5aa987ec 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -158,7 +158,7 @@ int unit_add_name(Unit *u, const char *text) {
@@ -272,7 +272,7 @@ index 4fb2fd300..db5aa987e 100644
          return u->unit_file_preset;
  }
 diff --git a/src/dbus1-generator/dbus1-generator.c b/src/dbus1-generator/dbus1-generator.c
-index 2e08af2df..c909a4b1d 100644
+index 2e08af2df2..c909a4b1da 100644
 --- a/src/dbus1-generator/dbus1-generator.c
 +++ b/src/dbus1-generator/dbus1-generator.c
 @@ -188,7 +188,7 @@ static int add_dbus(const char *path, const char *fname, const char *type) {
@@ -285,7 +285,7 @@ index 2e08af2df..c909a4b1d 100644
                          return 0;
                  }
 diff --git a/src/firstboot/firstboot.c b/src/firstboot/firstboot.c
-index a37ca170f..b77c1d887 100644
+index a37ca170fb..b77c1d8879 100644
 --- a/src/firstboot/firstboot.c
 +++ b/src/firstboot/firstboot.c
 @@ -50,8 +50,6 @@ static bool arg_copy_locale = false;
@@ -368,7 +368,7 @@ index a37ca170f..b77c1d887 100644
                  return 0;
  
 diff --git a/src/shared/cgroup-util.c b/src/shared/cgroup-util.c
-index dfd8689b7..cf757d2b2 100644
+index dfd8689b72..cf757d2b23 100644
 --- a/src/shared/cgroup-util.c
 +++ b/src/shared/cgroup-util.c
 @@ -1147,7 +1147,7 @@ int cg_path_decode_unit(const char *cgroup, char **unit){
@@ -399,7 +399,7 @@ index dfd8689b7..cf757d2b2 100644
  
                  escaped = cg_escape(n);
 diff --git a/src/shared/install.c b/src/shared/install.c
-index aa197e91b..5288bb450 100644
+index aa197e91b9..5288bb4501 100644
 --- a/src/shared/install.c
 +++ b/src/shared/install.c
 @@ -39,15 +39,24 @@
@@ -3124,7 +3124,7 @@ index aa197e91b..5288bb450 100644
  
  DEFINE_STRING_TABLE_LOOKUP(unit_file_state, UnitFileState);
 diff --git a/src/shared/install.h b/src/shared/install.h
-index d729e6ed1..87a40b67c 100644
+index d729e6ed15..87a40b67c1 100644
 --- a/src/shared/install.h
 +++ b/src/shared/install.h
 @@ -24,6 +24,7 @@
@@ -3214,7 +3214,7 @@ index d729e6ed1..87a40b67c 100644
  void unit_file_changes_free(UnitFileChange *changes, unsigned n_changes);
  
 diff --git a/src/shared/path-util.c b/src/shared/path-util.c
-index d5510bf56..1181ffb9d 100644
+index d5510bf56f..1181ffb9d4 100644
 --- a/src/shared/path-util.c
 +++ b/src/shared/path-util.c
 @@ -704,3 +704,37 @@ int fsck_exists(const char *fstype) {
@@ -3256,7 +3256,7 @@ index d5510bf56..1181ffb9d 100644
 +        return n;
 +}
 diff --git a/src/shared/path-util.h b/src/shared/path-util.h
-index ca81b49cb..71bb740e9 100644
+index ca81b49cbf..71bb740e98 100644
 --- a/src/shared/path-util.h
 +++ b/src/shared/path-util.h
 @@ -63,6 +63,33 @@ bool paths_check_timestamp(const char* const* paths, usec_t *paths_ts_usec, bool
@@ -3294,7 +3294,7 @@ index ca81b49cb..71bb740e9 100644
   * the tree, to root. Also returns "" (and not "/"!) for the root
   * directory. Excludes the specified directory itself */
 diff --git a/src/shared/unit-name.c b/src/shared/unit-name.c
-index f728af4a8..b7827d14b 100644
+index f728af4a81..b7827d14bb 100644
 --- a/src/shared/unit-name.c
 +++ b/src/shared/unit-name.c
 @@ -63,16 +63,13 @@ static const char* const unit_load_state_table[_UNIT_LOAD_STATE_MAX] = {
@@ -3349,7 +3349,7 @@ index f728af4a8..b7827d14b 100644
  
  bool unit_instance_is_valid(const char *i) {
 diff --git a/src/shared/unit-name.h b/src/shared/unit-name.h
-index 6f139cc4c..436486062 100644
+index 6f139cc4c4..4364860623 100644
 --- a/src/shared/unit-name.h
 +++ b/src/shared/unit-name.h
 @@ -107,6 +107,13 @@ enum UnitDependency {
@@ -3381,7 +3381,7 @@ index 6f139cc4c..436486062 100644
  bool unit_instance_is_valid(const char *i) _pure_;
  
 diff --git a/src/shared/util.c b/src/shared/util.c
-index a24aa7f93..036677eb4 100644
+index a24aa7f93a..036677eb46 100644
 --- a/src/shared/util.c
 +++ b/src/shared/util.c
 @@ -1094,6 +1094,27 @@ int readlink_and_canonicalize(const char *p, char **r) {
@@ -3413,7 +3413,7 @@ index a24aa7f93..036677eb4 100644
          int sig, r = 0;
  
 diff --git a/src/shared/util.h b/src/shared/util.h
-index b4a4a491f..a441e44ff 100644
+index b4a4a491f9..a441e44ff9 100644
 --- a/src/shared/util.h
 +++ b/src/shared/util.h
 @@ -281,6 +281,7 @@ int readlink_malloc(const char *p, char **r);
@@ -3425,7 +3425,7 @@ index b4a4a491f..a441e44ff 100644
  int reset_all_signal_handlers(void);
  int reset_signal_mask(void);
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index bf5bb398b..95ddf3be7 100644
+index bf5bb398b7..95ddf3be76 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -1304,7 +1304,7 @@ static void output_unit_file_list(const UnitFileList *units, unsigned c) {
@@ -3449,7 +3449,7 @@ index bf5bb398b..95ddf3be7 100644
  
                          if (state == UNIT_FILE_ENABLED ||
 diff --git a/src/sysv-generator/sysv-generator.c b/src/sysv-generator/sysv-generator.c
-index d60e75a06..7e0e7fc28 100644
+index d60e75a06b..7e0e7fc283 100644
 --- a/src/sysv-generator/sysv-generator.c
 +++ b/src/sysv-generator/sysv-generator.c
 @@ -712,6 +712,7 @@ static int fix_order(SysvStub *s, Hashmap *all_services) {
@@ -3485,7 +3485,7 @@ index d60e75a06..7e0e7fc28 100644
  
 diff --git a/src/test/test-install-root.c b/src/test/test-install-root.c
 new file mode 100644
-index 000000000..89d91d3d6
+index 0000000000..89d91d3d64
 --- /dev/null
 +++ b/src/test/test-install-root.c
 @@ -0,0 +1,663 @@
@@ -4153,7 +4153,7 @@ index 000000000..89d91d3d6
 +        return 0;
 +}
 diff --git a/src/test/test-install.c b/src/test/test-install.c
-index 467970b00..08a1faf2c 100644
+index 467970b007..08a1faf2c4 100644
 --- a/src/test/test-install.c
 +++ b/src/test/test-install.c
 @@ -50,17 +50,19 @@ int main(int argc, char* argv[]) {

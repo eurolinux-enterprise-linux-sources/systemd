@@ -1,0 +1,160 @@
+From 0c4a78cc276249e51bcaa50b29df3efcf6d22ec3 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Tue, 12 Feb 2019 11:10:59 +0100
+Subject: [PATCH] sd-bus: unify three code-paths which free struct
+ bus_container
+
+We didn't free one of the fields in two of the places.
+
+$ valgrind --show-leak-kinds=all --leak-check=full \
+  build/fuzz-bus-message \
+  test/fuzz/fuzz-bus-message/leak-c09c0e2256d43bc5e2d02748c8d8760e7bc25d20
+...
+==14457== HEAP SUMMARY:
+==14457==     in use at exit: 3 bytes in 1 blocks
+==14457==   total heap usage: 509 allocs, 508 frees, 51,016 bytes allocated
+==14457==
+==14457== 3 bytes in 1 blocks are definitely lost in loss record 1 of 1
+==14457==    at 0x4C2EBAB: malloc (vg_replace_malloc.c:299)
+==14457==    by 0x53AFE79: strndup (in /usr/lib64/libc-2.27.so)
+==14457==    by 0x4F52EB8: free_and_strndup (string-util.c:1039)
+==14457==    by 0x4F8E1AB: sd_bus_message_peek_type (bus-message.c:4193)
+==14457==    by 0x4F76CB5: bus_message_dump (bus-dump.c:144)
+==14457==    by 0x108F12: LLVMFuzzerTestOneInput (fuzz-bus-message.c:24)
+==14457==    by 0x1090F7: main (fuzz-main.c:34)
+==14457==
+==14457== LEAK SUMMARY:
+==14457==    definitely lost: 3 bytes in 1 blocks
+
+(cherry picked from commit 6d1e0f4fcba8d6f425da3dc91805db95399b3c8b)
+Resolves: #1643394
+---
+ src/libsystemd/sd-bus/bus-message.c | 66 +++++++++++++++--------------
+ 1 file changed, 35 insertions(+), 31 deletions(-)
+
+diff --git a/src/libsystemd/sd-bus/bus-message.c b/src/libsystemd/sd-bus/bus-message.c
+index 121e65674d..b786f943e4 100644
+--- a/src/libsystemd/sd-bus/bus-message.c
++++ b/src/libsystemd/sd-bus/bus-message.c
+@@ -104,20 +104,42 @@ static void message_reset_parts(sd_bus_message *m) {
+         m->cached_rindex_part_begin = 0;
+ }
+ 
+-static void message_reset_containers(sd_bus_message *m) {
+-        unsigned i;
++static struct bus_container *message_get_container(sd_bus_message *m) {
++        assert(m);
++
++        if (m->n_containers == 0)
++                return &m->root_container;
++
++        assert(m->containers);
++        return m->containers + m->n_containers - 1;
++}
++
++static void message_free_last_container(sd_bus_message *m) {
++        struct bus_container *c;
+ 
++        c = message_get_container(m);
++
++        free(c->signature);
++        free(c->peeked_signature);
++        free(c->offsets);
++
++        /* Move to previous container, but not if we are on root container */
++        if (m->n_containers > 0)
++                m->n_containers--;
++}
++
++
++
++static void message_reset_containers(sd_bus_message *m) {
+         assert(m);
+ 
+-        for (i = 0; i < m->n_containers; i++) {
+-                free(m->containers[i].signature);
+-                free(m->containers[i].offsets);
+-        }
++        while (m->n_containers > 0)
++                message_free_last_container(m);
+ 
+         free(m->containers);
+         m->containers = NULL;
+ 
+-        m->n_containers = m->containers_allocated = 0;
++        m->containers_allocated = 0;
+         m->root_container.index = 0;
+ }
+ 
+@@ -151,10 +173,8 @@ static void message_free(sd_bus_message *m) {
+         }
+ 
+         message_reset_containers(m);
+-        free(m->root_container.signature);
+-        free(m->root_container.offsets);
+-
+-        free(m->root_container.peeked_signature);
++        assert(m->n_containers == 0);
++        message_free_last_container(m);
+ 
+         bus_creds_done(&m->creds);
+         free(m);
+@@ -1179,16 +1199,6 @@ _public_ int sd_bus_message_set_allow_interactive_authorization(sd_bus_message *
+         return 0;
+ }
+ 
+-static struct bus_container *message_get_container(sd_bus_message *m) {
+-        assert(m);
+-
+-        if (m->n_containers == 0)
+-                return &m->root_container;
+-
+-        assert(m->containers);
+-        return m->containers + m->n_containers - 1;
+-}
+-
+ struct bus_body_part *message_append_part(sd_bus_message *m) {
+         struct bus_body_part *part;
+ 
+@@ -2107,6 +2117,7 @@ _public_ int sd_bus_message_open_container(
+         w = m->containers + m->n_containers++;
+         w->enclosing = type;
+         w->signature = signature;
++        w->peeked_signature = NULL;
+         w->index = 0;
+         w->array_size = array_size;
+         w->before = before;
+@@ -4195,13 +4206,9 @@ _public_ int sd_bus_message_exit_container(sd_bus_message *m) {
+                         return -EBUSY;
+         }
+ 
+-        free(c->signature);
+-        free(c->peeked_signature);
+-        free(c->offsets);
+-        m->n_containers--;
++        message_free_last_container(m);
+ 
+         c = message_get_container(m);
+-
+         saved = c->index;
+         c->index = c->saved_index;
+         r = container_next_item(m, c, &m->rindex);
+@@ -4219,16 +4226,13 @@ static void message_quit_container(sd_bus_message *m) {
+         assert(m->sealed);
+         assert(m->n_containers > 0);
+ 
+-        c = message_get_container(m);
+-
+         /* Undo seeks */
++        c = message_get_container(m);
+         assert(m->rindex >= c->before);
+         m->rindex = c->before;
+ 
+         /* Free container */
+-        free(c->signature);
+-        free(c->offsets);
+-        m->n_containers--;
++        message_free_last_container(m);
+ 
+         /* Correct index of new top-level container */
+         c = message_get_container(m);

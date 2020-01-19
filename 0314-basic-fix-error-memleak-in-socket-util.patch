@@ -14,7 +14,7 @@ Related: #1331667
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/shared/socket-util.c b/src/shared/socket-util.c
-index a4e26b1d8..407d0afee 100644
+index a4e26b1d8c..407d0afee3 100644
 --- a/src/shared/socket-util.c
 +++ b/src/shared/socket-util.c
 @@ -544,7 +544,7 @@ int sockaddr_pretty(const struct sockaddr *_sa, socklen_t salen, bool translate_

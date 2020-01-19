@@ -12,7 +12,7 @@ Resolves: #1264073
  2 files changed, 8 insertions(+), 2 deletions(-)
 
 diff --git a/Makefile.am b/Makefile.am
-index 58bcc2c42..0fcb73750 100644
+index 58bcc2c429..0fcb737509 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -5829,7 +5829,8 @@ systemd_user_sessions_SOURCES = \
@@ -26,7 +26,7 @@ index 58bcc2c42..0fcb73750 100644
  rootlibexec_PROGRAMS += \
  	systemd-logind \
 diff --git a/src/login/user-sessions.c b/src/login/user-sessions.c
-index 6edb823e8..d1d429c0d 100644
+index 6edb823e8c..d1d429c0d2 100644
 --- a/src/login/user-sessions.c
 +++ b/src/login/user-sessions.c
 @@ -26,6 +26,7 @@

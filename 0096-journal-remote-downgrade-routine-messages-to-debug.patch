@@ -13,7 +13,7 @@ https://bugs.freedesktop.org/show_bug.cgi?id=89486
  4 files changed, 22 insertions(+), 22 deletions(-)
 
 diff --git a/src/journal-remote/journal-remote-parse.c b/src/journal-remote/journal-remote-parse.c
-index afded7e38..6c096de03 100644
+index afded7e380..6c096de03a 100644
 --- a/src/journal-remote/journal-remote-parse.c
 +++ b/src/journal-remote/journal-remote-parse.c
 @@ -443,7 +443,7 @@ int process_source(RemoteSource *source, bool compress, bool seal) {
@@ -26,7 +26,7 @@ index afded7e38..6c096de03 100644
  
          if (!source->iovw.count) {
 diff --git a/src/journal-remote/journal-remote-write.c b/src/journal-remote/journal-remote-write.c
-index df3004939..99820fa7b 100644
+index df30049397..99820fa7b8 100644
 --- a/src/journal-remote/journal-remote-write.c
 +++ b/src/journal-remote/journal-remote-write.c
 @@ -156,7 +156,7 @@ int writer_write(Writer *w,
@@ -39,7 +39,7 @@ index df3004939..99820fa7b 100644
          log_debug("Retrying write.");
          r = journal_file_append_entry(w->journal, ts, iovw->iovec, iovw->count,
 diff --git a/src/journal-remote/journal-remote.c b/src/journal-remote/journal-remote.c
-index 8f32a9a98..d1486e7cd 100644
+index 8f32a9a988..d1486e7cda 100644
 --- a/src/journal-remote/journal-remote.c
 +++ b/src/journal-remote/journal-remote.c
 @@ -207,7 +207,7 @@ static int open_output(Writer *w, const char* host) {
@@ -156,7 +156,7 @@ index 8f32a9a98..d1486e7cd 100644
                  *hostname = b;
  
 diff --git a/src/journal-remote/microhttpd-util.c b/src/journal-remote/microhttpd-util.c
-index a95fff18f..b45c38d68 100644
+index a95fff18f3..b45c38d682 100644
 --- a/src/journal-remote/microhttpd-util.c
 +++ b/src/journal-remote/microhttpd-util.c
 @@ -178,7 +178,7 @@ static int verify_cert_authorized(gnutls_session_t session) {

@@ -1,0 +1,22 @@
+From 1d94abd086b04dabf20f547470d19ad12b969a9a Mon Sep 17 00:00:00 2001
+From: Frantisek Sumsal <fsumsal@redhat.com>
+Date: Mon, 4 Mar 2019 10:26:46 +0100
+Subject: [PATCH] travis: support SMP if available
+
+---
+ ci/travis-centos-rhel7.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ci/travis-centos-rhel7.sh b/ci/travis-centos-rhel7.sh
+index 7db3a8db41..bb60012eea 100755
+--- a/ci/travis-centos-rhel7.sh
++++ b/ci/travis-centos-rhel7.sh
+@@ -51,7 +51,7 @@ for phase in "${PHASES[@]}"; do
+             $DOCKER_EXEC ./configure --disable-timesyncd --disable-kdbus --disable-terminal \
+                                      --enable-gtk-doc --enable-compat-libs --disable-sysusers \
+                                      --disable-ldconfig --enable-lz4 --with-sysvinit-path=/etc/rc.d/init.d
+-            $DOCKER_EXEC make
++            $DOCKER_EXEC make -j $(nproc)
+             # Run the internal testsuite
+             # Let's install the new systemd and "reboot" the container to avoid
+             # unexpected fails due to incompatibilities with older systemd

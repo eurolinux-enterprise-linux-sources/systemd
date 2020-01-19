@@ -21,7 +21,7 @@ Resolves: #1299714
  1 file changed, 36 insertions(+), 10 deletions(-)
 
 diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
-index 8034b771d..0fd59ec07 100644
+index 8034b771de..0fd59ec073 100644
 --- a/src/journal/journal-file.c
 +++ b/src/journal/journal-file.c
 @@ -2543,6 +2543,41 @@ void journal_file_print_header(JournalFile *f) {

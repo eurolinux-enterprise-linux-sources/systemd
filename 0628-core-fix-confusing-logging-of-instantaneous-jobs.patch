@@ -35,7 +35,7 @@ Resolves: #1506256
  3 files changed, 58 insertions(+), 44 deletions(-)
 
 diff --git a/src/core/job.c b/src/core/job.c
-index c9a43a4cb..612caa604 100644
+index c9a43a4cb5..612caa6048 100644
 --- a/src/core/job.c
 +++ b/src/core/job.c
 @@ -504,10 +504,48 @@ static void job_change_type(Job *j, JobType newtype) {
@@ -145,7 +145,7 @@ index c9a43a4cb..612caa604 100644
                  if (r == -EALREADY)
                          r = job_finish_and_invalidate(j, JOB_DONE, true, true);
 diff --git a/src/core/unit.c b/src/core/unit.c
-index 6d535ae12..907a4bf7f 100644
+index 6d535ae12e..907a4bf7fd 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -1417,6 +1417,15 @@ static void unit_status_log_starting_stopping_reloading(Unit *u, JobType t) {
@@ -234,7 +234,7 @@ index 6d535ae12..907a4bf7f 100644
  
  bool unit_can_reload(Unit *u) {
 diff --git a/src/core/unit.h b/src/core/unit.h
-index 85f52df18..480e2e95f 100644
+index 85f52df187..480e2e95f1 100644
 --- a/src/core/unit.h
 +++ b/src/core/unit.h
 @@ -562,6 +562,7 @@ int unit_add_node_link(Unit *u, const char *what, bool wants, UnitDependency d);

@@ -22,7 +22,7 @@ Resolves: #1249968
  delete mode 100644 units/systemd-journald-dev-log.socket
 
 diff --git a/Makefile-man.am b/Makefile-man.am
-index 084df754a..497be6612 100644
+index 084df754a2..497be6612c 100644
 --- a/Makefile-man.am
 +++ b/Makefile-man.am
 @@ -214,7 +214,6 @@ MANPAGES_ALIAS += \
@@ -52,7 +52,7 @@ index 084df754a..497be6612 100644
  	$(html-alias)
  
 diff --git a/Makefile.am b/Makefile.am
-index a81d3c131..58bcc2c42 100644
+index a81d3c131e..58bcc2c429 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -4518,8 +4518,7 @@ bin_PROGRAMS += \
@@ -77,7 +77,7 @@ index a81d3c131..58bcc2c42 100644
  	systemd-journald.service \
  	systemd-journal-flush.service \
 diff --git a/man/systemd-journald.service.xml b/man/systemd-journald.service.xml
-index 8280d6c87..fe99ce9bc 100644
+index 8280d6c874..fe99ce9bc6 100644
 --- a/man/systemd-journald.service.xml
 +++ b/man/systemd-journald.service.xml
 @@ -45,7 +45,6 @@
@@ -97,7 +97,7 @@ index 8280d6c87..fe99ce9bc 100644
    </refsynopsisdiv>
  
 diff --git a/src/core/namespace.c b/src/core/namespace.c
-index d4f1c8621..ebd5fb334 100644
+index d4f1c86211..ebd5fb3347 100644
 --- a/src/core/namespace.c
 +++ b/src/core/namespace.c
 @@ -187,7 +187,8 @@ static int mount_dev(BindMount *m) {
@@ -111,7 +111,7 @@ index d4f1c8621..ebd5fb334 100644
          NULSTR_FOREACH(d, devnodes) {
                  _cleanup_free_ char *dn = NULL;
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index d692c06ef..fb7aae309 100644
+index d692c06ef7..fb7aae3096 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -1531,8 +1531,7 @@ int server_init(Server *s) {
@@ -125,7 +125,7 @@ index d692c06ef..fb7aae309 100644
                          if (s->syslog_fd >= 0) {
                                  log_error("Too many /dev/log sockets passed.");
 diff --git a/src/journal/journald-syslog.c b/src/journal/journald-syslog.c
-index ba80941d7..4e118aabc 100644
+index ba80941d7b..4e118aabc0 100644
 --- a/src/journal/journald-syslog.c
 +++ b/src/journal/journald-syslog.c
 @@ -384,7 +384,7 @@ int server_open_syslog_socket(Server *s) {
@@ -139,7 +139,7 @@ index ba80941d7..4e118aabc 100644
                  s->syslog_fd = socket(AF_UNIX, SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
 diff --git a/units/systemd-journald-dev-log.socket b/units/systemd-journald-dev-log.socket
 deleted file mode 100644
-index ffd44bb50..000000000
+index ffd44bb507..0000000000
 --- a/units/systemd-journald-dev-log.socket
 +++ /dev/null
 @@ -1,32 +0,0 @@
@@ -176,7 +176,7 @@ index ffd44bb50..000000000
 -ReceiveBuffer=8M
 -SendBuffer=8M
 diff --git a/units/systemd-journald.service.in b/units/systemd-journald.service.in
-index 1bcc290ec..9d4462283 100644
+index 1bcc290ec4..9d44622837 100644
 --- a/units/systemd-journald.service.in
 +++ b/units/systemd-journald.service.in
 @@ -10,12 +10,12 @@ Description=Journal Service
@@ -195,7 +195,7 @@ index 1bcc290ec..9d4462283 100644
  Restart=always
  RestartSec=0
 diff --git a/units/systemd-journald.socket b/units/systemd-journald.socket
-index 71737014c..fbeb10baa 100644
+index 71737014ca..fbeb10baae 100644
 --- a/units/systemd-journald.socket
 +++ b/units/systemd-journald.socket
 @@ -19,8 +19,8 @@ IgnoreOnIsolate=yes

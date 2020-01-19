@@ -10,7 +10,7 @@ Resolves: #1477757
  1 file changed, 11 insertions(+), 1 deletion(-)
 
 diff --git a/man/crypttab.xml b/man/crypttab.xml
-index a9197ab40..e4ecab3dc 100644
+index a9197ab40e..e4ecab3dcb 100644
 --- a/man/crypttab.xml
 +++ b/man/crypttab.xml
 @@ -199,7 +199,16 @@

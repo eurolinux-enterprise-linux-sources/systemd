@@ -19,7 +19,7 @@ Resolves: #1505385
  1 file changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/src/journal-remote/journal-remote.c b/src/journal-remote/journal-remote.c
-index 4fac55cc9..a455fb6bd 100644
+index 4fac55cc9a..a455fb6bd8 100644
 --- a/src/journal-remote/journal-remote.c
 +++ b/src/journal-remote/journal-remote.c
 @@ -894,7 +894,14 @@ static int remoteserver_init(RemoteServer *s,

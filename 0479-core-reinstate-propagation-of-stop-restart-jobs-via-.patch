@@ -25,7 +25,7 @@ Related: #1436021
  1 file changed, 13 insertions(+), 28 deletions(-)
 
 diff --git a/src/core/transaction.c b/src/core/transaction.c
-index 57e9cb3f8..428b7671b 100644
+index 57e9cb3f83..428b7671b3 100644
 --- a/src/core/transaction.c
 +++ b/src/core/transaction.c
 @@ -1008,40 +1008,25 @@ int transaction_add_job_and_dependencies(

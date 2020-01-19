@@ -10,7 +10,7 @@ Subject: [PATCH] service: don't add After= dependencies on .busname units if
  1 file changed, 5 insertions(+), 3 deletions(-)
 
 diff --git a/src/core/service.c b/src/core/service.c
-index 7781b4e62..ae5e61000 100644
+index 7781b4e626..ae5e610008 100644
 --- a/src/core/service.c
 +++ b/src/core/service.c
 @@ -556,14 +556,16 @@ static int service_add_extras(Service *s) {

@@ -14,7 +14,7 @@ Resolves: #1477285
  1 file changed, 6 insertions(+), 18 deletions(-)
 
 diff --git a/src/udev/udev-builtin-net_id.c b/src/udev/udev-builtin-net_id.c
-index 7c154355d..19e1f2631 100644
+index 7c154355dd..19e1f2631a 100644
 --- a/src/udev/udev-builtin-net_id.c
 +++ b/src/udev/udev-builtin-net_id.c
 @@ -38,7 +38,7 @@

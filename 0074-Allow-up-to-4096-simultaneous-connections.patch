@@ -16,7 +16,7 @@ This patch raises the limit to 4096.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/dbus.c b/src/core/dbus.c
-index 260775cd8..85b517486 100644
+index 260775cd85..85b5174868 100644
 --- a/src/core/dbus.c
 +++ b/src/core/dbus.c
 @@ -44,7 +44,7 @@

@@ -18,7 +18,7 @@ Resolves: #1222517
  2 files changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/Makefile.am b/Makefile.am
-index d3fb398fe..a81d3c131 100644
+index d3fb398fe5..a81d3c131e 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -177,6 +177,7 @@ AM_CPPFLAGS = \
@@ -30,7 +30,7 @@ index d3fb398fe..a81d3c131 100644
  	-DSYSTEMD_SLEEP_BINARY_PATH=\"$(rootlibexecdir)/systemd-sleep\" \
  	-DSYSTEMCTL_BINARY_PATH=\"$(rootbindir)/systemctl\" \
 diff --git a/src/shared/generator.c b/src/shared/generator.c
-index 148a0b077..3af84a325 100644
+index 148a0b077b..3af84a325c 100644
 --- a/src/shared/generator.c
 +++ b/src/shared/generator.c
 @@ -61,7 +61,7 @@ static int write_fsck_sysroot_service(const char *dir, const char *what) {

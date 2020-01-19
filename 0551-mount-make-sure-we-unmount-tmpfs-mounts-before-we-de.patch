@@ -25,7 +25,7 @@ Resolves: #1437518
  4 files changed, 26 insertions(+), 10 deletions(-)
 
 diff --git a/src/core/dbus-mount.c b/src/core/dbus-mount.c
-index 53fe4edc3..04beba631 100644
+index 53fe4edc34..04beba631b 100644
 --- a/src/core/dbus-mount.c
 +++ b/src/core/dbus-mount.c
 @@ -90,20 +90,12 @@ static int property_get_type(
@@ -51,7 +51,7 @@ index 53fe4edc3..04beba631 100644
  
  static BUS_DEFINE_PROPERTY_GET_ENUM(property_get_result, mount_result, MountResult);
 diff --git a/src/core/mount.c b/src/core/mount.c
-index 7ca7f5a25..a6d93b869 100644
+index 7ca7f5a258..a6d93b8691 100644
 --- a/src/core/mount.c
 +++ b/src/core/mount.c
 @@ -119,6 +119,21 @@ static bool needs_quota(const MountParameters *p) {
@@ -100,7 +100,7 @@ index 7ca7f5a25..a6d93b869 100644
  }
  
 diff --git a/src/core/mount.h b/src/core/mount.h
-index d6987e6fa..353222000 100644
+index d6987e6fa1..353222000f 100644
 --- a/src/core/mount.h
 +++ b/src/core/mount.h
 @@ -130,3 +130,4 @@ const char* mount_result_to_string(MountResult i) _const_;
@@ -109,7 +109,7 @@ index d6987e6fa..353222000 100644
  void warn_if_dir_nonempty(const char *unit, const char* where);
 +const char *mount_get_fstype(const Mount *m);
 diff --git a/units/tmp.mount b/units/tmp.mount
-index 8c53a8705..af0cf4a55 100644
+index 8c53a87052..af0cf4a551 100644
 --- a/units/tmp.mount
 +++ b/units/tmp.mount
 @@ -13,7 +13,6 @@ ConditionPathIsSymbolicLink=!/tmp

@@ -26,7 +26,7 @@ Related: #1404657, #1471230
  2 files changed, 32 insertions(+)
 
 diff --git a/src/core/service.c b/src/core/service.c
-index 9ad3a0eb0..ceed1cc2e 100644
+index 9ad3a0eb01..ceed1cc2e3 100644
 --- a/src/core/service.c
 +++ b/src/core/service.c
 @@ -2612,6 +2612,7 @@ static void service_sigchld_event(Unit *u, pid_t pid, int code, int status) {
@@ -38,7 +38,7 @@ index 9ad3a0eb0..ceed1cc2e 100644
  
                          /* There is another command to *
 diff --git a/test/test-exec-deserialization.py b/test/test-exec-deserialization.py
-index 859778a7a..61623da99 100755
+index 859778a7a8..61623da995 100755
 --- a/test/test-exec-deserialization.py
 +++ b/test/test-exec-deserialization.py
 @@ -178,6 +178,37 @@ class ExecutionResumeTest(unittest.TestCase):

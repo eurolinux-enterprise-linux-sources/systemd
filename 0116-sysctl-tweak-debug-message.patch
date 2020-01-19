@@ -9,7 +9,7 @@ Subject: [PATCH] sysctl: tweak debug message
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/sysctl/sysctl.c b/src/sysctl/sysctl.c
-index b6945eda5..4fb293b9b 100644
+index b6945eda54..4fb293b9b5 100644
 --- a/src/sysctl/sysctl.c
 +++ b/src/sysctl/sysctl.c
 @@ -121,7 +121,7 @@ static int parse_file(Hashmap *sysctl_options, const char *path, bool ignore_eno

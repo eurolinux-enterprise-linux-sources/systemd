@@ -40,7 +40,7 @@ Resolves: #1337244
  14 files changed, 236 insertions(+), 27 deletions(-)
 
 diff --git a/man/systemd-system.conf.xml b/man/systemd-system.conf.xml
-index 57b3b90be..d367ccd13 100644
+index 57b3b90be1..d367ccd130 100644
 --- a/man/systemd-system.conf.xml
 +++ b/man/systemd-system.conf.xml
 @@ -51,14 +51,14 @@
@@ -84,7 +84,7 @@ index 57b3b90be..d367ccd13 100644
          for details on the per-unit settings.</para></listitem>
        </varlistentry>
 diff --git a/man/systemd.resource-control.xml b/man/systemd.resource-control.xml
-index 8f4e7a3f1..6b9329bbe 100644
+index 8f4e7a3f16..6b9329bbee 100644
 --- a/man/systemd.resource-control.xml
 +++ b/man/systemd.resource-control.xml
 @@ -103,10 +103,10 @@
@@ -195,7 +195,7 @@ index 8f4e7a3f1..6b9329bbe 100644
            <citerefentry><refentrytitle>systemd-system.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>.</para>
          </listitem>
 diff --git a/src/core/cgroup.c b/src/core/cgroup.c
-index b7f08fb42..d4a8f9cbe 100644
+index b7f08fb420..d4a8f9cbe3 100644
 --- a/src/core/cgroup.c
 +++ b/src/core/cgroup.c
 @@ -40,6 +40,7 @@ void cgroup_context_init(CGroupContext *c) {
@@ -285,7 +285,7 @@ index b7f08fb42..d4a8f9cbe 100644
          [CGROUP_AUTO] = "auto",
          [CGROUP_CLOSED] = "closed",
 diff --git a/src/core/cgroup.h b/src/core/cgroup.h
-index 8fa851de3..8af3eaa3a 100644
+index 8fa851de32..8af3eaa3ae 100644
 --- a/src/core/cgroup.h
 +++ b/src/core/cgroup.h
 @@ -72,6 +72,7 @@ struct CGroupContext {
@@ -314,7 +314,7 @@ index 8fa851de3..8af3eaa3a 100644
  const char* cgroup_device_policy_to_string(CGroupDevicePolicy i) _const_;
  CGroupDevicePolicy cgroup_device_policy_from_string(const char *s) _pure_;
 diff --git a/src/core/dbus-cgroup.c b/src/core/dbus-cgroup.c
-index 4a9df0601..a4465dc7a 100644
+index 4a9df06016..a4465dc7aa 100644
 --- a/src/core/dbus-cgroup.c
 +++ b/src/core/dbus-cgroup.c
 @@ -168,6 +168,8 @@ const sd_bus_vtable bus_cgroup_vtable[] = {
@@ -380,7 +380,7 @@ index 4a9df0601..a4465dc7a 100644
  
          if (u->transient && u->load_state == UNIT_STUB) {
 diff --git a/src/core/dbus-unit.c b/src/core/dbus-unit.c
-index 056a17ac1..1d0d6f67c 100644
+index 056a17ac1f..1d0d6f67c7 100644
 --- a/src/core/dbus-unit.c
 +++ b/src/core/dbus-unit.c
 @@ -673,11 +673,36 @@ static int property_get_current_memory(
@@ -421,7 +421,7 @@ index 056a17ac1..1d0d6f67c 100644
  };
  
 diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
-index f996032cf..26e4c618e 100644
+index f996032cf2..26e4c618ee 100644
 --- a/src/core/load-fragment-gperf.gperf.m4
 +++ b/src/core/load-fragment-gperf.gperf.m4
 @@ -125,6 +125,8 @@ $1.StartupBlockIOWeight,         config_parse_blockio_weight,        0,
@@ -434,7 +434,7 @@ index f996032cf..26e4c618e 100644
  )m4_dnl
  Unit.Description,                config_parse_unit_string_printf,    0,                             offsetof(Unit, description)
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index 7d1ac6c25..7d2e737d0 100644
+index 7d1ac6c251..7d2e737d05 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -3052,7 +3052,7 @@ int config_parse_memory_limit(
@@ -496,7 +496,7 @@ index 7d1ac6c25..7d2e737d0 100644
                  const char *unit,
                  const char *filename,
 diff --git a/src/core/load-fragment.h b/src/core/load-fragment.h
-index 2059353d3..8d334f2c8 100644
+index 2059353d38..8d334f2c86 100644
 --- a/src/core/load-fragment.h
 +++ b/src/core/load-fragment.h
 @@ -89,6 +89,7 @@ int config_parse_pass_environ(const char *unit, const char *filename, unsigned l
@@ -508,7 +508,7 @@ index 2059353d3..8d334f2c8 100644
  int config_parse_device_allow(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
  int config_parse_blockio_weight(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
 diff --git a/src/core/main.c b/src/core/main.c
-index cba992cea..aca05a535 100644
+index cba992cea2..aca05a5358 100644
 --- a/src/core/main.c
 +++ b/src/core/main.c
 @@ -117,6 +117,7 @@ static bool arg_default_cpu_accounting = false;
@@ -536,7 +536,7 @@ index cba992cea..aca05a535 100644
          m->shutdown_watchdog = arg_shutdown_watchdog;
  
 diff --git a/src/core/manager.h b/src/core/manager.h
-index 231c076b1..96dcd83dc 100644
+index 231c076b10..96dcd83dc0 100644
 --- a/src/core/manager.h
 +++ b/src/core/manager.h
 @@ -261,6 +261,7 @@ struct Manager {
@@ -548,7 +548,7 @@ index 231c076b1..96dcd83dc 100644
          usec_t default_timer_accuracy_usec;
  
 diff --git a/src/core/unit.c b/src/core/unit.c
-index 103f92084..2fcb4fbf0 100644
+index 103f92084c..2fcb4fbf07 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -126,6 +126,7 @@ static void unit_init(Unit *u) {
@@ -560,7 +560,7 @@ index 103f92084..2fcb4fbf0 100644
  
          ec = unit_get_exec_context(u);
 diff --git a/src/shared/cgroup-util.h b/src/shared/cgroup-util.h
-index 96a3d3baf..31bd8d311 100644
+index 96a3d3bafa..31bd8d311f 100644
 --- a/src/shared/cgroup-util.h
 +++ b/src/shared/cgroup-util.h
 @@ -35,6 +35,7 @@ typedef enum CGroupControllerMask {
@@ -572,7 +572,7 @@ index 96a3d3baf..31bd8d311 100644
  } CGroupControllerMask;
  
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index 0333599c8..b1862b567 100644
+index 0333599c87..b1862b5676 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -3280,6 +3280,8 @@ typedef struct UnitStatusInfo {

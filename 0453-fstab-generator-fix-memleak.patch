@@ -15,7 +15,7 @@ Related: #1354410
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/src/fstab-generator/fstab-generator.c b/src/fstab-generator/fstab-generator.c
-index a943393b0..32aca2244 100644
+index a943393b04..32aca22444 100644
 --- a/src/fstab-generator/fstab-generator.c
 +++ b/src/fstab-generator/fstab-generator.c
 @@ -214,13 +214,13 @@ static int write_requires_mounts_for(FILE *f, const char *opts) {

@@ -11,7 +11,7 @@ Resolves: #1614686
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/rules/40-redhat.rules b/rules/40-redhat.rules
-index 26f726001..34a1df9c4 100644
+index 26f7260010..34a1df9c48 100644
 --- a/rules/40-redhat.rules
 +++ b/rules/40-redhat.rules
 @@ -4,7 +4,7 @@

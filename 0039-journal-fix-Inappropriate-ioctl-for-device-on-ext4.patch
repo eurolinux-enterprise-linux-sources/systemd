@@ -18,7 +18,7 @@ This is because ext4 does not support FS_NOCOW_FL.
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
-index 2845e05ce..0f28718b0 100644
+index 2845e05ce0..0f28718b0e 100644
 --- a/src/journal/journal-file.c
 +++ b/src/journal/journal-file.c
 @@ -2611,8 +2611,8 @@ int journal_file_open(

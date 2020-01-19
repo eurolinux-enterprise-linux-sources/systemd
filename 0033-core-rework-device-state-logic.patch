@@ -25,7 +25,7 @@ its BindTo dependency on the device would not be fulfilled.
  6 files changed, 285 insertions(+), 180 deletions(-)
 
 diff --git a/src/core/device.c b/src/core/device.c
-index d3deac393..75b9a4628 100644
+index d3deac3936..75b9a46287 100644
 --- a/src/core/device.c
 +++ b/src/core/device.c
 @@ -36,7 +36,8 @@
@@ -595,7 +595,7 @@ index d3deac393..75b9a4628 100644
  
  DEFINE_STRING_TABLE_LOOKUP(device_state, DeviceState);
 diff --git a/src/core/device.h b/src/core/device.h
-index bb7ae0783..0609b20fd 100644
+index bb7ae07834..0609b20fdb 100644
 --- a/src/core/device.h
 +++ b/src/core/device.h
 @@ -29,20 +29,28 @@ typedef struct Device Device;
@@ -636,7 +636,7 @@ index bb7ae0783..0609b20fd 100644
 +
 +int device_found_node(Manager *m, const char *node, bool add, DeviceFound found, bool now);
 diff --git a/src/core/mount.c b/src/core/mount.c
-index f3977e62d..c971330af 100644
+index f3977e62de..c971330af2 100644
 --- a/src/core/mount.c
 +++ b/src/core/mount.c
 @@ -1391,7 +1391,7 @@ static int mount_dispatch_timer(sd_event_source *source, usec_t usec, void *user
@@ -754,7 +754,7 @@ index f3977e62d..c971330af 100644
  
                          /* New or changed mount entry */
 diff --git a/src/core/swap.c b/src/core/swap.c
-index 6997921fd..5c19af5d9 100644
+index 6997921fde..5c19af5d91 100644
 --- a/src/core/swap.c
 +++ b/src/core/swap.c
 @@ -338,7 +338,7 @@ static int swap_load(Unit *u) {
@@ -881,7 +881,7 @@ index 6997921fd..5c19af5d9 100644
          int r = 0;
          Swap *s;
 diff --git a/src/core/swap.h b/src/core/swap.h
-index 73e64d87a..914a2dbcc 100644
+index 73e64d87a4..914a2dbccd 100644
 --- a/src/core/swap.h
 +++ b/src/core/swap.h
 @@ -116,8 +116,8 @@ struct Swap {
@@ -896,7 +896,7 @@ index 73e64d87a..914a2dbcc 100644
  const char* swap_state_to_string(SwapState i) _const_;
  SwapState swap_state_from_string(const char *s) _pure_;
 diff --git a/src/core/unit.c b/src/core/unit.c
-index 563f6fe85..a6558ee23 100644
+index 563f6fe850..a6558ee23b 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -2843,7 +2843,6 @@ int unit_add_node_link(Unit *u, const char *what, bool wants) {

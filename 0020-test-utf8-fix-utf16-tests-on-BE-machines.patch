@@ -9,7 +9,7 @@ Subject: [PATCH] test: utf8 - fix utf16 tests on BE machines
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/test/test-utf8.c b/src/test/test-utf8.c
-index befa38575..346f8524c 100644
+index befa385754..346f8524c6 100644
 --- a/src/test/test-utf8.c
 +++ b/src/test/test-utf8.c
 @@ -95,7 +95,7 @@ static void test_utf8_escaping_printable(void) {

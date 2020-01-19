@@ -1,4 +1,4 @@
-From 8e5cb71473f8392a69eee0acea11e198ce7cd4c9 Mon Sep 17 00:00:00 2001
+From e8f522de0e698d956f5d5305beec3862ae258f9a Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
 Date: Sat, 1 Jul 2017 16:17:12 -0400
 Subject: [PATCH] Revert "bus: when dumping string property values escape the
@@ -53,7 +53,7 @@ Resolves: #1643172
  1 file changed, 3 insertions(+), 16 deletions(-)
 
 diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
-index b1bdbad2d..9b77059a9 100644
+index b1bdbad2dd..9b77059a93 100644
 --- a/src/libsystemd/sd-bus/bus-util.c
 +++ b/src/libsystemd/sd-bus/bus-util.c
 @@ -643,15 +643,8 @@ int bus_print_property(const char *name, sd_bus_message *property, bool all) {

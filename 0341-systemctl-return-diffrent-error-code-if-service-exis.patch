@@ -68,7 +68,7 @@ Resolves: #1047466
  1 file changed, 2 insertions(+)
 
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index 95ddf3be7..6079d60db 100644
+index 95ddf3be76..6079d60dbf 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -4295,6 +4295,8 @@ static int show_one(

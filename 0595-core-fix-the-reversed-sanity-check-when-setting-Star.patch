@@ -14,7 +14,7 @@ Resolves: #1302305
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/dbus-cgroup.c b/src/core/dbus-cgroup.c
-index ffeeb5aa9..66b1324fe 100644
+index ffeeb5aa9a..66b1324fe9 100644
 --- a/src/core/dbus-cgroup.c
 +++ b/src/core/dbus-cgroup.c
 @@ -324,7 +324,7 @@ int bus_cgroup_set_property(

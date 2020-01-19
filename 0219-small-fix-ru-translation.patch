@@ -12,7 +12,7 @@ Resolves: #1222517
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/catalog/systemd.ru.catalog b/catalog/systemd.ru.catalog
-index f99532469..03eea04c9 100644
+index f99532469a..03eea04c9f 100644
 --- a/catalog/systemd.ru.catalog
 +++ b/catalog/systemd.ru.catalog
 @@ -81,7 +81,7 @@ Documentation: man:core(5)

@@ -13,7 +13,7 @@ Resolves: #1371437
  1 file changed, 1 deletion(-)
 
 diff --git a/src/login/logind-session.c b/src/login/logind-session.c
-index 59f5a7ad5..746e50aa5 100644
+index 59f5a7ad5d..746e50aa51 100644
 --- a/src/login/logind-session.c
 +++ b/src/login/logind-session.c
 @@ -507,7 +507,6 @@ static int session_start_scope(Session *s) {

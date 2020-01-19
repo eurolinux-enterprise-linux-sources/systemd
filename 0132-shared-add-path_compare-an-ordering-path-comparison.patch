@@ -13,7 +13,7 @@ Subject: [PATCH] shared: add path_compare(), an ordering path comparison
  3 files changed, 53 insertions(+), 21 deletions(-)
 
 diff --git a/src/shared/path-util.c b/src/shared/path-util.c
-index 70bc1caa2..d5510bf56 100644
+index 70bc1caa2a..d5510bf56f 100644
 --- a/src/shared/path-util.c
 +++ b/src/shared/path-util.c
 @@ -403,12 +403,18 @@ char* path_startswith(const char *path, const char *prefix) {
@@ -83,7 +83,7 @@ index 70bc1caa2..d5510bf56 100644
          return path_equal(a, b) || files_same(a, b) > 0;
  }
 diff --git a/src/shared/path-util.h b/src/shared/path-util.h
-index bcf116ed3..ca81b49cb 100644
+index bcf116ed3d..ca81b49cbf 100644
 --- a/src/shared/path-util.h
 +++ b/src/shared/path-util.h
 @@ -44,6 +44,7 @@ char* path_make_absolute_cwd(const char *p);
@@ -95,7 +95,7 @@ index bcf116ed3..ca81b49cb 100644
  bool path_equal_or_files_same(const char *a, const char *b);
  char* path_join(const char *root, const char *path, const char *rest);
 diff --git a/src/test/test-path-util.c b/src/test/test-path-util.c
-index 11aa52aae..6396fcb39 100644
+index 11aa52aaed..6396fcb398 100644
 --- a/src/test/test-path-util.c
 +++ b/src/test/test-path-util.c
 @@ -27,23 +27,37 @@

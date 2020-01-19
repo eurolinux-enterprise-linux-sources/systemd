@@ -11,7 +11,7 @@ Resolves: #1413964
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index a578897d9..1e1009f38 100644
+index a578897d9e..1e1009f388 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -5739,7 +5739,7 @@ static int unit_is_enabled(sd_bus *bus, char **args) {

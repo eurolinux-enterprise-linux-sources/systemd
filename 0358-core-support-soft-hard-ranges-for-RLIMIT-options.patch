@@ -32,7 +32,7 @@ Resolves: #1351415
  6 files changed, 667 insertions(+), 120 deletions(-)
 
 diff --git a/man/systemd-system.conf.xml b/man/systemd-system.conf.xml
-index b7d9cdee0..39d19bc71 100644
+index b7d9cdee05..39d19bc71a 100644
 --- a/man/systemd-system.conf.xml
 +++ b/man/systemd-system.conf.xml
 @@ -326,13 +326,26 @@
@@ -70,7 +70,7 @@ index b7d9cdee0..39d19bc71 100644
        </varlistentry>
      </variablelist>
 diff --git a/man/systemd.exec.xml b/man/systemd.exec.xml
-index cfdcc3d17..0cd469cd9 100644
+index cfdcc3d173..0cd469cd98 100644
 --- a/man/systemd.exec.xml
 +++ b/man/systemd.exec.xml
 @@ -558,7 +558,10 @@
@@ -86,7 +86,7 @@ index cfdcc3d17..0cd469cd9 100644
          suffixes K (=1024), M (=1024*1024) and so on for G, T, P and E
          may be used for resource limits measured in bytes
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index 8afe9d7e8..d307f1c74 100644
+index 8afe9d7e83..d307f1c743 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -1075,81 +1075,108 @@ int config_parse_bounding_set(const char *unit,
@@ -406,7 +406,7 @@ index 8afe9d7e8..d307f1c74 100644
  int config_parse_sysv_priority(const char *unit,
                                 const char *filename,
 diff --git a/src/shared/util.c b/src/shared/util.c
-index 036677eb4..f75ed9dd4 100644
+index 036677eb46..f75ed9dd42 100644
 --- a/src/shared/util.c
 +++ b/src/shared/util.c
 @@ -93,6 +93,7 @@
@@ -902,7 +902,7 @@ index 036677eb4..f75ed9dd4 100644
 +        return c;
 +}
 diff --git a/src/shared/util.h b/src/shared/util.h
-index a441e44ff..be04524cc 100644
+index a441e44ff9..be04524cc9 100644
 --- a/src/shared/util.h
 +++ b/src/shared/util.h
 @@ -315,6 +315,7 @@ int undecchar(char c) _const_;
@@ -931,7 +931,7 @@ index a441e44ff..be04524cc 100644
 +int extract_first_word_and_warn(const char **p, char **ret, const char *separators, ExtractFlags flags, const char *unit, const char *filename, unsigned line, const char *rvalue);
 +int extract_many_words(const char **p, const char *separators, ExtractFlags flags, ...) _sentinel_;
 diff --git a/src/test/test-unit-file.c b/src/test/test-unit-file.c
-index 87c81ccd7..931dfeda8 100644
+index 87c81ccd71..931dfeda88 100644
 --- a/src/test/test-unit-file.c
 +++ b/src/test/test-unit-file.c
 @@ -554,11 +554,22 @@ static void test_config_parse_rlimit(void) {

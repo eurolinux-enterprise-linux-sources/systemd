@@ -25,7 +25,7 @@ Fixes: https://bugzilla.redhat.com/show_bug.cgi?id=1184016
  1 file changed, 4 insertions(+), 8 deletions(-)
 
 diff --git a/src/core/namespace.c b/src/core/namespace.c
-index 4fecd3236..d4f1c8621 100644
+index 4fecd32363..d4f1c86211 100644
 --- a/src/core/namespace.c
 +++ b/src/core/namespace.c
 @@ -91,9 +91,11 @@ static int append_mounts(BindMount **p, char **strv, MountMode mode) {

@@ -9,7 +9,7 @@ Subject: [PATCH] import: remove unused variable
  1 file changed, 1 deletion(-)
 
 diff --git a/src/import/import-tar.c b/src/import/import-tar.c
-index 999aa8ab5..493252a13 100644
+index 999aa8ab5e..493252a132 100644
 --- a/src/import/import-tar.c
 +++ b/src/import/import-tar.c
 @@ -301,7 +301,6 @@ finish:

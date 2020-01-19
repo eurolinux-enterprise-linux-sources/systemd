@@ -11,7 +11,7 @@ That part of functionality was removed in 7fb3ee51c1b377.
  1 file changed, 4 insertions(+), 5 deletions(-)
 
 diff --git a/man/systemd-user-sessions.service.xml b/man/systemd-user-sessions.service.xml
-index 9d796b1ae..e75ef11c4 100644
+index 9d796b1ae1..e75ef11c4e 100644
 --- a/man/systemd-user-sessions.service.xml
 +++ b/man/systemd-user-sessions.service.xml
 @@ -55,13 +55,12 @@

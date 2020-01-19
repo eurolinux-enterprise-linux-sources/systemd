@@ -13,7 +13,7 @@ Related: #1421181
  1 file changed, 31 insertions(+), 10 deletions(-)
 
 diff --git a/src/core/execute.c b/src/core/execute.c
-index e9b4359a7..59340ec05 100644
+index e9b4359a7f..59340ec051 100644
 --- a/src/core/execute.c
 +++ b/src/core/execute.c
 @@ -1256,6 +1256,36 @@ static int build_environment(

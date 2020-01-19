@@ -27,7 +27,7 @@ Resolves: #1447937
  3 files changed, 3 insertions(+), 12 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index 2734368dc..def9fe5ce 100644
+index 2734368dc0..def9fe5ce7 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -187,7 +187,8 @@ CC_CHECK_FLAGS_APPEND([with_cflags], [CFLAGS], [\
@@ -57,7 +57,7 @@ index 2734368dc..def9fe5ce 100644
  
  AS_CASE([$CFLAGS], [*-O[[12345sz\ ]]*],
 diff --git a/src/core/main.c b/src/core/main.c
-index 50c9714f7..37e3ea0ce 100644
+index 50c9714f78..37e3ea0ced 100644
 --- a/src/core/main.c
 +++ b/src/core/main.c
 @@ -1205,7 +1205,6 @@ static int status_welcome(void) {
@@ -69,7 +69,7 @@ index 50c9714f7..37e3ea0ce 100644
          c = getenv("container");
          if (isempty(c))
 diff --git a/src/login/logind-session.c b/src/login/logind-session.c
-index 4575a029f..daf875a7d 100644
+index 4575a029fe..daf875a7d3 100644
 --- a/src/login/logind-session.c
 +++ b/src/login/logind-session.c
 @@ -183,7 +183,7 @@ int session_save(Session *s) {

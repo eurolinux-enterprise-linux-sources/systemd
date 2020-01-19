@@ -15,7 +15,7 @@ Resolves: #1222517
  2 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/python-systemd/_daemon.c b/src/python-systemd/_daemon.c
-index 65cfec7ce..7c5f1b2bb 100644
+index 65cfec7ce8..7c5f1b2bb6 100644
 --- a/src/python-systemd/_daemon.c
 +++ b/src/python-systemd/_daemon.c
 @@ -225,7 +225,7 @@ static PyObject* is_socket_inet(PyObject *self, PyObject *args) {
@@ -28,7 +28,7 @@ index 65cfec7ce..7c5f1b2bb 100644
                  return NULL;
          }
 diff --git a/src/python-systemd/daemon.py b/src/python-systemd/daemon.py
-index 1c386bb6f..82011ca60 100644
+index 1c386bb6fc..82011ca606 100644
 --- a/src/python-systemd/daemon.py
 +++ b/src/python-systemd/daemon.py
 @@ -26,7 +26,7 @@ def is_socket(fileobj, family=_AF_UNSPEC, type=0, listening=-1):

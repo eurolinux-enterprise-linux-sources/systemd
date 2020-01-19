@@ -16,7 +16,7 @@ Resolves: #1437114
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/execute.c b/src/core/execute.c
-index 4265b9c34..e68276973 100644
+index 4265b9c348..e68276973b 100644
 --- a/src/core/execute.c
 +++ b/src/core/execute.c
 @@ -1977,7 +1977,7 @@ int exec_spawn(ExecCommand *command,

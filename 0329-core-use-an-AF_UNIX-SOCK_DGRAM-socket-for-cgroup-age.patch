@@ -49,7 +49,7 @@ Resolves: #1305608
  6 files changed, 198 insertions(+), 62 deletions(-)
 
 diff --git a/src/cgroups-agent/cgroups-agent.c b/src/cgroups-agent/cgroups-agent.c
-index 529e84303..2fe65830e 100644
+index 529e843030..2fe65830e7 100644
 --- a/src/cgroups-agent/cgroups-agent.c
 +++ b/src/cgroups-agent/cgroups-agent.c
 @@ -1,5 +1,3 @@
@@ -126,7 +126,7 @@ index 529e84303..2fe65830e 100644
          }
  
 diff --git a/src/core/cgroup.c b/src/core/cgroup.c
-index 10fdcc998..b7f08fb42 100644
+index 10fdcc9984..b7f08fb420 100644
 --- a/src/core/cgroup.c
 +++ b/src/core/cgroup.c
 @@ -1028,6 +1028,8 @@ int manager_notify_cgroup_empty(Manager *m, const char *cgroup) {
@@ -139,7 +139,7 @@ index 10fdcc998..b7f08fb42 100644
          if (u) {
                  r = cg_is_empty_recursive(SYSTEMD_CGROUP_CONTROLLER, u->cgroup_path, true);
 diff --git a/src/core/dbus.c b/src/core/dbus.c
-index 85b517486..29524d49a 100644
+index 85b5174868..29524d49a3 100644
 --- a/src/core/dbus.c
 +++ b/src/core/dbus.c
 @@ -72,12 +72,37 @@ int bus_send_queued_message(Manager *m) {
@@ -225,7 +225,7 @@ index 85b517486..29524d49a 100644
          if (r < 0)
                  return 0;
 diff --git a/src/core/dbus.h b/src/core/dbus.h
-index d04f5326c..c27d136e3 100644
+index d04f5326c6..c27d136e30 100644
 --- a/src/core/dbus.h
 +++ b/src/core/dbus.h
 @@ -40,3 +40,5 @@ int bus_verify_manage_unit_async(Manager *m, sd_bus_message *call, sd_bus_error
@@ -235,7 +235,7 @@ index d04f5326c..c27d136e3 100644
 +
 +int bus_forward_agent_released(Manager *m, const char *path);
 diff --git a/src/core/manager.c b/src/core/manager.c
-index ee456fb79..370c8cbbe 100644
+index ee456fb790..370c8cbbed 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -83,8 +83,10 @@
@@ -474,7 +474,7 @@ index ee456fb79..370c8cbbe 100644
          q = manager_coldplug(m);
          if (q < 0 && r >= 0)
 diff --git a/src/core/manager.h b/src/core/manager.h
-index d3971f168..3e855db46 100644
+index d3971f1684..3e855db466 100644
 --- a/src/core/manager.h
 +++ b/src/core/manager.h
 @@ -137,6 +137,9 @@ struct Manager {

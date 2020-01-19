@@ -1,0 +1,34 @@
+From 916af326c9d2eabcdda2e048102f0bf83f76caca Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Tue, 28 Jun 2016 15:27:07 -0400
+Subject: [PATCH] journalctl: allow --file/--directory with --boot or
+ --list-boots
+
+It works mostly fine, and can be quite useful to examine data from another
+system.
+
+OTOH, a single boot id doesn't make sense with --merge, so mixing with --merge
+is still not allowed.
+
+(cherry picked from commit f3bd7561c54dea82b128d06f6b269a4951ae2855)
+
+Resolves: #1463678
+---
+ src/journal/journalctl.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
+index 1e6d0761c7..b9549602d9 100644
+--- a/src/journal/journalctl.c
++++ b/src/journal/journalctl.c
+@@ -814,8 +814,8 @@ static int parse_argv(int argc, char *argv[]) {
+                 return -EINVAL;
+         }
+ 
+-        if ((arg_boot || arg_action == ACTION_LIST_BOOTS) && (arg_file || arg_directory || arg_merge)) {
+-                log_error("Using --boot or --list-boots with --file, --directory or --merge is not supported.");
++        if ((arg_boot || arg_action == ACTION_LIST_BOOTS) && arg_merge) {
++                log_error("Using --boot or --list-boots with --merge is not supported.");
+                 return -EINVAL;
+         }
+ 

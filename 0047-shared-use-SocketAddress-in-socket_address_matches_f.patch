@@ -11,7 +11,7 @@ Cleanup. No behavior change.
  1 file changed, 18 insertions(+), 18 deletions(-)
 
 diff --git a/src/shared/socket-util.c b/src/shared/socket-util.c
-index c278d6f9d..c31f60ec7 100644
+index c278d6f9d4..c31f60ec7e 100644
 --- a/src/shared/socket-util.c
 +++ b/src/shared/socket-util.c
 @@ -435,48 +435,48 @@ bool socket_ipv6_is_supported(void) {

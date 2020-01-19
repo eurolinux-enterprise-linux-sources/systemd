@@ -9,7 +9,7 @@ Subject: [PATCH] man: standard-conf: change directory reference to wildcard
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/man/standard-conf.xml b/man/standard-conf.xml
-index 36af45927..004f53f70 100644
+index 36af45927d..004f53f70c 100644
 --- a/man/standard-conf.xml
 +++ b/man/standard-conf.xml
 @@ -54,7 +54,7 @@

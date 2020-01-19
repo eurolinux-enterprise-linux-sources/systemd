@@ -12,7 +12,7 @@ Resolves: #1515130
  1 file changed, 7 insertions(+), 2 deletions(-)
 
 diff --git a/man/halt.xml b/man/halt.xml
-index a06dbd009..d0fc25c20 100644
+index a06dbd0097..d0fc25c209 100644
 --- a/man/halt.xml
 +++ b/man/halt.xml
 @@ -112,8 +112,13 @@

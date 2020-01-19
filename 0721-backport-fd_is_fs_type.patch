@@ -1,0 +1,58 @@
+From 5d73882b52d92e38b39ec84255e4b44ccbc4b3f8 Mon Sep 17 00:00:00 2001
+From: David Tardon <dtardon@redhat.com>
+Date: Thu, 3 Jan 2019 13:04:10 +0100
+Subject: [PATCH] backport fd_is_fs_type
+
+Related: #1663143
+---
+ src/shared/util.c | 16 ++++++++++++++++
+ src/shared/util.h |  8 ++++++++
+ 2 files changed, 24 insertions(+)
+
+diff --git a/src/shared/util.c b/src/shared/util.c
+index 4ba4693668..2838d50f6f 100644
+--- a/src/shared/util.c
++++ b/src/shared/util.c
+@@ -9186,3 +9186,19 @@ int wait_for_terminate_with_timeout(pid_t pid, usec_t timeout) {
+ 
+         return -EPROTO;
+ }
++
++bool is_fs_type(const struct statfs *s, statfs_f_type_t magic_value) {
++        assert(s);
++        assert_cc(sizeof(statfs_f_type_t) >= sizeof(s->f_type));
++
++        return F_TYPE_EQUAL(s->f_type, magic_value);
++}
++
++int fd_is_fs_type(int fd, statfs_f_type_t magic_value) {
++        struct statfs s;
++
++        if (fstatfs(fd, &s) < 0)
++                return -errno;
++
++        return is_fs_type(&s, magic_value);
++}
+diff --git a/src/shared/util.h b/src/shared/util.h
+index 8fc237495a..f768936ab1 100644
+--- a/src/shared/util.h
++++ b/src/shared/util.h
+@@ -36,6 +36,7 @@
+ #include <limits.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
++#include <sys/statfs.h>
+ #include <dirent.h>
+ #include <sys/resource.h>
+ #include <stddef.h>
+@@ -1147,3 +1148,10 @@ static inline void block_signals_reset(sigset_t *ss) {
+ 
+ char* set_iovec_string_field(struct iovec *iovec, unsigned int *n_iovec, const char *field, const char *value);
+ char* set_iovec_field_free(struct iovec *iovec, unsigned int *n_iovec, const char *field, char *value);
++
++/* The .f_type field of struct statfs is really weird defined on
++ * different archs. Let's give its type a name. */
++typedef typeof(((struct statfs*)NULL)->f_type) statfs_f_type_t;
++
++bool is_fs_type(const struct statfs *s, statfs_f_type_t magic_value) _pure_;
++int fd_is_fs_type(int fd, statfs_f_type_t magic_value);

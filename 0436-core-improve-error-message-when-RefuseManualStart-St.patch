@@ -12,7 +12,7 @@ Resolves: #1026648
  2 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/core/dbus-unit.c b/src/core/dbus-unit.c
-index 89b00e94c..056a17ac1 100644
+index 89b00e94c6..056a17ac1f 100644
 --- a/src/core/dbus-unit.c
 +++ b/src/core/dbus-unit.c
 @@ -843,7 +843,7 @@ int bus_unit_queue_job(
@@ -25,7 +25,7 @@ index 89b00e94c..056a17ac1 100644
          r = manager_add_job(u->manager, type, u, mode, true, error, &j);
          if (r < 0)
 diff --git a/src/core/dbus.c b/src/core/dbus.c
-index 29524d49a..0061211fa 100644
+index 29524d49a3..0061211faa 100644
 --- a/src/core/dbus.c
 +++ b/src/core/dbus.c
 @@ -187,7 +187,7 @@ static int signal_activation_request(sd_bus *bus, sd_bus_message *message, void

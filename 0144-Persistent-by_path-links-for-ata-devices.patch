@@ -31,7 +31,7 @@ Resolves: #1045498
  1 file changed, 41 insertions(+), 12 deletions(-)
 
 diff --git a/src/udev/udev-builtin-path_id.c b/src/udev/udev-builtin-path_id.c
-index b6749aab7..bb0a6242a 100644
+index b6749aab76..bb0a6242ac 100644
 --- a/src/udev/udev-builtin-path_id.c
 +++ b/src/udev/udev-builtin-path_id.c
 @@ -426,6 +426,46 @@ static struct udev_device *handle_scsi_hyperv(struct udev_device *parent, char *

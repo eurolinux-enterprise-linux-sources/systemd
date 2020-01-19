@@ -10,7 +10,7 @@ Resolves: #1501017
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/journal/journald-native.c b/src/journal/journald-native.c
-index fdb1a38dd..cf3349393 100644
+index fdb1a38ddc..cf3349393f 100644
 --- a/src/journal/journald-native.c
 +++ b/src/journal/journald-native.c
 @@ -406,7 +406,7 @@ void server_process_native_file(

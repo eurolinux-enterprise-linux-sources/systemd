@@ -11,7 +11,7 @@ parse_acl() returns the error instead of setting errno.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
-index c948d4d21..88ba7e46a 100644
+index c948d4d218..88ba7e46a2 100644
 --- a/src/tmpfiles/tmpfiles.c
 +++ b/src/tmpfiles/tmpfiles.c
 @@ -689,7 +689,7 @@ static int get_acls_from_arg(Item *item) {

@@ -23,7 +23,7 @@ Resolves: #1339721
  1 file changed, 6 deletions(-)
 
 diff --git a/src/core/mount.c b/src/core/mount.c
-index 23f63ce32..fe967bc03 100644
+index 23f63ce32c..fe967bc039 100644
 --- a/src/core/mount.c
 +++ b/src/core/mount.c
 @@ -881,8 +881,6 @@ static void mount_enter_unmounting(Mount *m) {

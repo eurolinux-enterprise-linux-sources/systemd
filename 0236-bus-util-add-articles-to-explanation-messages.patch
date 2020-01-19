@@ -16,7 +16,7 @@ Related: #1016680
  1 file changed, 8 insertions(+), 9 deletions(-)
 
 diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
-index fff00d9f9..017fbaf2a 100644
+index fff00d9f93..017fbaf2a3 100644
 --- a/src/libsystemd/sd-bus/bus-util.c
 +++ b/src/libsystemd/sd-bus/bus-util.c
 @@ -1714,13 +1714,13 @@ static int bus_job_get_service_result(BusWaitForJobs *d, char **result) {

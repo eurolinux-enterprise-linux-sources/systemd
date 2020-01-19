@@ -9,7 +9,7 @@ Subject: [PATCH] hwdb: add Lenovo W451 to TOUCHPAD_HAS_TRACKPOINT_BUTTONS list
  1 file changed, 2 insertions(+)
 
 diff --git a/hwdb/70-touchpad.hwdb b/hwdb/70-touchpad.hwdb
-index 9fcb5fdb9..8a324466b 100644
+index 9fcb5fdb9b..8a324466b3 100644
 --- a/hwdb/70-touchpad.hwdb
 +++ b/hwdb/70-touchpad.hwdb
 @@ -36,6 +36,8 @@

@@ -75,7 +75,7 @@ Resolves: #1404657,#1471230
  1 file changed, 180 insertions(+), 15 deletions(-)
 
 diff --git a/src/core/service.c b/src/core/service.c
-index 3bd6c3338..9ad3a0eb0 100644
+index 3bd6c33381..9ad3a0eb01 100644
 --- a/src/core/service.c
 +++ b/src/core/service.c
 @@ -1950,6 +1950,80 @@ _pure_ static bool service_can_reload(Unit *u) {

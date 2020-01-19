@@ -18,7 +18,7 @@ https://bugzilla.redhat.com/show_bug.cgi?id=1204336
  1 file changed, 16 insertions(+), 7 deletions(-)
 
 diff --git a/src/fstab-generator/fstab-generator.c b/src/fstab-generator/fstab-generator.c
-index 5662b5fde..8e2f522bd 100644
+index 5662b5fde1..8e2f522bd0 100644
 --- a/src/fstab-generator/fstab-generator.c
 +++ b/src/fstab-generator/fstab-generator.c
 @@ -54,9 +54,10 @@ static int add_swap(

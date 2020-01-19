@@ -18,7 +18,7 @@ Resolves: #1191920
  4 files changed, 14 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/dbus-unit.c b/src/core/dbus-unit.c
-index 1d0d6f67c..f0f75e01b 100644
+index 1d0d6f67c7..f0f75e01b0 100644
 --- a/src/core/dbus-unit.c
 +++ b/src/core/dbus-unit.c
 @@ -850,7 +850,7 @@ int bus_unit_queue_job(
@@ -31,7 +31,7 @@ index 1d0d6f67c..f0f75e01b 100644
  
          r = mac_selinux_unit_access_check(
 diff --git a/src/core/job.c b/src/core/job.c
-index 1617e24c0..c9a43a4cb 100644
+index 1617e24c03..c9a43a4cb5 100644
 --- a/src/core/job.c
 +++ b/src/core/job.c
 @@ -404,6 +404,13 @@ JobType job_type_collapse(JobType t, Unit *u) {
@@ -57,7 +57,7 @@ index 1617e24c0..c9a43a4cb 100644
  };
  
 diff --git a/src/core/job.h b/src/core/job.h
-index ce81607de..535052b48 100644
+index ce81607de8..535052b48f 100644
 --- a/src/core/job.h
 +++ b/src/core/job.h
 @@ -63,6 +63,9 @@ enum JobType {
@@ -71,7 +71,7 @@ index ce81607de..535052b48 100644
           * from transaction merging (there's no way for JOB_RELOAD and
           * JOB_START to meet in one transaction). It can result from a merge
 diff --git a/src/core/unit.c b/src/core/unit.c
-index 41d7b63d7..6d535ae12 100644
+index 41d7b63d73..6d535ae12e 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -1868,6 +1868,7 @@ void unit_notify(Unit *u, UnitActiveState os, UnitActiveState ns, bool reload_su

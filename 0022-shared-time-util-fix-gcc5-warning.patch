@@ -15,7 +15,7 @@ src/shared/time-util.c:789:25: warning: logical not is only applied to the left 
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/shared/time-util.c b/src/shared/time-util.c
-index 947ac1fcf..1c36c577c 100644
+index 947ac1fcfb..1c36c577c4 100644
 --- a/src/shared/time-util.c
 +++ b/src/shared/time-util.c
 @@ -786,7 +786,7 @@ int parse_nsec(const char *t, nsec_t *nsec) {

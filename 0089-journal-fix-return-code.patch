@@ -14,7 +14,7 @@ recurse this deep.
  1 file changed, 1 insertion(+), 3 deletions(-)
 
 diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
-index 24c49b916..f500568fe 100644
+index 24c49b916a..f500568fec 100644
 --- a/src/journal/journal-file.c
 +++ b/src/journal/journal-file.c
 @@ -2652,10 +2652,8 @@ int journal_file_open(

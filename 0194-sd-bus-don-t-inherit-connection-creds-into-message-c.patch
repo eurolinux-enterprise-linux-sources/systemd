@@ -17,7 +17,7 @@ Related: #1230190
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/libsystemd/sd-bus/bus-socket.c b/src/libsystemd/sd-bus/bus-socket.c
-index d00cd014e..a3c3a45b4 100644
+index d00cd014eb..a3c3a45b46 100644
 --- a/src/libsystemd/sd-bus/bus-socket.c
 +++ b/src/libsystemd/sd-bus/bus-socket.c
 @@ -900,8 +900,8 @@ static int bus_socket_make_message(sd_bus *bus, size_t size) {

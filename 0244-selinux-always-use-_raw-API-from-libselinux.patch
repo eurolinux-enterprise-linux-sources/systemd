@@ -23,7 +23,7 @@ Resolves: #1256888
  2 files changed, 7 insertions(+), 7 deletions(-)
 
 diff --git a/src/core/selinux-access.c b/src/core/selinux-access.c
-index f11247c09..297372d12 100644
+index f11247c092..297372d126 100644
 --- a/src/core/selinux-access.c
 +++ b/src/core/selinux-access.c
 @@ -219,13 +219,13 @@ int mac_selinux_generic_access_check(
@@ -43,7 +43,7 @@ index f11247c09..297372d12 100644
                          r = sd_bus_error_setf(error, SD_BUS_ERROR_ACCESS_DENIED, "Failed to get current context.");
                          goto finish;
 diff --git a/src/shared/selinux-util.c b/src/shared/selinux-util.c
-index a46ddf849..4c2e1b0b4 100644
+index a46ddf8498..4c2e1b0b47 100644
 --- a/src/shared/selinux-util.c
 +++ b/src/shared/selinux-util.c
 @@ -200,11 +200,11 @@ int mac_selinux_get_create_label_from_exe(const char *exe, char **label) {

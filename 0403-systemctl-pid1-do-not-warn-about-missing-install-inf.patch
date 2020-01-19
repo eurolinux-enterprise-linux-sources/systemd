@@ -24,7 +24,7 @@ Resolves: #1373950
  2 files changed, 17 insertions(+), 16 deletions(-)
 
 diff --git a/man/systemctl.xml b/man/systemctl.xml
-index 2d0678d18..bb21f3a88 100644
+index 2d0678d18d..bb21f3a887 100644
 --- a/man/systemctl.xml
 +++ b/man/systemctl.xml
 @@ -1012,22 +1012,22 @@ kobject-uevent 1 systemd-udevd-kernel.socket systemd-udevd.service
@@ -64,7 +64,7 @@ index 2d0678d18..bb21f3a88 100644
            </listitem>
          </varlistentry>
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index e4b404abc..e854508d9 100644
+index e4b404abc2..e854508d9d 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -5367,6 +5367,7 @@ static int enable_unit(sd_bus *bus, char **args) {

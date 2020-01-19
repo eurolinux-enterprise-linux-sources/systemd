@@ -1,0 +1,23 @@
+From 2ecf5164d4749c580d3eab74a68a0db96c0d861b Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Tue, 18 Dec 2018 11:59:04 +0100
+Subject: [PATCH] units/rescue.service.in: fix announcement message
+
+Resolves: #1660422
+---
+ units/rescue.service.in | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/units/rescue.service.in b/units/rescue.service.in
+index de73fee654..c82aaa6ceb 100644
+--- a/units/rescue.service.in
++++ b/units/rescue.service.in
+@@ -17,7 +17,7 @@ Before=shutdown.target
+ Environment=HOME=/root
+ WorkingDirectory=/root
+ ExecStartPre=-/bin/plymouth quit
+-ExecStartPre=-/bin/echo -e 'Welcome to emergency mode! After logging in, type "journalctl -xb" to view\\nsystem logs, "systemctl reboot" to reboot, "systemctl default" or ^D to\\nboot into default mode.'
++ExecStartPre=-/bin/echo -e 'Welcome to rescue mode! After logging in, type "journalctl -xb" to view\\nsystem logs, "systemctl reboot" to reboot, "systemctl default" or ^D to\\nboot into default mode.'
+ ExecStart=-/bin/sh -c "@SULOGIN@; @SYSTEMCTL@ --fail --no-block default"
+ Type=idle
+ StandardInput=tty-force

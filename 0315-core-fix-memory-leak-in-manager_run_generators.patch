@@ -38,7 +38,7 @@ Related: #1331667
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/manager.c b/src/core/manager.c
-index bb5050303..a1504bf17 100644
+index bb5050303c..a1504bf17b 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -2827,7 +2827,7 @@ static void trim_generator_dir(Manager *m, char **generator) {

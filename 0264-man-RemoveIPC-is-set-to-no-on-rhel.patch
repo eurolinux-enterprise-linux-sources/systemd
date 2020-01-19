@@ -11,7 +11,7 @@ Related: #1284588
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/man/logind.conf.xml b/man/logind.conf.xml
-index d02d57356..54651f07d 100644
+index d02d573565..54651f07d2 100644
 --- a/man/logind.conf.xml
 +++ b/man/logind.conf.xml
 @@ -276,7 +276,7 @@

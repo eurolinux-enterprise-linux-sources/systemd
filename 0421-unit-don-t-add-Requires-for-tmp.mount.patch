@@ -10,7 +10,7 @@ Resolves: #1372249
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/unit.c b/src/core/unit.c
-index 0e90d130a..a7d6d2f45 100644
+index 0e90d130a4..a7d6d2f45b 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -1155,7 +1155,7 @@ static int unit_add_mount_dependencies(Unit *u) {

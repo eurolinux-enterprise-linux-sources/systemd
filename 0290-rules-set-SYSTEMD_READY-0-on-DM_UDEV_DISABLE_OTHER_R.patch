@@ -20,7 +20,7 @@ Resolves: #1312011
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/rules/99-systemd.rules.in b/rules/99-systemd.rules.in
-index b66d727a4..a4f4bf3df 100644
+index b66d727a48..a4f4bf3dfd 100644
 --- a/rules/99-systemd.rules.in
 +++ b/rules/99-systemd.rules.in
 @@ -12,7 +12,7 @@ SUBSYSTEM=="tty", KERNEL=="tty[a-zA-Z]*|hvc*|xvc*|hvsi*|ttysclp*|sclp_line*|3270

@@ -13,7 +13,7 @@ Related: #1350232
  1 file changed, 13 insertions(+), 3 deletions(-)
 
 diff --git a/src/journal/journal-verify.c b/src/journal/journal-verify.c
-index b03335ef3..983217c1b 100644
+index b03335ef31..983217c1bc 100644
 --- a/src/journal/journal-verify.c
 +++ b/src/journal/journal-verify.c
 @@ -69,6 +69,16 @@ static void draw_progress(uint64_t p, usec_t *last_usec) {

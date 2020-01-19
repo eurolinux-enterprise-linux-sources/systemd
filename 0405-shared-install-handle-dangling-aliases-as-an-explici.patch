@@ -21,7 +21,7 @@ Resolves: #1375097
  4 files changed, 19 insertions(+), 4 deletions(-)
 
 diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
-index 75d03708e..d35776087 100644
+index 75d03708e2..d357760870 100644
 --- a/src/libsystemd/sd-bus/bus-util.c
 +++ b/src/libsystemd/sd-bus/bus-util.c
 @@ -1897,6 +1897,8 @@ int bus_deserialize_and_dump_unit_file_changes(sd_bus_message *m, bool quiet, Un
@@ -34,7 +34,7 @@ index 75d03708e..d35776087 100644
                                  log_notice("Manager reported unknown change type \"%s\" for %s.", type, path);
                  }
 diff --git a/src/shared/install.c b/src/shared/install.c
-index 62da52d3b..b0a29ddd7 100644
+index 62da52d3b3..b0a29ddd7e 100644
 --- a/src/shared/install.c
 +++ b/src/shared/install.c
 @@ -1253,12 +1253,15 @@ static int install_info_traverse(
@@ -86,7 +86,7 @@ index 62da52d3b..b0a29ddd7 100644
  
  DEFINE_STRING_TABLE_LOOKUP(unit_file_change_type, UnitFileChangeType);
 diff --git a/src/shared/install.h b/src/shared/install.h
-index f0e36661b..7e40445d3 100644
+index f0e36661b5..7e40445d36 100644
 --- a/src/shared/install.h
 +++ b/src/shared/install.h
 @@ -61,6 +61,7 @@ typedef enum UnitFileChangeType {
@@ -98,7 +98,7 @@ index f0e36661b..7e40445d3 100644
          _UNIT_FILE_CHANGE_TYPE_INVALID = -1
  } UnitFileChangeType;
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index a688d6905..39f0150e5 100644
+index a688d69052..39f0150e52 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -1955,6 +1955,9 @@ static void dump_unit_file_changes(const UnitFileChange *changes, unsigned n_cha

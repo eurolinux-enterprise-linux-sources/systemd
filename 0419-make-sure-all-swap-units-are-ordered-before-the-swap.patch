@@ -29,7 +29,7 @@ Resolves: #1298355
  1 file changed, 8 insertions(+)
 
 diff --git a/src/core/swap.c b/src/core/swap.c
-index 42f995990..984be2d9a 100644
+index 42f995990c..984be2d9a9 100644
 --- a/src/core/swap.c
 +++ b/src/core/swap.c
 @@ -210,6 +210,8 @@ static int swap_add_device_links(Swap *s) {

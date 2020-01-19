@@ -12,7 +12,7 @@ Related: #1447937
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/configure.ac b/configure.ac
-index def9fe5ce..ee147e28e 100644
+index def9fe5ce7..ee147e28eb 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -188,7 +188,7 @@ CC_CHECK_FLAGS_APPEND([with_cflags], [CFLAGS], [\

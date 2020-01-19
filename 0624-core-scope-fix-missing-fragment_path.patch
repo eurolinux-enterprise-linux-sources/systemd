@@ -24,7 +24,7 @@ u->fragment_path.
  2 files changed, 9 insertions(+)
 
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index da58bcc5c..f3d0851fe 100644
+index da58bcc5c9..f3d0851fe2 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -3950,6 +3950,11 @@ int unit_load_fragment(Unit *u) {
@@ -40,7 +40,7 @@ index da58bcc5c..f3d0851fe 100644
           * for unit files in the default directories, to make it easy
           * to override things by placing things in /etc/systemd/system */
 diff --git a/src/core/scope.c b/src/core/scope.c
-index ae6614fbf..29954ba28 100644
+index ae6614fbf0..29954ba285 100644
 --- a/src/core/scope.c
 +++ b/src/core/scope.c
 @@ -150,6 +150,10 @@ static int scope_load(Unit *u) {

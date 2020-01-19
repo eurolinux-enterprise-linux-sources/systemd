@@ -22,7 +22,7 @@ Related: #1351415
  5 files changed, 231 insertions(+), 23 deletions(-)
 
 diff --git a/man/systemd.exec.xml b/man/systemd.exec.xml
-index 25aea1655..cfdcc3d17 100644
+index 25aea16553..cfdcc3d173 100644
 --- a/man/systemd.exec.xml
 +++ b/man/systemd.exec.xml
 @@ -559,90 +559,133 @@
@@ -189,7 +189,7 @@ index 25aea1655..cfdcc3d17 100644
          <citerefentry><refentrytitle>tmpfiles.d</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
          <citerefentry project='man-pages'><refentrytitle>exec</refentrytitle><manvolnum>3</manvolnum></citerefentry>
 diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
-index c3461a0a6..ce1397c7e 100644
+index c3461a0a69..ce1397c7e8 100644
 --- a/src/core/load-fragment-gperf.gperf.m4
 +++ b/src/core/load-fragment-gperf.gperf.m4
 @@ -58,7 +58,7 @@ $1.RestrictAddressFamilies,      config_parse_address_families,      0,
@@ -211,7 +211,7 @@ index c3461a0a6..ce1397c7e 100644
  $1.ReadOnlyDirectories,          config_parse_namespace_path_strv,   0,                             offsetof($1, exec_context.read_only_dirs)
  $1.InaccessibleDirectories,      config_parse_namespace_path_strv,   0,                             offsetof($1, exec_context.inaccessible_dirs)
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index dbb45b20f..8afe9d7e8 100644
+index dbb45b20f3..8afe9d7e83 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -1162,6 +1162,107 @@ int config_parse_bytes_limit(const char *unit,
@@ -323,7 +323,7 @@ index dbb45b20f..8afe9d7e8 100644
  int config_parse_sysv_priority(const char *unit,
                                 const char *filename,
 diff --git a/src/core/load-fragment.h b/src/core/load-fragment.h
-index 2d509d0cb..359794d0a 100644
+index 2d509d0cb4..359794d0ac 100644
 --- a/src/core/load-fragment.h
 +++ b/src/core/load-fragment.h
 @@ -57,6 +57,8 @@ int config_parse_exec_secure_bits(const char *unit, const char *filename, unsign
@@ -336,7 +336,7 @@ index 2d509d0cb..359794d0a 100644
  int config_parse_kill_signal(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
  int config_parse_exec_mount_flags(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
 diff --git a/src/test/test-unit-file.c b/src/test/test-unit-file.c
-index 550098332..d15173796 100644
+index 5500983322..d151737960 100644
 --- a/src/test/test-unit-file.c
 +++ b/src/test/test-unit-file.c
 @@ -545,6 +545,66 @@ static void test_install_printf(void) {

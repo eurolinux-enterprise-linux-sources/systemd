@@ -25,7 +25,7 @@ Related: #1472439
  12 files changed, 62 insertions(+), 242 deletions(-)
 
 diff --git a/src/core/automount.c b/src/core/automount.c
-index eedd9b824..4e066613d 100644
+index eedd9b8243..4e066613d7 100644
 --- a/src/core/automount.c
 +++ b/src/core/automount.c
 @@ -749,7 +749,7 @@ static int automount_start(Unit *u) {
@@ -38,7 +38,7 @@ index eedd9b824..4e066613d 100644
                                 "Path %s is already a mount point, refusing start for %s",
                                 a->where, u->id);
 diff --git a/src/core/machine-id-setup.c b/src/core/machine-id-setup.c
-index 1121d373f..d00a53246 100644
+index 1121d373fa..d00a53246f 100644
 --- a/src/core/machine-id-setup.c
 +++ b/src/core/machine-id-setup.c
 @@ -203,7 +203,7 @@ int machine_id_commit(const char *root) {
@@ -51,7 +51,7 @@ index 1121d373f..d00a53246 100644
                  return log_error_errno(r, "Failed to determine whether %s is a mount point: %m", etc_machine_id);
          if (r == 0) {
 diff --git a/src/core/mount-setup.c b/src/core/mount-setup.c
-index 2b8fbab1a..521545e5c 100644
+index 2b8fbab1a3..521545e5ce 100644
 --- a/src/core/mount-setup.c
 +++ b/src/core/mount-setup.c
 @@ -160,7 +160,7 @@ static int mount_one(const MountPoint *p, bool relabel) {
@@ -64,7 +64,7 @@ index 2b8fbab1a..521545e5c 100644
                  return r;
  
 diff --git a/src/efi-boot-generator/efi-boot-generator.c b/src/efi-boot-generator/efi-boot-generator.c
-index 5492b1994..b3ff3a8b7 100644
+index 5492b19946..b3ff3a8b78 100644
 --- a/src/efi-boot-generator/efi-boot-generator.c
 +++ b/src/efi-boot-generator/efi-boot-generator.c
 @@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
@@ -77,7 +77,7 @@ index 5492b1994..b3ff3a8b7 100644
                  log_debug("/boot already populated, exiting.");
                  return EXIT_SUCCESS;
 diff --git a/src/gpt-auto-generator/gpt-auto-generator.c b/src/gpt-auto-generator/gpt-auto-generator.c
-index d7b047118..00a2141a5 100644
+index d7b047118d..00a2141a58 100644
 --- a/src/gpt-auto-generator/gpt-auto-generator.c
 +++ b/src/gpt-auto-generator/gpt-auto-generator.c
 @@ -299,7 +299,7 @@ static int probe_and_add_mount(
@@ -90,7 +90,7 @@ index d7b047118..00a2141a5 100644
                  log_debug("%s already populated, ignoring.", where);
                  return 0;
 diff --git a/src/login/logind-user.c b/src/login/logind-user.c
-index 912c50ebd..4298704ce 100644
+index 912c50ebde..4298704cea 100644
 --- a/src/login/logind-user.c
 +++ b/src/login/logind-user.c
 @@ -320,7 +320,7 @@ static int user_mkdir_runtime_path(User *u) {
@@ -103,7 +103,7 @@ index 912c50ebd..4298704ce 100644
  
                  (void) mkdir(p, 0700);
 diff --git a/src/nspawn/nspawn.c b/src/nspawn/nspawn.c
-index a90a3a5d7..ea365b3f9 100644
+index a90a3a5d75..ea365b3f9b 100644
 --- a/src/nspawn/nspawn.c
 +++ b/src/nspawn/nspawn.c
 @@ -863,7 +863,7 @@ static int mount_all(const char *dest) {
@@ -152,7 +152,7 @@ index a90a3a5d7..ea365b3f9 100644
                                  log_error_errno(r, "Failed to determine whether directory %s is mount point: %m", arg_directory);
                                  goto finish;
 diff --git a/src/shared/cgroup-util.c b/src/shared/cgroup-util.c
-index cf085cb5f..c5d9e4bb5 100644
+index cf085cb5ff..c5d9e4bb58 100644
 --- a/src/shared/cgroup-util.c
 +++ b/src/shared/cgroup-util.c
 @@ -488,7 +488,7 @@ int cg_get_path(const char *controller, const char *path, const char *suffix, ch
@@ -165,7 +165,7 @@ index cf085cb5f..c5d9e4bb5 100644
                          return r < 0 ? r : -ENOENT;
  
 diff --git a/src/shared/condition.c b/src/shared/condition.c
-index 0d2cd2bc3..796cc520d 100644
+index 0d2cd2bc3a..796cc520d7 100644
 --- a/src/shared/condition.c
 +++ b/src/shared/condition.c
 @@ -350,7 +350,7 @@ static int condition_test_path_is_mount_point(Condition *c) {
@@ -178,7 +178,7 @@ index 0d2cd2bc3..796cc520d 100644
  
  static int condition_test_path_is_read_write(Condition *c) {
 diff --git a/src/shared/path-util.c b/src/shared/path-util.c
-index 0f252ec26..1181ffb9d 100644
+index 0f252ec262..1181ffb9d4 100644
 --- a/src/shared/path-util.c
 +++ b/src/shared/path-util.c
 @@ -36,7 +36,6 @@
@@ -440,7 +440,7 @@ index 0f252ec26..1181ffb9d 100644
  
  int path_is_read_only_fs(const char *path) {
 diff --git a/src/shared/path-util.h b/src/shared/path-util.h
-index e16484087..71bb740e9 100644
+index e16484087f..71bb740e98 100644
 --- a/src/shared/path-util.h
 +++ b/src/shared/path-util.h
 @@ -53,8 +53,7 @@ char** path_strv_make_absolute_cwd(char **l);
@@ -454,7 +454,7 @@ index e16484087..71bb740e9 100644
  int path_is_os_tree(const char *path);
  
 diff --git a/src/test/test-path-util.c b/src/test/test-path-util.c
-index 8870f178a..6396fcb39 100644
+index 8870f178a1..6396fcb398 100644
 --- a/src/test/test-path-util.c
 +++ b/src/test/test-path-util.c
 @@ -21,7 +21,6 @@

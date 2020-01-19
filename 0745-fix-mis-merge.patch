@@ -1,0 +1,28 @@
+From 9012a119379d26cefe777c26a88429eb9d0992bd Mon Sep 17 00:00:00 2001
+From: David Tardon <dtardon@redhat.com>
+Date: Thu, 30 May 2019 13:40:23 +0200
+Subject: [PATCH] fix mis-merge
+
+Regression since commit c0f32feb77768aa76d8c813471b3484c93bc2651 .
+
+Resolves: #1714503
+---
+ src/core/service.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/core/service.c b/src/core/service.c
+index 06b39e3..93e4759 100644
+--- a/src/core/service.c
++++ b/src/core/service.c
+@@ -3046,7 +3046,7 @@ static void service_notify_message(
+         if (!service_notify_message_authorized(SERVICE(u), ucred->pid, tags, fds))
+                 return;
+ 
+-        if (s->notify_access == NOTIFY_NONE) {
++        if (_unlikely_(log_get_max_level() >= LOG_DEBUG)) {
+                 _cleanup_free_ char *cc = NULL;
+ 
+                 cc = strv_join(tags, ", ");
+-- 
+2.21.0
+

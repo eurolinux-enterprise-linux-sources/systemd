@@ -12,7 +12,7 @@ Resolves: #1189253
  1 file changed, 7 insertions(+)
 
 diff --git a/src/sysv-generator/sysv-generator.c b/src/sysv-generator/sysv-generator.c
-index 0125ca27d..cfc4a99e4 100644
+index 0125ca27d9..cfc4a99e4a 100644
 --- a/src/sysv-generator/sysv-generator.c
 +++ b/src/sysv-generator/sysv-generator.c
 @@ -692,6 +692,13 @@ static int fix_order(SysvStub *s, Hashmap *all_services) {

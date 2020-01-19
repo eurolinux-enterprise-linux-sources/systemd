@@ -1,0 +1,49 @@
+From 81e311e36abca2f433fa6ac3d86100fcc9d50403 Mon Sep 17 00:00:00 2001
+From: Kyle Walker <kwalker@redhat.com>
+Date: Thu, 15 Nov 2018 11:50:39 -0500
+Subject: [PATCH] shared/install: allow "enable" on linked unit files
+
+User expectations are broken when "systemctl enable /some/path/service.service"
+behaves differently to "systemctl link ..." followed by "systemctl enable".
+From user's POV, "enable" with the full path just combines the two steps into
+one.
+
+(cherry picked from commit f777b4345e8c57e739bda746f78757d0fb136ac7)
+
+Resolves: #1628575
+---
+ src/shared/install.c         | 2 +-
+ src/test/test-install-root.c | 7 ++++++-
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/src/shared/install.c b/src/shared/install.c
+index e73f0c95bd..ea01e4dcc2 100644
+--- a/src/shared/install.c
++++ b/src/shared/install.c
+@@ -1878,7 +1878,7 @@ int unit_file_enable(
+                 return r;
+ 
+         STRV_FOREACH(f, files) {
+-                r = install_info_discover(scope, &c, root_dir, &paths, *f, SEARCH_LOAD, &i);
++                r = install_info_discover(scope, &c, root_dir, &paths, *f, SEARCH_LOAD|SEARCH_FOLLOW_CONFIG_SYMLINKS, &i);
+                 if (r < 0)
+                         return r;
+                 if (i->type == UNIT_FILE_TYPE_MASKED)
+diff --git a/src/test/test-install-root.c b/src/test/test-install-root.c
+index cb417d4c19..9f6fa625ac 100644
+--- a/src/test/test-install-root.c
++++ b/src/test/test-install-root.c
+@@ -299,7 +299,12 @@ static void test_linked_units(const char *root) {
+         unit_file_changes_free(changes, n_changes);
+         changes = NULL; n_changes = 0;
+ 
+-        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("linked3.service"), &changes, &n_changes) == -ELOOP);
++        assert_se(unit_file_enable(UNIT_FILE_SYSTEM, 0, root, STRV_MAKE("linked3.service"), &changes, &n_changes) >= 0);
++        assert_se(n_changes == 1);
++        assert_se(changes[0].type == UNIT_FILE_SYMLINK);
++        assert_se(startswith(changes[0].path, root));
++        assert_se(endswith(changes[0].path, "linked3.service"));
++        assert_se(streq(changes[0].source, "/opt/linked3.service"));
+         unit_file_changes_free(changes, n_changes);
+         changes = NULL; n_changes = 0;
+ }

@@ -11,7 +11,7 @@ Resolves: #1370299
  2 files changed, 13 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
-index 9eef290ca..8d3758ac7 100644
+index 9eef290ca7..8d3758ac7e 100644
 --- a/src/core/dbus-manager.c
 +++ b/src/core/dbus-manager.c
 @@ -633,7 +633,18 @@ static int transient_unit_from_message(
@@ -35,7 +35,7 @@ index 9eef290ca..8d3758ac7 100644
                  return sd_bus_error_setf(error, BUS_ERROR_UNIT_EXISTS, "Unit %s already exists.", name);
  
 diff --git a/src/core/slice.c b/src/core/slice.c
-index 61ff9d331..9154558b7 100644
+index 61ff9d3314..9154558b7b 100644
 --- a/src/core/slice.c
 +++ b/src/core/slice.c
 @@ -272,6 +272,7 @@ const UnitVTable slice_vtable = {

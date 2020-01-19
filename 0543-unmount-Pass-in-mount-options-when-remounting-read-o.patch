@@ -19,7 +19,7 @@ Related: #1312002
  1 file changed, 20 insertions(+), 6 deletions(-)
 
 diff --git a/src/core/umount.c b/src/core/umount.c
-index dd7df194d..bfd8aa5f8 100644
+index dd7df194de..bfd8aa5f88 100644
 --- a/src/core/umount.c
 +++ b/src/core/umount.c
 @@ -28,6 +28,7 @@

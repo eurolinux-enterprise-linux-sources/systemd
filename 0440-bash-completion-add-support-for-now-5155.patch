@@ -10,7 +10,7 @@ Resolves: #1351806
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/shell-completion/bash/systemctl.in b/shell-completion/bash/systemctl.in
-index 0a022c4cf..a1dde32c3 100644
+index 0a022c4cf4..a1dde32c3e 100644
 --- a/shell-completion/bash/systemctl.in
 +++ b/shell-completion/bash/systemctl.in
 @@ -91,7 +91,7 @@ _systemctl () {

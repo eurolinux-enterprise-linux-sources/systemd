@@ -11,7 +11,7 @@ Related: #1199644
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/notify/notify.c b/src/notify/notify.c
-index e4a128b0b..c89a6cc06 100644
+index e4a128b0b2..c89a6cc063 100644
 --- a/src/notify/notify.c
 +++ b/src/notify/notify.c
 @@ -49,7 +49,7 @@ static void help(void) {

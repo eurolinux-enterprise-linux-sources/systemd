@@ -11,7 +11,7 @@ CID#1271344/1271345
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/shared/acl-util.c b/src/shared/acl-util.c
-index cbe09d7ab..e67e9acb6 100644
+index cbe09d7aba..e67e9acb6a 100644
 --- a/src/shared/acl-util.c
 +++ b/src/shared/acl-util.c
 @@ -302,7 +302,7 @@ static int acl_entry_equal(acl_entry_t a, acl_entry_t b) {

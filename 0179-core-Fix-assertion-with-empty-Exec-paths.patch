@@ -28,7 +28,7 @@ Resolves: #1222517
  2 files changed, 26 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index f17a82fcd..ec4cf4eef 100644
+index f17a82fcdf..ec4cf4eefa 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -604,7 +604,11 @@ int config_parse_exec(const char *unit,
@@ -45,7 +45,7 @@ index f17a82fcd..ec4cf4eef 100644
                          } else if (strneq(word, ";", MAX(l, 1U)))
                                  /* new commandline */
 diff --git a/src/test/test-unit-file.c b/src/test/test-unit-file.c
-index 9f3e3a227..550098332 100644
+index 9f3e3a227e..5500983322 100644
 --- a/src/test/test-unit-file.c
 +++ b/src/test/test-unit-file.c
 @@ -318,6 +318,27 @@ static void test_config_parse_exec(void) {

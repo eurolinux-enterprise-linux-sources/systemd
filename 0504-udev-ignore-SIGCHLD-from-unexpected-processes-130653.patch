@@ -12,7 +12,7 @@ Resolves: #1306539
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/src/udev/udev-event.c b/src/udev/udev-event.c
-index bc115f112..0ba079201 100644
+index bc115f112d..0ba079201c 100644
 --- a/src/udev/udev-event.c
 +++ b/src/udev/udev-event.c
 @@ -610,7 +610,11 @@ static int spawn_wait(struct udev_event *event,

@@ -26,7 +26,7 @@ https://bugs.freedesktop.org/show_bug.cgi?id=89516
  3 files changed, 59 insertions(+), 8 deletions(-)
 
 diff --git a/src/journal-remote/journal-remote-parse.c b/src/journal-remote/journal-remote-parse.c
-index 6c096de03..7e6295435 100644
+index 6c096de03a..7e62954351 100644
 --- a/src/journal-remote/journal-remote-parse.c
 +++ b/src/journal-remote/journal-remote-parse.c
 @@ -41,6 +41,7 @@ void source_free(RemoteSource *source) {
@@ -38,7 +38,7 @@ index 6c096de03..7e6295435 100644
          free(source);
  }
 diff --git a/src/journal-remote/journal-remote-parse.h b/src/journal-remote/journal-remote-parse.h
-index 22db55091..06a50296a 100644
+index 22db550913..06a50296a1 100644
 --- a/src/journal-remote/journal-remote-parse.h
 +++ b/src/journal-remote/journal-remote-parse.h
 @@ -54,6 +54,7 @@ typedef struct RemoteSource {
@@ -50,7 +50,7 @@ index 22db55091..06a50296a 100644
  
  RemoteSource* source_new(int fd, bool passive_fd, char *name, Writer *writer);
 diff --git a/src/journal-remote/journal-remote.c b/src/journal-remote/journal-remote.c
-index d1486e7cd..b7cc6d717 100644
+index d1486e7cda..b7cc6d7172 100644
 --- a/src/journal-remote/journal-remote.c
 +++ b/src/journal-remote/journal-remote.c
 @@ -289,6 +289,8 @@ static int dispatch_raw_source_event(sd_event_source *event,

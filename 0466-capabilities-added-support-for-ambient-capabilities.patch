@@ -45,7 +45,7 @@ Resolves: #1387398
  9 files changed, 174 insertions(+), 17 deletions(-)
 
 diff --git a/src/core/dbus-execute.c b/src/core/dbus-execute.c
-index a564c53fa..817ef80d1 100644
+index a564c53fae..817ef80d1f 100644
 --- a/src/core/dbus-execute.c
 +++ b/src/core/dbus-execute.c
 @@ -327,6 +327,24 @@ static int property_get_capability_bounding_set(
@@ -82,7 +82,7 @@ index a564c53fa..817ef80d1 100644
          SD_BUS_PROPERTY("Group", "s", NULL, offsetof(ExecContext, group), SD_BUS_VTABLE_PROPERTY_CONST),
          SD_BUS_PROPERTY("SupplementaryGroups", "as", NULL, offsetof(ExecContext, supplementary_groups), SD_BUS_VTABLE_PROPERTY_CONST),
 diff --git a/src/core/execute.c b/src/core/execute.c
-index 40db11e28..4265b9c34 100644
+index 40db11e284..4265b9c348 100644
 --- a/src/core/execute.c
 +++ b/src/core/execute.c
 @@ -696,12 +696,7 @@ static int enforce_user(const ExecContext *context, uid_t uid) {
@@ -226,7 +226,7 @@ index 40db11e28..4265b9c34 100644
                  fprintf(f, "%sUser: %s\n", prefix, c->user);
          if (c->group)
 diff --git a/src/core/execute.h b/src/core/execute.h
-index 40f7b794c..00bf99cbe 100644
+index 40f7b794c5..00bf99cbea 100644
 --- a/src/core/execute.h
 +++ b/src/core/execute.h
 @@ -152,6 +152,8 @@ struct ExecContext {
@@ -239,7 +239,7 @@ index 40f7b794c..00bf99cbe 100644
          int secure_bits;
  
 diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
-index e4ce29210..f996032cf 100644
+index e4ce292100..f996032cf2 100644
 --- a/src/core/load-fragment-gperf.gperf.m4
 +++ b/src/core/load-fragment-gperf.gperf.m4
 @@ -48,6 +48,7 @@ $1.SyslogLevelPrefix,            config_parse_bool,                  0,
@@ -251,7 +251,7 @@ index e4ce29210..f996032cf 100644
  $1.NoNewPrivileges,              config_parse_no_new_privileges,     0,                             offsetof($1, exec_context)
  m4_ifdef(`HAVE_SECCOMP',
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index dbaaf2fee..7d1ac6c25 100644
+index dbaaf2fee7..7d1ac6c251 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -61,6 +61,7 @@
@@ -280,7 +280,7 @@ index dbaaf2fee..7d1ac6c25 100644
                  }
  
 diff --git a/src/shared/capability.c b/src/shared/capability.c
-index 3ed31df5a..6e3d7d22e 100644
+index 3ed31df5ab..6e3d7d22e0 100644
 --- a/src/shared/capability.c
 +++ b/src/shared/capability.c
 @@ -98,6 +98,61 @@ unsigned long cap_last_cap(void) {
@@ -346,7 +346,7 @@ index 3ed31df5a..6e3d7d22e 100644
          _cleanup_cap_free_ cap_t after_cap = NULL;
          cap_flag_value_t fv;
 diff --git a/src/shared/capability.h b/src/shared/capability.h
-index 04cd6e54e..76a756856 100644
+index 04cd6e54e2..76a7568561 100644
 --- a/src/shared/capability.h
 +++ b/src/shared/capability.h
 @@ -36,6 +36,9 @@ int capability_bounding_set_drop_usermode(uint64_t keep);
@@ -360,7 +360,7 @@ index 04cd6e54e..76a756856 100644
  
  DEFINE_TRIVIAL_CLEANUP_FUNC(cap_t, cap_free);
 diff --git a/src/shared/missing.h b/src/shared/missing.h
-index 4b36a9c93..a7771bc99 100644
+index 4b36a9c93a..a7771bc996 100644
 --- a/src/shared/missing.h
 +++ b/src/shared/missing.h
 @@ -1004,3 +1004,19 @@ static inline int kcmp(pid_t pid1, pid_t pid2, int type, unsigned long idx1, uns
@@ -384,7 +384,7 @@ index 4b36a9c93..a7771bc99 100644
 +#define PR_CAP_AMBIENT_CLEAR_ALL 4
 +#endif
 diff --git a/src/test/test-unit-file.c b/src/test/test-unit-file.c
-index 38ecfe972..cfa3d2316 100644
+index 38ecfe972e..cfa3d23166 100644
 --- a/src/test/test-unit-file.c
 +++ b/src/test/test-unit-file.c
 @@ -38,6 +38,7 @@

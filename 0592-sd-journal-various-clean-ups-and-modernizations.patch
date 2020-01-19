@@ -32,7 +32,7 @@ Related: #1465759
  1 file changed, 111 insertions(+), 131 deletions(-)
 
 diff --git a/src/journal/sd-journal.c b/src/journal/sd-journal.c
-index 3749f9e89..9895d9608 100644
+index 3749f9e895..9895d9608f 100644
 --- a/src/journal/sd-journal.c
 +++ b/src/journal/sd-journal.c
 @@ -1171,6 +1171,8 @@ static bool file_has_type_prefix(const char *prefix, const char *filename) {

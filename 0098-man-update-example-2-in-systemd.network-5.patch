@@ -12,7 +12,7 @@ https://bugs.freedesktop.org/show_bug.cgi?id=89221
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/man/systemd.network.xml b/man/systemd.network.xml
-index 485876b6a..24f8416ef 100644
+index 485876b6ac..24f8416ef9 100644
 --- a/man/systemd.network.xml
 +++ b/man/systemd.network.xml
 @@ -643,7 +643,7 @@ Gateway=192.168.0.1</programlisting>

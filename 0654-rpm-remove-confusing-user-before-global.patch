@@ -12,7 +12,7 @@ Resolves: #1582383
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/core/macros.systemd.in b/src/core/macros.systemd.in
-index 662791ccc..3d6e41274 100644
+index 662791cccc..3d6e412744 100644
 --- a/src/core/macros.systemd.in
 +++ b/src/core/macros.systemd.in
 @@ -43,7 +43,7 @@ if [ $1 -eq 1 ] ; then \

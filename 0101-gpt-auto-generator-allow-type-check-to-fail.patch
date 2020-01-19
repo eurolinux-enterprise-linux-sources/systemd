@@ -12,7 +12,7 @@ the variable to NULL not to pass garbage on error.
  1 file changed, 5 insertions(+), 8 deletions(-)
 
 diff --git a/src/gpt-auto-generator/gpt-auto-generator.c b/src/gpt-auto-generator/gpt-auto-generator.c
-index cceeeb845..00a2141a5 100644
+index cceeeb845c..00a2141a58 100644
 --- a/src/gpt-auto-generator/gpt-auto-generator.c
 +++ b/src/gpt-auto-generator/gpt-auto-generator.c
 @@ -291,7 +291,7 @@ static int probe_and_add_mount(

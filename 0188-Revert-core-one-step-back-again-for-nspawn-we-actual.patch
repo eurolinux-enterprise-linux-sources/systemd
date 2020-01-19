@@ -17,7 +17,7 @@ Resolves: #1199644
  1 file changed, 1 insertion(+), 9 deletions(-)
 
 diff --git a/src/core/unit.c b/src/core/unit.c
-index b9e1f13ea..fa17567dd 100644
+index b9e1f13eaf..fa17567dd3 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -3546,15 +3546,7 @@ int unit_kill_context(

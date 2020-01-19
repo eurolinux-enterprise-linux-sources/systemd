@@ -16,7 +16,7 @@ be to simply make the kernel stop creating these devices as they are pretty usel
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/network/networkd-netdev.c b/src/network/networkd-netdev.c
-index 8119205dd..7d193d088 100644
+index 8119205dde..7d193d088e 100644
 --- a/src/network/networkd-netdev.c
 +++ b/src/network/networkd-netdev.c
 @@ -261,7 +261,7 @@ static int netdev_create_handler(sd_rtnl *rtnl, sd_rtnl_message *m, void *userda

@@ -12,7 +12,7 @@ Related: #1299714
  1 file changed, 42 insertions(+), 37 deletions(-)
 
 diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
-index 70e0cc2fa..ddb274fce 100644
+index 70e0cc2fa3..ddb274fcec 100644
 --- a/src/tmpfiles/tmpfiles.c
 +++ b/src/tmpfiles/tmpfiles.c
 @@ -151,6 +151,14 @@ static const char conf_file_dirs[] = CONF_DIRS_NULSTR("tmpfiles");

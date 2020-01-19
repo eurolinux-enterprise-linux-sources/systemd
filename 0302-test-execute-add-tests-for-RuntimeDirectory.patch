@@ -14,7 +14,7 @@ Resolves: #1324826
  create mode 100644 test/exec-runtimedirectory.service
 
 diff --git a/src/test/test-execute.c b/src/test/test-execute.c
-index 00f3607b4..90b1c871c 100644
+index 00f3607b49..90b1c871cc 100644
 --- a/src/test/test-execute.c
 +++ b/src/test/test-execute.c
 @@ -141,6 +141,11 @@ static void test_exec_umask(Manager *m) {
@@ -47,7 +47,7 @@ index 00f3607b4..90b1c871c 100644
          r = manager_new(SYSTEMD_USER, true, &m);
 diff --git a/test/exec-runtimedirectory-mode.service b/test/exec-runtimedirectory-mode.service
 new file mode 100644
-index 000000000..ba6d7ee39
+index 0000000000..ba6d7ee39f
 --- /dev/null
 +++ b/test/exec-runtimedirectory-mode.service
 @@ -0,0 +1,8 @@
@@ -61,7 +61,7 @@ index 000000000..ba6d7ee39
 +RuntimeDirectoryMode=0750
 diff --git a/test/exec-runtimedirectory.service b/test/exec-runtimedirectory.service
 new file mode 100644
-index 000000000..c12a6c63d
+index 0000000000..c12a6c63d6
 --- /dev/null
 +++ b/test/exec-runtimedirectory.service
 @@ -0,0 +1,7 @@

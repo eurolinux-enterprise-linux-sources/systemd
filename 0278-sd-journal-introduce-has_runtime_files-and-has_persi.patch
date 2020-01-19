@@ -22,7 +22,7 @@ Resolves: #1082179
  create mode 100644 man/sd_journal_has_runtime_files.xml
 
 diff --git a/Makefile-man.am b/Makefile-man.am
-index 497be6612..7ec709c8b 100644
+index 497be6612c..7ec709c8b8 100644
 --- a/Makefile-man.am
 +++ b/Makefile-man.am
 @@ -40,6 +40,7 @@ MANPAGES += \
@@ -68,7 +68,7 @@ index 497be6612..7ec709c8b 100644
  	man/sd_journal_open.xml \
  	man/sd_journal_print.xml \
 diff --git a/man/sd-journal.xml b/man/sd-journal.xml
-index 9b1a52207..a1185d372 100644
+index 9b1a52207f..a1185d372b 100644
 --- a/man/sd-journal.xml
 +++ b/man/sd-journal.xml
 @@ -81,9 +81,11 @@
@@ -96,7 +96,7 @@ index 9b1a52207..a1185d372 100644
        <citerefentry project='die-net'><refentrytitle>pkg-config</refentrytitle><manvolnum>1</manvolnum></citerefentry>
 diff --git a/man/sd_journal_has_runtime_files.xml b/man/sd_journal_has_runtime_files.xml
 new file mode 100644
-index 000000000..237e64920
+index 0000000000..237e649206
 --- /dev/null
 +++ b/man/sd_journal_has_runtime_files.xml
 @@ -0,0 +1,95 @@
@@ -196,7 +196,7 @@ index 000000000..237e64920
 +
 +</refentry>
 diff --git a/src/journal/journal-internal.h b/src/journal/journal-internal.h
-index b51ecdb60..115d7776d 100644
+index b51ecdb600..115d7776da 100644
 --- a/src/journal/journal-internal.h
 +++ b/src/journal/journal-internal.h
 @@ -115,6 +115,8 @@ struct sd_journal {
@@ -209,7 +209,7 @@ index b51ecdb60..115d7776d 100644
          size_t data_threshold;
  
 diff --git a/src/journal/sd-journal.c b/src/journal/sd-journal.c
-index 9b9e8ac85..20456c3a1 100644
+index 9b9e8ac859..20456c3a12 100644
 --- a/src/journal/sd-journal.c
 +++ b/src/journal/sd-journal.c
 @@ -1230,8 +1230,7 @@ static int add_any_file(sd_journal *j, const char *path) {
@@ -261,7 +261,7 @@ index 9b9e8ac85..20456c3a1 100644
 +        return j->has_persistent_files;
 +}
 diff --git a/src/systemd/sd-journal.h b/src/systemd/sd-journal.h
-index 00237a215..d5fd46eea 100644
+index 00237a2158..d5fd46eea4 100644
 --- a/src/systemd/sd-journal.h
 +++ b/src/systemd/sd-journal.h
 @@ -138,6 +138,9 @@ int sd_journal_reliable_fd(sd_journal *j);

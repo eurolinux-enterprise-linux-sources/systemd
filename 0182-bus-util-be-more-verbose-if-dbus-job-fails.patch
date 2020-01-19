@@ -16,7 +16,7 @@ Resolves: #1016680
  1 file changed, 72 insertions(+), 7 deletions(-)
 
 diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
-index b0a5a7592..2e6d88962 100644
+index b0a5a7592a..2e6d889620 100644
 --- a/src/libsystemd/sd-bus/bus-util.c
 +++ b/src/libsystemd/sd-bus/bus-util.c
 @@ -30,6 +30,7 @@

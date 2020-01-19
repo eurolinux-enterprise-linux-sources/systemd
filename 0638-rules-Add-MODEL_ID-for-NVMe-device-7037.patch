@@ -22,7 +22,7 @@ Resolves: #1397264
  1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/rules/60-persistent-storage.rules b/rules/60-persistent-storage.rules
-index ba619633b..4aae97a9f 100644
+index ba619633b7..4aae97a9fb 100644
 --- a/rules/60-persistent-storage.rules
 +++ b/rules/60-persistent-storage.rules
 @@ -28,10 +28,12 @@ KERNEL=="nvme*[0-9]n*[0-9]p*[0-9]", ENV{DEVTYPE}=="partition", ATTRS{wwid}=="?*"

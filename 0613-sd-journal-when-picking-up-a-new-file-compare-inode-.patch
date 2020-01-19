@@ -22,7 +22,7 @@ Related: #1540538
  1 file changed, 29 insertions(+), 6 deletions(-)
 
 diff --git a/src/journal/sd-journal.c b/src/journal/sd-journal.c
-index e1cde6e1c..004fe646d 100644
+index e1cde6e1c2..004fe646d4 100644
 --- a/src/journal/sd-journal.c
 +++ b/src/journal/sd-journal.c
 @@ -1224,20 +1224,43 @@ static bool file_type_wanted(int flags, const char *filename) {

@@ -11,7 +11,7 @@ Resolves: #1235635
  1 file changed, 14 insertions(+)
 
 diff --git a/shell-completion/bash/systemctl.in b/shell-completion/bash/systemctl.in
-index 3d787cdb7..496c756a4 100644
+index 3d787cdb77..496c756a43 100644
 --- a/shell-completion/bash/systemctl.in
 +++ b/shell-completion/bash/systemctl.in
 @@ -96,6 +96,12 @@ _systemctl () {

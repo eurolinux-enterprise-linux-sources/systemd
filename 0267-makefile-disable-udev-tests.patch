@@ -9,7 +9,7 @@ RHEL-only
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/Makefile.am b/Makefile.am
-index 887e70a95..2645f66bc 100644
+index 887e70a95f..2645f66bc1 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -3785,9 +3785,9 @@ hwdb-remove-hook:

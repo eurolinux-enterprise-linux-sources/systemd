@@ -13,7 +13,7 @@ Related: #1446095
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/libsystemd/sd-bus/bus-internal.h b/src/libsystemd/sd-bus/bus-internal.h
-index 6a106862e..9c1e5a35b 100644
+index 6a106862ee..9c1e5a35b8 100644
 --- a/src/libsystemd/sd-bus/bus-internal.h
 +++ b/src/libsystemd/sd-bus/bus-internal.h
 @@ -329,7 +329,7 @@ struct sd_bus {

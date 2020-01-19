@@ -9,7 +9,7 @@ Subject: [PATCH] journald-audit: exit gracefully in the case we can't join
  1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/src/journal/journald-audit.c b/src/journal/journald-audit.c
-index c2f1545cc..151097a6e 100644
+index c2f1545cc9..151097a6e6 100644
 --- a/src/journal/journald-audit.c
 +++ b/src/journal/journald-audit.c
 @@ -529,8 +529,10 @@ int server_open_audit(Server *s) {

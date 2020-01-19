@@ -15,7 +15,7 @@ Resolves: #1503253
  1 file changed, 1 insertion(+)
 
 diff --git a/rules/60-persistent-storage.rules b/rules/60-persistent-storage.rules
-index 10642a1fd..ba619633b 100644
+index 10642a1fd8..ba619633b7 100644
 --- a/rules/60-persistent-storage.rules
 +++ b/rules/60-persistent-storage.rules
 @@ -27,6 +27,7 @@ KERNEL=="nvme*[0-9]n*[0-9]", ATTR{wwid}=="?*", SYMLINK+="disk/by-id/nvme-$attr{w

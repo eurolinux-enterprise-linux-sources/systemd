@@ -30,7 +30,7 @@ except that:
  3 files changed, 17 insertions(+), 12 deletions(-)
 
 diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
-index 0f28718b0..24c49b916 100644
+index 0f28718b0e..24c49b916a 100644
 --- a/src/journal/journal-file.c
 +++ b/src/journal/journal-file.c
 @@ -2014,8 +2014,7 @@ void journal_file_reset_location(JournalFile *f) {
@@ -44,7 +44,7 @@ index 0f28718b0..24c49b916 100644
          f->current_offset = offset;
          f->current_seqnum = le64toh(o->entry.seqnum);
 diff --git a/src/journal/journal-file.h b/src/journal/journal-file.h
-index 2526e14d6..403c8f760 100644
+index 2526e14d65..403c8f760c 100644
 --- a/src/journal/journal-file.h
 +++ b/src/journal/journal-file.h
 @@ -199,7 +199,7 @@ int journal_file_find_field_object(JournalFile *f, const void *field, uint64_t s
@@ -57,7 +57,7 @@ index 2526e14d6..403c8f760 100644
  int journal_file_next_entry(JournalFile *f, uint64_t p, direction_t direction, Object **ret, uint64_t *offset);
  
 diff --git a/src/journal/sd-journal.c b/src/journal/sd-journal.c
-index 94891cdf3..9b57e5945 100644
+index 94891cdf35..9b57e5945d 100644
 --- a/src/journal/sd-journal.c
 +++ b/src/journal/sd-journal.c
 @@ -723,13 +723,17 @@ static int next_beyond_location(sd_journal *j, JournalFile *f, direction_t direc

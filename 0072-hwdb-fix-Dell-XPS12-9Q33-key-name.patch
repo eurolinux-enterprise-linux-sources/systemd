@@ -10,7 +10,7 @@ https://bugs.freedesktop.org/show_bug.cgi?id=84437
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/hwdb/60-keyboard.hwdb b/hwdb/60-keyboard.hwdb
-index 2cb976923..88906655e 100644
+index 2cb976923d..88906655ef 100644
 --- a/hwdb/60-keyboard.hwdb
 +++ b/hwdb/60-keyboard.hwdb
 @@ -259,7 +259,7 @@ keyboard:dmi:bvn*:bvr*:bd*:svnDell*:pnXPS*:pvr*

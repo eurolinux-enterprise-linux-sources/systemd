@@ -18,7 +18,7 @@ Resolves: #1283579
  2 files changed, 69 insertions(+), 12 deletions(-)
 
 diff --git a/src/core/device.c b/src/core/device.c
-index cc4ebd2c8..8a6855dfc 100644
+index cc4ebd2c87..8a6855dfc3 100644
 --- a/src/core/device.c
 +++ b/src/core/device.c
 @@ -151,14 +151,47 @@ static int device_coldplug(Unit *u, Hashmap *deferred_work) {
@@ -144,7 +144,7 @@ index cc4ebd2c8..8a6855dfc 100644
  
          .active_state = device_active_state,
 diff --git a/src/core/device.h b/src/core/device.h
-index 0609b20fd..6724ab21e 100644
+index 0609b20fdb..6724ab21ea 100644
 --- a/src/core/device.h
 +++ b/src/core/device.h
 @@ -53,7 +53,7 @@ struct Device {

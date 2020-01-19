@@ -52,7 +52,7 @@ Related: #1185120
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/selinux-access.c b/src/core/selinux-access.c
-index 297372d12..6cc0a49b9 100644
+index 297372d126..6cc0a49b92 100644
 --- a/src/core/selinux-access.c
 +++ b/src/core/selinux-access.c
 @@ -42,6 +42,7 @@

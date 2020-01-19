@@ -12,7 +12,7 @@ Related: #1409997
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/src/shared/install.c b/src/shared/install.c
-index 87d805c94..62bdf674c 100644
+index 87d805c941..62bdf674c9 100644
 --- a/src/shared/install.c
 +++ b/src/shared/install.c
 @@ -1639,7 +1639,11 @@ int unit_file_unmask(

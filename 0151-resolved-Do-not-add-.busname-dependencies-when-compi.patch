@@ -16,7 +16,7 @@ Resolves: #1222517
  rename units/{systemd-resolved.service.in => systemd-resolved.service.m4.in} (96%)
 
 diff --git a/Makefile.am b/Makefile.am
-index 8474b2912..604eaf2f1 100644
+index 8474b29129..604eaf2f17 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -5520,7 +5520,7 @@ dist_dbussystemservice_DATA += \
@@ -29,7 +29,7 @@ index 8474b2912..604eaf2f1 100644
  SYSTEM_UNIT_ALIASES += \
  	systemd-resolved.service dbus-org.freedesktop.resolve1.service
 diff --git a/units/.gitignore b/units/.gitignore
-index 638a7abc4..7f3e0d093 100644
+index 638a7abc4c..7f3e0d093c 100644
 --- a/units/.gitignore
 +++ b/units/.gitignore
 @@ -58,6 +58,7 @@
@@ -44,7 +44,7 @@ diff --git a/units/systemd-resolved.service.in b/units/systemd-resolved.service.
 similarity index 96%
 rename from units/systemd-resolved.service.in
 rename to units/systemd-resolved.service.m4.in
-index b643da9a7..d133847d5 100644
+index b643da9a73..d133847d5e 100644
 --- a/units/systemd-resolved.service.in
 +++ b/units/systemd-resolved.service.m4.in
 @@ -10,11 +10,13 @@ Description=Network Name Resolution

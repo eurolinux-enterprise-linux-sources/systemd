@@ -17,7 +17,7 @@ the device tree anyway.
  1 file changed, 7 deletions(-)
 
 diff --git a/src/cryptsetup/cryptsetup-generator.c b/src/cryptsetup/cryptsetup-generator.c
-index dfbca8754..d191def5f 100644
+index dfbca8754f..d191def5f8 100644
 --- a/src/cryptsetup/cryptsetup-generator.c
 +++ b/src/cryptsetup/cryptsetup-generator.c
 @@ -377,13 +377,6 @@ static int add_crypttab_devices(void) {

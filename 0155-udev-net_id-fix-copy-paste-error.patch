@@ -14,7 +14,7 @@ Resolves: #1222517
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/udev/udev-builtin-net_id.c b/src/udev/udev-builtin-net_id.c
-index 2cc1fd409..66474f772 100644
+index 2cc1fd409b..66474f7728 100644
 --- a/src/udev/udev-builtin-net_id.c
 +++ b/src/udev/udev-builtin-net_id.c
 @@ -271,7 +271,7 @@ static int dev_pci_slot(struct udev_device *dev, struct netnames *names) {

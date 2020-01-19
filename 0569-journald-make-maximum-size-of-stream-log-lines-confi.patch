@@ -52,7 +52,7 @@ conflicts in a code that was totally unrelated.]
  7 files changed, 209 insertions(+), 20 deletions(-)
 
 diff --git a/man/journald.conf.xml b/man/journald.conf.xml
-index 46a498b67..e2d6a1225 100644
+index 46a498b673..e2d6a12252 100644
 --- a/man/journald.conf.xml
 +++ b/man/journald.conf.xml
 @@ -354,6 +354,24 @@
@@ -81,7 +81,7 @@ index 46a498b67..e2d6a1225 100644
  
    </refsect1>
 diff --git a/man/systemd.journal-fields.xml b/man/systemd.journal-fields.xml
-index 7d6c5c715..a53f8def2 100644
+index 7d6c5c715f..a53f8def2d 100644
 --- a/man/systemd.journal-fields.xml
 +++ b/man/systemd.journal-fields.xml
 @@ -311,6 +311,28 @@
@@ -114,7 +114,7 @@ index 7d6c5c715..a53f8def2 100644
    </refsect1>
  
 diff --git a/src/journal/journald-gperf.gperf b/src/journal/journald-gperf.gperf
-index 74554c1c3..73327c10e 100644
+index 74554c1c34..73327c10e9 100644
 --- a/src/journal/journald-gperf.gperf
 +++ b/src/journal/journald-gperf.gperf
 @@ -40,3 +40,4 @@ Journal.MaxLevelKMsg,       config_parse_log_level,  0, offsetof(Server, max_lev
@@ -124,7 +124,7 @@ index 74554c1c3..73327c10e 100644
 +Journal.LineMax,            config_parse_line_max,   0, offsetof(Server, line_max)
 \ No newline at end of file
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index f6f8c30eb..daeecd519 100644
+index f6f8c30eb2..daeecd5191 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -67,6 +67,10 @@
@@ -220,7 +220,7 @@ index f6f8c30eb..daeecd519 100644
          memset(&s->runtime_metrics, 0xFF, sizeof(s->runtime_metrics));
  
 diff --git a/src/journal/journald-server.h b/src/journal/journald-server.h
-index 7a456c2d5..b29410778 100644
+index 7a456c2d54..b294107788 100644
 --- a/src/journal/journald-server.h
 +++ b/src/journal/journald-server.h
 @@ -143,6 +143,8 @@ typedef struct Server {
@@ -241,7 +241,7 @@ index 7a456c2d5..b29410778 100644
  const char *storage_to_string(Storage s) _const_;
  Storage storage_from_string(const char *s) _pure_;
 diff --git a/src/journal/journald-stream.c b/src/journal/journald-stream.c
-index 15c9110c0..4d6b7ad18 100644
+index 15c9110c0f..4d6b7ad189 100644
 --- a/src/journal/journald-stream.c
 +++ b/src/journal/journald-stream.c
 @@ -53,6 +53,16 @@ typedef enum StdoutStreamState {
@@ -515,7 +515,7 @@ index 15c9110c0..4d6b7ad18 100644
  }
  
 diff --git a/src/journal/journald.conf b/src/journal/journald.conf
-index 3907dfb7f..5355ec2b2 100644
+index 3907dfb7ff..5355ec2b2f 100644
 --- a/src/journal/journald.conf
 +++ b/src/journal/journald.conf
 @@ -37,3 +37,4 @@

@@ -22,7 +22,7 @@ rule when generating kdump initrd]
  create mode 100644 rules/40-redhat-cpu-hotplug.rules
 
 diff --git a/Makefile.am b/Makefile.am
-index e9ceac98a..94fee02c5 100644
+index e9ceac98a4..94fee02c57 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -3511,6 +3511,7 @@ dist_udevrules_DATA += \
@@ -35,7 +35,7 @@ index e9ceac98a..94fee02c5 100644
  
 diff --git a/rules/40-redhat-cpu-hotplug.rules b/rules/40-redhat-cpu-hotplug.rules
 new file mode 100644
-index 000000000..bc5ddc841
+index 0000000000..bc5ddc8416
 --- /dev/null
 +++ b/rules/40-redhat-cpu-hotplug.rules
 @@ -0,0 +1,4 @@
@@ -44,7 +44,7 @@ index 000000000..bc5ddc841
 +# CPU hotadd request
 +SUBSYSTEM=="cpu", ACTION=="add", TEST=="online", ATTR{online}=="0", ATTR{online}="1"
 diff --git a/rules/40-redhat.rules b/rules/40-redhat.rules
-index 34a1df9c4..d04c7fc9a 100644
+index 34a1df9c48..d04c7fc9a2 100644
 --- a/rules/40-redhat.rules
 +++ b/rules/40-redhat.rules
 @@ -1,8 +1,5 @@

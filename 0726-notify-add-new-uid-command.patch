@@ -1,0 +1,127 @@
+From 18f3bad3ba1ffc5a363d188da8b0653f9b527a18 Mon Sep 17 00:00:00 2001
+From: Lennart Poettering <lennart@poettering.net>
+Date: Fri, 5 Jan 2018 13:26:38 +0100
+Subject: [PATCH] notify: add new --uid= command
+
+The new --uid= switch allows selecting the UID from which the
+notificaiton messages shall originate.
+
+This is primarily useful for testing purposes, but might have other
+uses.
+
+(cherry picked from commit 65c6b99094580afa186199d8091cd7536900526c)
+
+Related: #1663143
+---
+ man/systemd-notify.xml |  9 +++++++++
+ src/notify/notify.c    | 39 ++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 45 insertions(+), 3 deletions(-)
+
+diff --git a/man/systemd-notify.xml b/man/systemd-notify.xml
+index 46ede1ab8f..4048783611 100644
+--- a/man/systemd-notify.xml
++++ b/man/systemd-notify.xml
+@@ -106,6 +106,15 @@
+         <citerefentry><refentrytitle>sd_notify</refentrytitle><manvolnum>3</manvolnum></citerefentry>.</para></listitem>
+       </varlistentry>
+ 
++      <varlistentry>
++        <term><option>--uid=</option><replaceable>USER</replaceable></term>
++
++        <listitem><para>Set the user ID to send the notification from. Takes a UNIX user name or numeric UID. When
++        specified the notification message will be sent with the specified UID as sender, in place of the user the
++        command was invoked as. This option requires sufficient privileges in order to be able manipulate the user
++        identity of the process.</para></listitem>
++      </varlistentry>
++
+       <varlistentry>
+         <term><option>--status=</option></term>
+ 
+diff --git a/src/notify/notify.c b/src/notify/notify.c
+index 0d382992a5..659ba7c54b 100644
+--- a/src/notify/notify.c
++++ b/src/notify/notify.c
+@@ -40,6 +40,8 @@ static pid_t arg_pid = 0;
+ static const char *arg_status = NULL;
+ static bool arg_booted = false;
+ static const char *arg_readahead = NULL;
++static uid_t arg_uid = UID_INVALID;
++static gid_t arg_gid = GID_INVALID;
+ 
+ static void help(void) {
+         printf("%s [OPTIONS...] [VARIABLE=VALUE...]\n\n"
+@@ -47,7 +49,8 @@ static void help(void) {
+                "  -h --help            Show this help\n"
+                "     --version         Show package version\n"
+                "     --ready           Inform the init system about service start-up completion\n"
+-               "     --pid[=PID]       Set main pid of daemon\n"
++               "     --pid[=PID]       Set main PID of daemon\n"
++               "     --uid=USER        Set user to send from\n"
+                "     --status=TEXT     Set status text\n"
+                "     --booted          Check if the system was booted up with systemd\n"
+                "     --readahead=ACTION Controls read-ahead operations\n",
+@@ -62,7 +65,8 @@ static int parse_argv(int argc, char *argv[]) {
+                 ARG_PID,
+                 ARG_STATUS,
+                 ARG_BOOTED,
+-                ARG_READAHEAD
++                ARG_READAHEAD,
++                ARG_UID,
+         };
+ 
+         static const struct option options[] = {
+@@ -73,10 +77,11 @@ static int parse_argv(int argc, char *argv[]) {
+                 { "status",    required_argument, NULL, ARG_STATUS    },
+                 { "booted",    no_argument,       NULL, ARG_BOOTED    },
+                 { "readahead", required_argument, NULL, ARG_READAHEAD },
++                { "uid",       required_argument, NULL, ARG_UID       },
+                 {}
+         };
+ 
+-        int c;
++        int c, r;
+ 
+         assert(argc >= 0);
+         assert(argv);
+@@ -122,6 +127,18 @@ static int parse_argv(int argc, char *argv[]) {
+                         arg_readahead = optarg;
+                         break;
+ 
++                case ARG_UID: {
++                        const char *u = optarg;
++
++                        r = get_user_creds(&u, &arg_uid, &arg_gid, NULL, NULL);
++                        if (r == -ESRCH) /* If the user doesn't exist, then accept it anyway as numeric */
++                                r = parse_uid(u, &arg_uid);
++                        if (r < 0)
++                                return log_error_errno(r, "Can't resolve user %s: %m", optarg);
++
++                        break;
++                }
++
+                 case '?':
+                         return -EINVAL;
+ 
+@@ -209,6 +226,22 @@ int main(int argc, char* argv[]) {
+                 goto finish;
+         }
+ 
++        /* If this is requested change to the requested UID/GID. Note thta we only change the real UID here, and leave
++           the effective UID in effect (which is 0 for this to work). That's because we want the privileges to fake the
++           ucred data, and sd_pid_notify() uses the real UID for filling in ucred. */
++
++        if (arg_gid != GID_INVALID)
++                if (setregid(arg_gid, (gid_t) -1) < 0) {
++                        r = log_error_errno(errno, "Failed to change GID: %m");
++                        goto finish;
++                }
++
++        if (arg_uid != UID_INVALID)
++                if (setreuid(arg_uid, (uid_t) -1) < 0) {
++                        r = log_error_errno(errno, "Failed to change UID: %m");
++                        goto finish;
++                }
++
+         r = sd_pid_notify(arg_pid ? arg_pid : getppid(), false, n);
+         if (r < 0) {
+                 log_error_errno(r, "Failed to notify init system: %m");

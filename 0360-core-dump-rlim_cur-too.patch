@@ -10,7 +10,7 @@ Related: #1351415
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/core/execute.c b/src/core/execute.c
-index 8172c8b44..e9b4359a7 100644
+index 8172c8b442..e9b4359a7f 100644
 --- a/src/core/execute.c
 +++ b/src/core/execute.c
 @@ -2254,8 +2254,8 @@ void exec_context_dump(ExecContext *c, FILE* f, const char *prefix) {

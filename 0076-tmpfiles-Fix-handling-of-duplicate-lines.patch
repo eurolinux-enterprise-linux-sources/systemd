@@ -14,7 +14,7 @@ https://launchpad.net/bugs/1428540
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
-index 187997e1f..1e1096816 100644
+index 187997e1f4..1e10968164 100644
 --- a/src/tmpfiles/tmpfiles.c
 +++ b/src/tmpfiles/tmpfiles.c
 @@ -1750,9 +1750,11 @@ static int parse_line(const char *fname, unsigned line, const char *buffer) {

@@ -1,0 +1,67 @@
+From 747f3af70c0ee9089e520ccd8917ded397a5cd2a Mon Sep 17 00:00:00 2001
+From: Frantisek Sumsal <fsumsal@redhat.com>
+Date: Thu, 4 Apr 2019 12:21:45 +0200
+Subject: [PATCH] include sys/sysmacros.h in more places
+
+Since glibc is moving away from implicitly including sys/sysmacros.h
+all the time via sys/types.h, include the header directly in more
+places.  This seems to cover most makedev/major/minor usage.
+
+(cherry picked from commit 27d13af71c3af6b2f9b60556d2c046dbb6e36e23)
+
+Resolves: #1694605
+---
+ src/libudev/libudev.h | 1 +
+ src/shared/macro.h    | 1 +
+ src/shared/util.h     | 1 +
+ src/udev/udev.h       | 1 +
+ 4 files changed, 4 insertions(+)
+
+diff --git a/src/libudev/libudev.h b/src/libudev/libudev.h
+index a94505c09e..cfff02746d 100644
+--- a/src/libudev/libudev.h
++++ b/src/libudev/libudev.h
+@@ -23,6 +23,7 @@
+ #include <stdarg.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
++#include <sys/sysmacros.h>
+ 
+ #ifdef __cplusplus
+ extern "C" {
+diff --git a/src/shared/macro.h b/src/shared/macro.h
+index d4cdb1d08b..d490406483 100644
+--- a/src/shared/macro.h
++++ b/src/shared/macro.h
+@@ -23,6 +23,7 @@
+ 
+ #include <assert.h>
+ #include <sys/param.h>
++#include <sys/sysmacros.h>
+ #include <sys/types.h>
+ #include <sys/uio.h>
+ #include <inttypes.h>
+diff --git a/src/shared/util.h b/src/shared/util.h
+index d89f0d34a1..538ca4be2d 100644
+--- a/src/shared/util.h
++++ b/src/shared/util.h
+@@ -45,6 +45,7 @@
+ #include <mntent.h>
+ #include <sys/socket.h>
+ #include <sys/inotify.h>
++#include <sys/sysmacros.h>
+ #include <glob.h>
+ 
+ #if SIZEOF_PID_T == 4
+diff --git a/src/udev/udev.h b/src/udev/udev.h
+index dece6eccab..281b2e5ce5 100644
+--- a/src/udev/udev.h
++++ b/src/udev/udev.h
+@@ -20,6 +20,7 @@
+ 
+ #include <sys/types.h>
+ #include <sys/param.h>
++#include <sys/sysmacros.h>
+ #include <signal.h>
+ 
+ #include "macro.h"

@@ -1,0 +1,45 @@
+From 5ccf02d71c36bed22929893f3ad5374a333daf77 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Tue, 28 Jun 2016 16:12:47 -0400
+Subject: [PATCH] journalct: allow --boot=0 to DTRT with --file/--directory
+
+--boot=0 magically meant "this boot", but when used with --file/--directory it
+should simply refer to the last boot found in the specified journal. This way,
+--boot and --list-boots are consistent.
+
+Fixes #3603.
+
+(cherry picked from commit 592855c3189549fed93b1060b72299910c6ab1d0)
+
+Related: #1463678
+---
+ src/journal/journalctl.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
+index b9549602d9..077dc37f76 100644
+--- a/src/journal/journalctl.c
++++ b/src/journal/journalctl.c
+@@ -1050,7 +1050,7 @@ static int get_boots(
+         /* Adjust for the asymmetry that offset 0 is
+          * the last (and current) boot, while 1 is considered the
+          * (chronological) first boot in the journal. */
+-        skip_once = query_ref_boot && sd_id128_is_null(query_ref_boot->id) && ref_boot_offset < 0;
++        skip_once = query_ref_boot && sd_id128_is_null(query_ref_boot->id) && ref_boot_offset <= 0;
+ 
+         /* Advance to the earliest/latest occurrence of our reference
+          * boot ID (taking our lookup direction into account), so that
+@@ -1188,7 +1188,12 @@ static int add_boot(sd_journal *j) {
+         if (!arg_boot)
+                 return 0;
+ 
+-        if (arg_boot_offset == 0 && sd_id128_equal(arg_boot_id, SD_ID128_NULL))
++        /* Take a shortcut and use the current boot_id, which we can do very quickly.
++         * We can do this only when we logs are coming from the current machine,
++         * so take the slow path if log location is specified. */
++        if (arg_boot_offset == 0 && sd_id128_equal(arg_boot_id, SD_ID128_NULL) &&
++            !arg_directory && !arg_file)
++
+                 return add_match_this_boot(j, arg_machine);
+ 
+         ref_boot_id.id = arg_boot_id;

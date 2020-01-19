@@ -18,7 +18,7 @@ deactivate, as there's no point in further iteration.
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/unit.c b/src/core/unit.c
-index 9f1e55e2f..563f6fe85 100644
+index 9f1e55e2f1..563f6fe850 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -1648,12 +1648,14 @@ static void unit_check_binds_to(Unit *u) {

@@ -21,7 +21,7 @@ Resolves: #1210981
  1 file changed, 6 insertions(+)
 
 diff --git a/src/udev/udevadm-settle.c b/src/udev/udevadm-settle.c
-index fff5de7a8..e60c4623b 100644
+index fff5de7a8b..e60c4623bd 100644
 --- a/src/udev/udevadm-settle.c
 +++ b/src/udev/udevadm-settle.c
 @@ -56,6 +56,7 @@ static int adm_settle(struct udev *udev, int argc, char *argv[]) {

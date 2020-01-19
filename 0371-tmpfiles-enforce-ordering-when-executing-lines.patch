@@ -15,7 +15,7 @@ Resolves: #1365870
  1 file changed, 35 insertions(+), 4 deletions(-)
 
 diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
-index 64c733aaa..bda89df5b 100644
+index 64c733aaa0..bda89df5be 100644
 --- a/src/tmpfiles/tmpfiles.c
 +++ b/src/tmpfiles/tmpfiles.c
 @@ -78,18 +78,18 @@ typedef enum ItemType {

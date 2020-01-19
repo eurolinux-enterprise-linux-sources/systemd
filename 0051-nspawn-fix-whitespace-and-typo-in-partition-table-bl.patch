@@ -9,7 +9,7 @@ Subject: [PATCH] nspawn: fix whitespace and typo in partition table blurb
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/nspawn/nspawn.c b/src/nspawn/nspawn.c
-index fb672510b..7724df96b 100644
+index fb672510b4..7724df96bd 100644
 --- a/src/nspawn/nspawn.c
 +++ b/src/nspawn/nspawn.c
 @@ -2676,7 +2676,7 @@ static int setup_image(char **device_path, int *loop_nr) {

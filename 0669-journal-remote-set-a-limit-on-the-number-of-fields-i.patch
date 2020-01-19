@@ -1,4 +1,4 @@
-From 95ec0c76b4ee758012bc6c282c5299baee5ae451 Mon Sep 17 00:00:00 2001
+From dec34b2c3b66f9ccf3977e3a45d3a8365ba92027 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
 Date: Thu, 3 Jan 2019 16:28:30 +0100
 Subject: [PATCH] journal-remote: set a limit on the number of fields in a
@@ -19,7 +19,7 @@ Resolves: #1657792
  3 files changed, 16 insertions(+), 3 deletions(-)
 
 diff --git a/src/journal-remote/journal-remote-parse.c b/src/journal-remote/journal-remote-parse.c
-index 64089da19..53f4e3612 100644
+index 64089da19b..53f4e36123 100644
 --- a/src/journal-remote/journal-remote-parse.c
 +++ b/src/journal-remote/journal-remote-parse.c
 @@ -107,7 +107,7 @@ static int get_line(RemoteSource *source, char **line, size_t *size) {
@@ -32,7 +32,7 @@ index 64089da19..53f4e3612 100644
  
                  if (source->passive_fd)
 diff --git a/src/journal-remote/journal-remote-write.c b/src/journal-remote/journal-remote-write.c
-index 99820fa7b..99920e62c 100644
+index 99820fa7b8..99920e62c5 100644
 --- a/src/journal-remote/journal-remote-write.c
 +++ b/src/journal-remote/journal-remote-write.c
 @@ -22,6 +22,9 @@
@@ -46,7 +46,7 @@ index 99820fa7b..99920e62c 100644
                  return log_oom();
  
 diff --git a/src/journal-remote/journal-remote.c b/src/journal-remote/journal-remote.c
-index a455fb6bd..e65daf6a0 100644
+index a455fb6bd8..e65daf6a0b 100644
 --- a/src/journal-remote/journal-remote.c
 +++ b/src/journal-remote/journal-remote.c
 @@ -524,11 +524,18 @@ static int process_http_upload(

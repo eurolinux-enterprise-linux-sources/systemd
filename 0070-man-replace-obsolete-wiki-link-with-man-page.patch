@@ -18,7 +18,7 @@ Subject: [PATCH] man: replace obsolete wiki link with man page
  10 files changed, 18 insertions(+), 34 deletions(-)
 
 diff --git a/man/systemd-cryptsetup-generator.xml b/man/systemd-cryptsetup-generator.xml
-index 0e48e7934..1974cd7a2 100644
+index 0e48e79346..1974cd7a2d 100644
 --- a/man/systemd-cryptsetup-generator.xml
 +++ b/man/systemd-cryptsetup-generator.xml
 @@ -59,10 +59,8 @@
@@ -35,7 +35,7 @@ index 0e48e7934..1974cd7a2 100644
  
    <refsect1>
 diff --git a/man/systemd-debug-generator.xml b/man/systemd-debug-generator.xml
-index 74c3b2620..5c5e9fc4a 100644
+index 74c3b2620e..5c5e9fc4a1 100644
 --- a/man/systemd-debug-generator.xml
 +++ b/man/systemd-debug-generator.xml
 @@ -79,10 +79,8 @@
@@ -52,7 +52,7 @@ index 74c3b2620..5c5e9fc4a 100644
  
    <refsect1>
 diff --git a/man/systemd-efi-boot-generator.xml b/man/systemd-efi-boot-generator.xml
-index b2d8d65e3..fd7ba7983 100644
+index b2d8d65e3d..fd7ba79837 100644
 --- a/man/systemd-efi-boot-generator.xml
 +++ b/man/systemd-efi-boot-generator.xml
 @@ -68,9 +68,7 @@
@@ -67,7 +67,7 @@ index b2d8d65e3..fd7ba7983 100644
  
    <refsect1>
 diff --git a/man/systemd-fstab-generator.xml b/man/systemd-fstab-generator.xml
-index 8f82e3330..022efb413 100644
+index 8f82e33304..022efb4130 100644
 --- a/man/systemd-fstab-generator.xml
 +++ b/man/systemd-fstab-generator.xml
 @@ -71,10 +71,8 @@
@@ -84,7 +84,7 @@ index 8f82e3330..022efb413 100644
  
    <refsect1>
 diff --git a/man/systemd-getty-generator.xml b/man/systemd-getty-generator.xml
-index 0b5b2f2a7..338925964 100644
+index 0b5b2f2a71..338925964d 100644
 --- a/man/systemd-getty-generator.xml
 +++ b/man/systemd-getty-generator.xml
 @@ -75,9 +75,8 @@
@@ -100,7 +100,7 @@ index 0b5b2f2a7..338925964 100644
      <para>Further information about configuration of gettys you may
      find in
 diff --git a/man/systemd-gpt-auto-generator.xml b/man/systemd-gpt-auto-generator.xml
-index 9c706df24..8d2eaca4f 100644
+index 9c706df246..8d2eaca4f6 100644
 --- a/man/systemd-gpt-auto-generator.xml
 +++ b/man/systemd-gpt-auto-generator.xml
 @@ -157,9 +157,7 @@
@@ -115,7 +115,7 @@ index 9c706df24..8d2eaca4f 100644
  
    <refsect1>
 diff --git a/man/systemd-system-update-generator.xml b/man/systemd-system-update-generator.xml
-index 3eec1d7b9..e7fc95c74 100644
+index 3eec1d7b93..e7fc95c742 100644
 --- a/man/systemd-system-update-generator.xml
 +++ b/man/systemd-system-update-generator.xml
 @@ -61,10 +61,8 @@
@@ -132,7 +132,7 @@ index 3eec1d7b9..e7fc95c74 100644
  
    <refsect1>
 diff --git a/man/systemd-sysv-generator.xml b/man/systemd-sysv-generator.xml
-index e619b1bc2..f2d56cbcd 100644
+index e619b1bc2e..f2d56cbcd2 100644
 --- a/man/systemd-sysv-generator.xml
 +++ b/man/systemd-sysv-generator.xml
 @@ -81,10 +81,8 @@
@@ -149,7 +149,7 @@ index e619b1bc2..f2d56cbcd 100644
  
    <refsect1>
 diff --git a/man/systemd.unit.xml b/man/systemd.unit.xml
-index 09e11b471..a452f87ba 100644
+index 09e11b4711..a452f87baf 100644
 --- a/man/systemd.unit.xml
 +++ b/man/systemd.unit.xml
 @@ -357,8 +357,8 @@
@@ -164,7 +164,7 @@ index 09e11b471..a452f87ba 100644
    </refsect1>
  
 diff --git a/man/systemd.xml b/man/systemd.xml
-index 80591dc73..9b92140e6 100644
+index 80591dc732..9b92140e6b 100644
 --- a/man/systemd.xml
 +++ b/man/systemd.xml
 @@ -415,9 +415,8 @@

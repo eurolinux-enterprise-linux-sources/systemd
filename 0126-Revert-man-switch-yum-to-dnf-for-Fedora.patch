@@ -13,7 +13,7 @@ Conflicts:
  2 files changed, 1 insertion(+), 15 deletions(-)
 
 diff --git a/man/custom-html.xsl b/man/custom-html.xsl
-index 706b95a1c..1df824cbb 100644
+index 706b95a1c4..1df824cbbc 100644
 --- a/man/custom-html.xsl
 +++ b/man/custom-html.xsl
 @@ -60,18 +60,6 @@
@@ -36,7 +36,7 @@ index 706b95a1c..1df824cbb 100644
    <a>
      <xsl:attribute name="href">
 diff --git a/man/systemd-nspawn.xml b/man/systemd-nspawn.xml
-index 65b4c2f29..cbd44d4ab 100644
+index 65b4c2f294..cbd44d4aba 100644
 --- a/man/systemd-nspawn.xml
 +++ b/man/systemd-nspawn.xml
 @@ -98,7 +98,6 @@

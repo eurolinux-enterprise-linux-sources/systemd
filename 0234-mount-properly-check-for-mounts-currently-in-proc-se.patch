@@ -14,7 +14,7 @@ Resolves: #1222517
  1 file changed, 19 insertions(+), 14 deletions(-)
 
 diff --git a/src/core/mount.c b/src/core/mount.c
-index fa63f2426..1f1a41ab6 100644
+index fa63f2426f..1f1a41ab66 100644
 --- a/src/core/mount.c
 +++ b/src/core/mount.c
 @@ -1768,7 +1768,18 @@ static int mount_dispatch_io(sd_event_source *source, int fd, uint32_t revents,

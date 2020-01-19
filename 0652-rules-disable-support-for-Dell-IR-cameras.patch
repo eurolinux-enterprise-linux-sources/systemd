@@ -11,7 +11,7 @@ Resolves: #1591316
  create mode 100644 rules/40-redhat-disable-dell-ir-camera.rules
 
 diff --git a/Makefile.am b/Makefile.am
-index cbc120dad..40ebbe98e 100644
+index cbc120dade..40ebbe98ee 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -3523,6 +3523,7 @@ dist_udevrules_DATA += \
@@ -24,7 +24,7 @@ index cbc120dad..40ebbe98e 100644
  
 diff --git a/rules/40-redhat-disable-dell-ir-camera.rules b/rules/40-redhat-disable-dell-ir-camera.rules
 new file mode 100644
-index 000000000..2806482a5
+index 0000000000..2806482a58
 --- /dev/null
 +++ b/rules/40-redhat-disable-dell-ir-camera.rules
 @@ -0,0 +1,2 @@

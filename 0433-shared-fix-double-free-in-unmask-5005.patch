@@ -19,7 +19,7 @@ Resolves: #1409997
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/shared/install.c b/src/shared/install.c
-index f01a21262..1b59a96b1 100644
+index f01a212620..1b59a96b15 100644
 --- a/src/shared/install.c
 +++ b/src/shared/install.c
 @@ -1602,7 +1602,7 @@ int unit_file_unmask(

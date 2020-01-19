@@ -18,7 +18,7 @@ Resolves: #1222517
  2 files changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/man/coredump.conf.xml b/man/coredump.conf.xml
-index 0b7329bf5..fd54c59e6 100644
+index 0b7329bf55..fd54c59e6b 100644
 --- a/man/coredump.conf.xml
 +++ b/man/coredump.conf.xml
 @@ -134,7 +134,9 @@
@@ -33,7 +33,7 @@ index 0b7329bf5..fd54c59e6 100644
      </variablelist>
  
 diff --git a/src/journal/coredump-vacuum.c b/src/journal/coredump-vacuum.c
-index 9b73795e5..c0347ef56 100644
+index 9b73795e5b..c0347ef569 100644
 --- a/src/journal/coredump-vacuum.c
 +++ b/src/journal/coredump-vacuum.c
 @@ -103,8 +103,7 @@ static bool vacuum_necessary(int fd, off_t sum, off_t keep_free, off_t max_use)

@@ -1,0 +1,23 @@
+From 4b125d957a082250b83ff1bff775edefe90356de Mon Sep 17 00:00:00 2001
+From: David Tardon <dtardon@redhat.com>
+Date: Mon, 19 Nov 2018 15:58:27 +0100
+Subject: [PATCH] set automount state to waiting when the mount is stopped
+
+Resolves: #1651257
+---
+ src/core/automount.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/core/automount.c b/src/core/automount.c
+index f57782b9b8..4678bdc7c9 100644
+--- a/src/core/automount.c
++++ b/src/core/automount.c
+@@ -523,6 +523,8 @@ int automount_update_mount(Automount *a, MountState old_state, MountState state)
+                 if (old_state != state)
+                         automount_send_ready(a, a->tokens, -ENODEV);
+                 (void) sd_event_source_set_enabled(a->expire_event_source, SD_EVENT_OFF);
++                if (a->state == AUTOMOUNT_RUNNING)
++                        automount_set_state(a, AUTOMOUNT_WAITING);
+                 break;
+         default:
+                 break;

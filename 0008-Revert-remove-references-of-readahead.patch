@@ -11,7 +11,7 @@ This reverts commit 3b71c18d3e3906f8606c66bea98b327684394e61.
  3 files changed, 9 insertions(+)
 
 diff --git a/.gitignore b/.gitignore
-index e8a4085a3..0360f7c6b 100644
+index e8a4085a3a..0360f7c6bd 100644
 --- a/.gitignore
 +++ b/.gitignore
 @@ -107,6 +107,7 @@
@@ -23,7 +23,7 @@ index e8a4085a3..0360f7c6b 100644
  /systemd-remount-fs
  /systemd-reply-password
 diff --git a/README b/README
-index 5f5783a68..287d05c9b 100644
+index 5f5783a684..287d05c9b4 100644
 --- a/README
 +++ b/README
 @@ -30,6 +30,7 @@ AUTHOR:
@@ -35,7 +35,7 @@ index 5f5783a68..287d05c9b 100644
          - except src/shared/siphash24.c which is CC0 Public Domain
          - except src/journal/lookup3.c which is Public Domain
 diff --git a/TODO b/TODO
-index 255a4f2d0..90b2c4b30 100644
+index 255a4f2d07..90b2c4b30a 100644
 --- a/TODO
 +++ b/TODO
 @@ -786,6 +786,13 @@ Features:

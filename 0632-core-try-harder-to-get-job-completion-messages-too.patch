@@ -16,7 +16,7 @@ Related: #1506256
  1 file changed, 68 insertions(+), 124 deletions(-)
 
 diff --git a/src/core/job.c b/src/core/job.c
-index 612caa604..f371f914d 100644
+index 612caa6048..f371f914d4 100644
 --- a/src/core/job.c
 +++ b/src/core/job.c
 @@ -622,156 +622,100 @@ int job_run_and_invalidate(Job *j) {

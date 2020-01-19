@@ -28,7 +28,7 @@ during it and sends JobRemoved after the reload has finished.
  4 files changed, 60 insertions(+), 5 deletions(-)
 
 diff --git a/src/core/job.c b/src/core/job.c
-index 1861c8a63..275503169 100644
+index 1861c8a633..275503169b 100644
 --- a/src/core/job.c
 +++ b/src/core/job.c
 @@ -53,6 +53,7 @@ Job* job_new_raw(Unit *unit) {
@@ -123,7 +123,7 @@ index 1861c8a63..275503169 100644
          /* Fail depending jobs on failure */
          if (result != JOB_DONE && recursive) {
 diff --git a/src/core/job.h b/src/core/job.h
-index 535052b48..4ae6f2802 100644
+index 535052b48f..4ae6f28020 100644
 --- a/src/core/job.h
 +++ b/src/core/job.h
 @@ -172,10 +172,12 @@ struct Job {
@@ -140,7 +140,7 @@ index 535052b48..4ae6f2802 100644
  Job* job_install(Job *j);
  int job_install_deserialized(Job *j);
 diff --git a/src/core/manager.c b/src/core/manager.c
-index 47b09e1e9..9c406bb5b 100644
+index 47b09e1e93..9c406bb5bf 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -2702,6 +2702,18 @@ finish:
@@ -173,7 +173,7 @@ index 47b09e1e9..9c406bb5b 100644
  
          return r;
 diff --git a/src/core/manager.h b/src/core/manager.h
-index e91e7bd8b..90d2d982e 100644
+index e91e7bd8b3..90d2d982e1 100644
 --- a/src/core/manager.h
 +++ b/src/core/manager.h
 @@ -270,6 +270,9 @@ struct Manager {

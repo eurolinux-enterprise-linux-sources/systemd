@@ -9,7 +9,7 @@ Subject: [PATCH] systemctl: check validity of PID we received
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index 6b93ec844..3da4d3d4f 100644
+index 6b93ec8446..3da4d3d4f1 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -2881,6 +2881,9 @@ static int check_inhibitors(sd_bus *bus, enum action a) {

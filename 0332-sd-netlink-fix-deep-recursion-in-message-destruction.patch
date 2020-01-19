@@ -18,7 +18,7 @@ Resolves: #1330593
  1 file changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/src/libsystemd/sd-rtnl/rtnl-message.c b/src/libsystemd/sd-rtnl/rtnl-message.c
-index 276591f31..9276bbdeb 100644
+index 276591f31b..9276bbdebc 100644
 --- a/src/libsystemd/sd-rtnl/rtnl-message.c
 +++ b/src/libsystemd/sd-rtnl/rtnl-message.c
 @@ -584,7 +584,9 @@ sd_rtnl_message *sd_rtnl_message_ref(sd_rtnl_message *m) {

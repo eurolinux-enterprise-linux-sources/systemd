@@ -18,7 +18,7 @@ Related: #1318994
  1 file changed, 4 deletions(-)
 
 diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
-index 2a93460d4..8034b771d 100644
+index 2a93460d4e..8034b771de 100644
 --- a/src/journal/journal-file.c
 +++ b/src/journal/journal-file.c
 @@ -1419,10 +1419,6 @@ int journal_file_append_entry(JournalFile *f, const dual_timestamp *ts, const st

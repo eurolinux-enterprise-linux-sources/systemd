@@ -37,7 +37,7 @@ Resolves: #1445732
  1 file changed, 14 insertions(+), 2 deletions(-)
 
 diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
-index df7676b57..ed35b8cf0 100644
+index df7676b572..ed35b8cf0d 100644
 --- a/src/tmpfiles/tmpfiles.c
 +++ b/src/tmpfiles/tmpfiles.c
 @@ -585,8 +585,20 @@ static int path_set_perms(Item *i, const char *path) {

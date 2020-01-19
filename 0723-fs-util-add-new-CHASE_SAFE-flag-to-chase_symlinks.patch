@@ -1,0 +1,162 @@
+From 0e64363bb21a07fa318017ea8c90597db63a9545 Mon Sep 17 00:00:00 2001
+From: David Tardon <dtardon@redhat.com>
+Date: Thu, 3 Jan 2019 14:37:34 +0100
+Subject: [PATCH] fs-util: add new CHASE_SAFE flag to chase_symlinks()
+
+When the flag is specified we won't transition to a privilege-owned
+file or directory from an unprivileged-owned one. This is useful when
+privileged code wants to load data from a file unprivileged users have
+write access to, and validates the ownership, but want's to make sure
+that no symlink games are played to read a root-owned system file
+belonging to a different context.
+
+(cherry picked from commit f14f1806e329fe92d01f15c22a384702f0cb4ae0)
+
+Related: #1663143
+---
+ src/shared/util.c    | 43 +++++++++++++++++++++++++++++++++++++++++++
+ src/shared/util.h    |  7 ++++---
+ src/test/test-util.c | 26 ++++++++++++++++++++++++++
+ 3 files changed, 73 insertions(+), 3 deletions(-)
+
+diff --git a/src/shared/util.c b/src/shared/util.c
+index 385551f2b3..fc4887920f 100644
+--- a/src/shared/util.c
++++ b/src/shared/util.c
+@@ -9203,10 +9203,22 @@ int fd_is_fs_type(int fd, statfs_f_type_t magic_value) {
+         return is_fs_type(&s, magic_value);
+ }
+ 
++static bool safe_transition(const struct stat *a, const struct stat *b) {
++        /* Returns true if the transition from a to b is safe, i.e. that we never transition from unprivileged to
++         * privileged files or directories. Why bother? So that unprivileged code can't symlink to privileged files
++         * making us believe we read something safe even though it isn't safe in the specific context we open it in. */
++
++        if (a->st_uid == 0) /* Transitioning from privileged to unprivileged is always fine */
++                return true;
++
++        return a->st_uid == b->st_uid; /* Otherwise we need to stay within the same UID */
++}
++
+ int chase_symlinks(const char *path, const char *original_root, unsigned flags, char **ret) {
+         _cleanup_free_ char *buffer = NULL, *done = NULL, *root = NULL;
+         _cleanup_close_ int fd = -1;
+         unsigned max_follow = 32; /* how many symlinks to follow before giving up and returning ELOOP */
++        struct stat previous_stat;
+         bool exists = true;
+         char *todo;
+         int r;
+@@ -9250,6 +9262,11 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags,
+         if (fd < 0)
+                 return -errno;
+ 
++        if (flags & CHASE_SAFE) {
++                if (fstat(fd, &previous_stat) < 0)
++                        return -errno;
++        }
++
+         todo = buffer;
+         for (;;) {
+                 _cleanup_free_ char *first = NULL;
+@@ -9313,6 +9330,16 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags,
+                         if (fd_parent < 0)
+                                 return -errno;
+ 
++                        if (flags & CHASE_SAFE) {
++                                if (fstat(fd_parent, &st) < 0)
++                                        return -errno;
++
++                                if (!safe_transition(&previous_stat, &st))
++                                        return -EPERM;
++
++                                previous_stat = st;
++                        }
++
+                         safe_close(fd);
+                         fd = fd_parent;
+ 
+@@ -9347,6 +9374,12 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags,
+ 
+                 if (fstat(child, &st) < 0)
+                         return -errno;
++                if ((flags & CHASE_SAFE) &&
++                    !safe_transition(&previous_stat, &st))
++                        return -EPERM;
++
++                previous_stat = st;
++
+                 if ((flags & CHASE_NO_AUTOFS) &&
+                     fd_is_fs_type(child, AUTOFS_SUPER_MAGIC) > 0)
+                         return -EREMOTE;
+@@ -9379,6 +9412,16 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags,
+ 
+                                 free(done);
+ 
++                                if (flags & CHASE_SAFE) {
++                                        if (fstat(fd, &st) < 0)
++                                                return -errno;
++
++                                        if (!safe_transition(&previous_stat, &st))
++                                                return -EPERM;
++
++                                        previous_stat = st;
++                                }
++
+                                 /* Note that we do not revalidate the root, we take it as is. */
+                                 if (isempty(root))
+                                         done = NULL;
+diff --git a/src/shared/util.h b/src/shared/util.h
+index 915c7439e8..fa3e2e3009 100644
+--- a/src/shared/util.h
++++ b/src/shared/util.h
+@@ -1157,9 +1157,10 @@ bool is_fs_type(const struct statfs *s, statfs_f_type_t magic_value) _pure_;
+ int fd_is_fs_type(int fd, statfs_f_type_t magic_value);
+ 
+ enum {
+-        CHASE_PREFIX_ROOT = 1,   /* If set, the specified path will be prefixed by the specified root before beginning the iteration */
+-        CHASE_NONEXISTENT = 2,   /* If set, it's OK if the path doesn't actually exist. */
+-        CHASE_NO_AUTOFS = 4,     /* If set, return -EREMOTE if autofs mount point found */
++        CHASE_PREFIX_ROOT = 1U << 0,   /* If set, the specified path will be prefixed by the specified root before beginning the iteration */
++        CHASE_NONEXISTENT = 1U << 1,   /* If set, it's OK if the path doesn't actually exist. */
++        CHASE_NO_AUTOFS   = 1U << 2,   /* If set, return -EREMOTE if autofs mount point found */
++        CHASE_SAFE        = 1U << 3,   /* If set, return EPERM if we ever traverse from unprivileged to privileged files or directories */
+ };
+ 
+ int chase_symlinks(const char *path_with_prefix, const char *root, unsigned flags, char **ret);
+diff --git a/src/test/test-util.c b/src/test/test-util.c
+index 397c45a9f4..e5a646ec20 100644
+--- a/src/test/test-util.c
++++ b/src/test/test-util.c
+@@ -2113,6 +2113,32 @@ static void test_chase_symlinks(void) {
+         r = chase_symlinks(p, NULL, 0, &result);
+         assert_se(r == -ENOENT);
+ 
++        if (geteuid() == 0) {
++                p = strjoina(temp, "/priv1");
++                assert_se(mkdir(p, 0755) >= 0);
++
++                q = strjoina(p, "/priv2");
++                assert_se(mkdir(q, 0755) >= 0);
++
++                assert_se(chase_symlinks(q, NULL, CHASE_SAFE, NULL) >= 0);
++
++                assert_se(chown(q, 65534, 65534) >= 0);
++                assert_se(chase_symlinks(q, NULL, CHASE_SAFE, NULL) >= 0);
++
++                assert_se(chown(p, 65534, 65534) >= 0);
++                assert_se(chase_symlinks(q, NULL, CHASE_SAFE, NULL) >= 0);
++
++                assert_se(chown(q, 0, 0) >= 0);
++                assert_se(chase_symlinks(q, NULL, CHASE_SAFE, NULL) == -EPERM);
++
++                assert_se(rmdir(q) >= 0);
++                assert_se(symlink("/etc/passwd", q) >= 0);
++                assert_se(chase_symlinks(q, NULL, CHASE_SAFE, NULL) == -EPERM);
++
++                assert_se(chown(p, 0, 0) >= 0);
++                assert_se(chase_symlinks(q, NULL, CHASE_SAFE, NULL) >= 0);
++        }
++
+         assert_se(rm_rf_dangerous(temp, false, true, false) >= 0);
+ }
+ 

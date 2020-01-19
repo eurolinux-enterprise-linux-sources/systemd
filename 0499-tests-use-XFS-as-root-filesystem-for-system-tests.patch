@@ -14,7 +14,7 @@ Resolves: #1475870
  2 files changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/test/TEST-02-CRYPTSETUP/test.sh b/test/TEST-02-CRYPTSETUP/test.sh
-index 4be2365e2..6e5c53d8b 100755
+index 4be2365e2f..6e5c53d8bd 100755
 --- a/test/TEST-02-CRYPTSETUP/test.sh
 +++ b/test/TEST-02-CRYPTSETUP/test.sh
 @@ -38,7 +38,7 @@ test_setup() {
@@ -36,7 +36,7 @@ index 4be2365e2..6e5c53d8b 100755
      )
      setup_nspawn_root
 diff --git a/test/test-functions b/test/test-functions
-index 901ff4860..f8950e31e 100644
+index 901ff48605..f8950e31e8 100644
 --- a/test/test-functions
 +++ b/test/test-functions
 @@ -150,7 +150,7 @@ create_empty_image() {

@@ -1,0 +1,25 @@
+From 40ed615d2f05472e2bc807fa1cdf5498625321e7 Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Tue, 11 Dec 2018 10:40:25 +0100
+Subject: [PATCH] tmpfiles: 'e' is supposed to accept shell-style globs
+
+(cherry picked from commit 939ca2136363f50b5acdb9ca102b9c27389859f1)
+
+Related: #1641764
+---
+ src/tmpfiles/tmpfiles.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
+index 20bc465d23..0b17b5908e 100644
+--- a/src/tmpfiles/tmpfiles.c
++++ b/src/tmpfiles/tmpfiles.c
+@@ -1240,7 +1240,7 @@ static int create_item(Item *i) {
+                 /* fall through */
+ 
+         case EMPTY_DIRECTORY:
+-                r = path_set_perms(i, i->path);
++                r = glob_item(i, path_set_perms, false);
+                 if (r < 0)
+                         return r;
+ 

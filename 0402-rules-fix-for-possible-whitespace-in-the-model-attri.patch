@@ -15,7 +15,7 @@ Related: #1274651
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/rules/60-persistent-storage.rules b/rules/60-persistent-storage.rules
-index 74f8f21f3..06e3329cc 100644
+index 74f8f21f3a..06e3329cc9 100644
 --- a/rules/60-persistent-storage.rules
 +++ b/rules/60-persistent-storage.rules
 @@ -27,10 +27,10 @@ KERNEL=="nvme*[0-9]n*[0-9]", ATTR{wwid}=="?*", SYMLINK+="disk/by-id/nvme-$attr{w

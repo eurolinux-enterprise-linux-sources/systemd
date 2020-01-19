@@ -1,0 +1,62 @@
+From 2d8d8b2d713a3b0c0aad0552608cc2cd13583207 Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Fri, 26 Apr 2019 19:20:09 +0200
+Subject: [PATCH] udev: check if the spawned PID didn't exit after reaping
+ unexpected PID
+
+We shouldn't just continue after getting SIGCHLD for the unexpected
+process because signal coalescing might have happened. If it actually
+did happen we won't get any more SIGCHLDs on signalfd.
+
+Related: #1697909
+---
+ src/udev/udev-event.c | 27 +++++++++++++++++++++++----
+ 1 file changed, 23 insertions(+), 4 deletions(-)
+
+diff --git a/src/udev/udev-event.c b/src/udev/udev-event.c
+index 0ba079201c..7fe64f04a4 100644
+--- a/src/udev/udev-event.c
++++ b/src/udev/udev-event.c
+@@ -597,8 +597,9 @@ static int spawn_wait(struct udev_event *event,
+                 }
+ 
+                 if (pfd[0].revents & POLLIN) {
++                        int child_exited = -1;
+                         struct signalfd_siginfo fdsi;
+-                        int status;
++                        int status, r;
+                         ssize_t size;
+ 
+                         size = read(event->fd_signal, &fdsi, sizeof(struct signalfd_siginfo));
+@@ -612,10 +613,28 @@ static int spawn_wait(struct udev_event *event,
+                         case SIGCHLD:
+                                 if (pid != (pid_t) fdsi.ssi_pid) {
+                                         log_debug("expected SIGCHLD from '%s' ["PID_FMT"] received from unknown process ["PID_FMT"]. Ignoring", cmd, pid, fdsi.ssi_pid);
+-                                        continue;
++
++                                        /* We got SIGCHLD from unexpected process. Possibly some library that we use forked off something behind our back.
++                                           In case the PID we wait for also exited the kernel could coalesce SIGCHLDs and we won't get second SIGCHLD
++                                           on the signalfd. We can't know if coalescing happened or not, hence we need to call waitpid() in a loop until
++                                           the PID we care for exits, we if it haven't already. */
++                                        while (child_exited < 0) {
++                                                r = waitpid(-1, &status, 0);
++                                                if (r < 0 && errno == EINTR)
++                                                        continue;
++                                                else if (r < 0)
++                                                        break;
++                                                else if (r == pid)
++                                                        child_exited = 0;
++                                        }
+                                 }
+-                                if (waitpid(pid, &status, WNOHANG) <= 0)
+-                                        break;
++
++                                /* We didn't wait for child yet, let's do that now */
++                                if (child_exited < 0) {
++                                        if (waitpid(pid, &status, WNOHANG) <= 0)
++                                                break;
++                                }
++
+                                 if (WIFEXITED(status)) {
+                                         log_debug("'%s' ["PID_FMT"] exit with return code %i", cmd, pid, WEXITSTATUS(status));
+                                         if (WEXITSTATUS(status) != 0)

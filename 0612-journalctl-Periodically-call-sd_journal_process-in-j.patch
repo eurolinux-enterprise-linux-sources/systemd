@@ -24,7 +24,7 @@ Related: #1540538
  1 file changed, 16 insertions(+)
 
 diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
-index 0be70764e..1e6d0761c 100644
+index 0be70764ef..1e6d0761c7 100644
 --- a/src/journal/journalctl.c
 +++ b/src/journal/journalctl.c
 @@ -67,6 +67,8 @@

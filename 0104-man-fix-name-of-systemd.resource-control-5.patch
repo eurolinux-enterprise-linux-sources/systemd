@@ -9,7 +9,7 @@ Subject: [PATCH] man: fix name of systemd.resource-control(5)
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/man/systemctl.xml b/man/systemctl.xml
-index 07eb43165..3c4c9cb92 100644
+index 07eb43165e..3c4c9cb92c 100644
 --- a/man/systemctl.xml
 +++ b/man/systemctl.xml
 @@ -1732,7 +1732,7 @@ kobject-uevent 1 systemd-udevd-kernel.socket systemd-udevd.service

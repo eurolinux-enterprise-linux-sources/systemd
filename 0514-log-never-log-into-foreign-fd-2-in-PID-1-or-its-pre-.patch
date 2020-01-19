@@ -13,7 +13,7 @@ Resolves: #1420505
  3 files changed, 16 insertions(+), 3 deletions(-)
 
 diff --git a/src/core/main.c b/src/core/main.c
-index 37e3ea0ce..66393ed6a 100644
+index 37e3ea0ced..66393ed6ad 100644
 --- a/src/core/main.c
 +++ b/src/core/main.c
 @@ -1310,10 +1310,17 @@ int main(int argc, char *argv[]) {
@@ -37,7 +37,7 @@ index 37e3ea0ce..66393ed6a 100644
  
                  /* Running outside of a container as PID 1 */
 diff --git a/src/shared/log.c b/src/shared/log.c
-index 646a1d638..349142030 100644
+index 646a1d6389..3491420308 100644
 --- a/src/shared/log.c
 +++ b/src/shared/log.c
 @@ -52,6 +52,7 @@ static bool show_color = false;
@@ -66,7 +66,7 @@ index 646a1d638..349142030 100644
 +        always_reopen_console = b;
 +}
 diff --git a/src/shared/log.h b/src/shared/log.h
-index 2889e1e77..3c9448f1a 100644
+index 2889e1e77f..3c9448f1a7 100644
 --- a/src/shared/log.h
 +++ b/src/shared/log.h
 @@ -210,3 +210,4 @@ LogTarget log_target_from_string(const char *s) _pure_;

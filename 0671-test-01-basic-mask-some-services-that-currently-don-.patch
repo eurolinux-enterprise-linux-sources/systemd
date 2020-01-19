@@ -1,0 +1,29 @@
+From 5daaf2b0fd5086aa281f44c665513a7de8f403e1 Mon Sep 17 00:00:00 2001
+From: Daniel Mack <daniel@zonque.org>
+Date: Thu, 19 Nov 2015 13:27:39 +0100
+Subject: [PATCH] test: 01-basic: mask some services that currently don't run
+ in qemu
+
+Cherry-picked from: 6f9d3b08cf3e50d3903282d2ce36244bb86c7b7c
+---
+ test/TEST-01-BASIC/test.sh | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/test/TEST-01-BASIC/test.sh b/test/TEST-01-BASIC/test.sh
+index d97fbe24d4..ee9c66aba8 100755
+--- a/test/TEST-01-BASIC/test.sh
++++ b/test/TEST-01-BASIC/test.sh
+@@ -61,6 +61,13 @@ EOF
+     )
+     setup_nspawn_root
+ 
++    # mask some services that we do not want to run in these tests
++    ln -s /dev/null $initdir/etc/systemd/system/systemd-hwdb-update.service
++    ln -s /dev/null $initdir/etc/systemd/system/systemd-journal-catalog-update.service
++    ln -s /dev/null $initdir/etc/systemd/system/systemd-networkd.service
++    ln -s /dev/null $initdir/etc/systemd/system/systemd-networkd.socket
++    ln -s /dev/null $initdir/etc/systemd/system/systemd-resolved.service
++
+     ddebug "umount $TESTDIR/root"
+     umount $TESTDIR/root
+ }

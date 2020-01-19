@@ -1,4 +1,4 @@
-From dfb87e5916ce13e75af2cefd62bbbafaef143d8c Mon Sep 17 00:00:00 2001
+From efecb8966520f1782501f8f5f05c89fde0c19deb Mon Sep 17 00:00:00 2001
 From: Riccardo Schirone <rschiron@redhat.com>
 Date: Mon, 4 Feb 2019 14:29:09 +0100
 Subject: [PATCH] Refuse dbus message paths longer than BUS_PATH_SIZE_MAX
@@ -11,14 +11,14 @@ time-consuming and it may have security impacts.
 In any case, the limit is set so high that real-life applications should not
 have a problem with it.
 
-Related: #1667870
+Related: #1667871
 ---
  src/libsystemd/sd-bus/bus-internal.c | 2 +-
  src/libsystemd/sd-bus/bus-internal.h | 4 ++++
  2 files changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/src/libsystemd/sd-bus/bus-internal.c b/src/libsystemd/sd-bus/bus-internal.c
-index 91b288cd2..c952d63e1 100644
+index 91b288cd25..c952d63e10 100644
 --- a/src/libsystemd/sd-bus/bus-internal.c
 +++ b/src/libsystemd/sd-bus/bus-internal.c
 @@ -58,7 +58,7 @@ bool object_path_is_valid(const char *p) {
@@ -31,7 +31,7 @@ index 91b288cd2..c952d63e1 100644
  
  char* object_path_startswith(const char *a, const char *b) {
 diff --git a/src/libsystemd/sd-bus/bus-internal.h b/src/libsystemd/sd-bus/bus-internal.h
-index 9c1e5a35b..1c5fbeac2 100644
+index 9c1e5a35b8..1c5fbeac2a 100644
 --- a/src/libsystemd/sd-bus/bus-internal.h
 +++ b/src/libsystemd/sd-bus/bus-internal.h
 @@ -331,6 +331,10 @@ struct sd_bus {

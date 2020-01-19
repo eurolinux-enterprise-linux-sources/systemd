@@ -12,7 +12,7 @@ Related: #1256858
  2 files changed, 10 insertions(+), 22 deletions(-)
 
 diff --git a/src/core/transaction.c b/src/core/transaction.c
-index aed64fa41..57e9cb3f8 100644
+index aed64fa419..57e9cb3f83 100644
 --- a/src/core/transaction.c
 +++ b/src/core/transaction.c
 @@ -26,6 +26,7 @@
@@ -59,7 +59,7 @@ index aed64fa41..57e9cb3f8 100644
                  return sd_bus_error_setf(e, BUS_ERROR_JOB_TYPE_NOT_APPLICABLE,
                                           "Job type %s is not applicable for unit %s.",
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index 58998185c..e4b404abc 100644
+index 58998185c6..e4b404abc2 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -2617,6 +2617,11 @@ static int start_unit_one(

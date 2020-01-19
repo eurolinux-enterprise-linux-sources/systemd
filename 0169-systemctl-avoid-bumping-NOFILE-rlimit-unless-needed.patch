@@ -16,7 +16,7 @@ Resolves: #1222517
  1 file changed, 6 insertions(+), 5 deletions(-)
 
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index 4ec0cff21..089c25f83 100644
+index 4ec0cff21d..089c25f83f 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -4449,6 +4449,12 @@ static int show(sd_bus *bus, char **args) {

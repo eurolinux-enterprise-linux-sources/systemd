@@ -14,7 +14,7 @@ Resolves: #1549119
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/timer.c b/src/core/timer.c
-index 91d8db67e..0a264f60d 100644
+index 91d8db67e8..0a264f60d9 100644
 --- a/src/core/timer.c
 +++ b/src/core/timer.c
 @@ -421,7 +421,7 @@ static void timer_enter_waiting(Timer *t, bool initial) {

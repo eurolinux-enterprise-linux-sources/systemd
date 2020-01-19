@@ -14,7 +14,7 @@ Resolves: #1222517
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/test/test-hashmap-plain.c b/src/test/test-hashmap-plain.c
-index 84b508f87..c1a5ccf1f 100644
+index 84b508f874..c1a5ccf1f5 100644
 --- a/src/test/test-hashmap-plain.c
 +++ b/src/test/test-hashmap-plain.c
 @@ -682,7 +682,7 @@ static void test_hashmap_get2(void) {

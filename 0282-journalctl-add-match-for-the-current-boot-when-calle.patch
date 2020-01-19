@@ -11,7 +11,7 @@ Related: #947636
  1 file changed, 4 insertions(+)
 
 diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
-index 3db1cd24e..6948ed689 100644
+index 3db1cd24ef..6948ed689d 100644
 --- a/src/journal/journalctl.c
 +++ b/src/journal/journalctl.c
 @@ -207,6 +207,10 @@ static int add_matches_for_device(sd_journal *j, const char *devpath) {

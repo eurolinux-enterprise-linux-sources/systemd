@@ -15,7 +15,7 @@ Resolves: #1178929
  1 file changed, 310 insertions(+)
 
 diff --git a/man/systemd.exec.xml b/man/systemd.exec.xml
-index 1b14ced78..508146f06 100644
+index 1b14ced788..508146f06c 100644
 --- a/man/systemd.exec.xml
 +++ b/man/systemd.exec.xml
 @@ -1360,6 +1360,316 @@

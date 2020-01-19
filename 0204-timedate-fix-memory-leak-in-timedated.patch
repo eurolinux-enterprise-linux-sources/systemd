@@ -57,7 +57,7 @@ Resolves: #1222517
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/timedate/timedated.c b/src/timedate/timedated.c
-index f87514936..09d0dbabc 100644
+index f875149364..09d0dbabcd 100644
 --- a/src/timedate/timedated.c
 +++ b/src/timedate/timedated.c
 @@ -245,7 +245,7 @@ static int context_read_ntp(Context *c, sd_bus *bus) {

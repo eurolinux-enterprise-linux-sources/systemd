@@ -20,7 +20,7 @@ Related: #1446095
  3 files changed, 215 insertions(+)
 
 diff --git a/src/shared/util.c b/src/shared/util.c
-index af0953273..982f5e044 100644
+index af09532733..982f5e044f 100644
 --- a/src/shared/util.c
 +++ b/src/shared/util.c
 @@ -95,6 +95,7 @@
@@ -191,7 +191,7 @@ index af0953273..982f5e044 100644
 +        return -EOPNOTSUPP;
 +}
 diff --git a/src/shared/util.h b/src/shared/util.h
-index 526a6fe84..9c4be0256 100644
+index 526a6fe848..9c4be02566 100644
 --- a/src/shared/util.h
 +++ b/src/shared/util.h
 @@ -1112,3 +1112,13 @@ int parse_percent(const char *p);
@@ -209,7 +209,7 @@ index 526a6fe84..9c4be0256 100644
 +
 +int acquire_data_fd(const void *data, size_t size, unsigned flags);
 diff --git a/src/test/test-util.c b/src/test/test-util.c
-index f2c52edce..efb02ff53 100644
+index f2c52edcee..efb02ff530 100644
 --- a/src/test/test-util.c
 +++ b/src/test/test-util.c
 @@ -1861,6 +1861,54 @@ static void test_system_tasks_max_scale(void) {

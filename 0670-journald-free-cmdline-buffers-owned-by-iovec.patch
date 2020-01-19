@@ -1,4 +1,4 @@
-From b4f602cb19719cbb44e5635d4b4743125f5b20bd Mon Sep 17 00:00:00 2001
+From 4b0ebd414553f9ccab85dfd708bf808127da505f Mon Sep 17 00:00:00 2001
 From: Michal Sekletar <msekleta@redhat.com>
 Date: Wed, 16 Jan 2019 10:24:56 +0100
 Subject: [PATCH] journald: free cmdline buffers owned by iovec
@@ -15,7 +15,7 @@ immediately exit so allocated memory is reclaimed by the kernel.]
  1 file changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index c35858247..88d8f3e41 100644
+index c35858247b..88d8f3e41d 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -738,6 +738,7 @@ static void dispatch_message_real(

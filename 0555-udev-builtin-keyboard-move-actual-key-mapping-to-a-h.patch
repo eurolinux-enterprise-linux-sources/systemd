@@ -17,7 +17,7 @@ Resolves: #1500119
  1 file changed, 33 insertions(+), 25 deletions(-)
 
 diff --git a/src/udev/udev-builtin-keyboard.c b/src/udev/udev-builtin-keyboard.c
-index 515edd45c..f33401790 100644
+index 515edd45ce..f33401790c 100644
 --- a/src/udev/udev-builtin-keyboard.c
 +++ b/src/udev/udev-builtin-keyboard.c
 @@ -66,12 +66,41 @@ static int install_force_release(struct udev_device *dev, const unsigned *releas

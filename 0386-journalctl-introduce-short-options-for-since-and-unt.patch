@@ -13,7 +13,7 @@ Related: #1318994
  2 files changed, 9 insertions(+), 9 deletions(-)
 
 diff --git a/man/journalctl.xml b/man/journalctl.xml
-index 0981fba72..dedcf1925 100644
+index 0981fba729..dedcf19250 100644
 --- a/man/journalctl.xml
 +++ b/man/journalctl.xml
 @@ -528,7 +528,9 @@
@@ -27,7 +27,7 @@ index 0981fba72..dedcf1925 100644
  
          <listitem><para>Start showing entries on or newer than the
 diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
-index e84dd4c9d..ba9ae05f7 100644
+index e84dd4c9d3..ba9ae05f72 100644
 --- a/src/journal/journalctl.c
 +++ b/src/journal/journalctl.c
 @@ -274,8 +274,8 @@ static void help(void) {

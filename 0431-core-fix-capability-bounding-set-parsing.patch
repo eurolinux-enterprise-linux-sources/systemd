@@ -12,7 +12,7 @@ Resolves: #1409586
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index 90d42b002..705641971 100644
+index 90d42b002f..7056419715 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -1069,7 +1069,7 @@ int config_parse_bounding_set(const char *unit,

@@ -19,7 +19,7 @@ Related: #1571098
  1 file changed, 111 insertions(+), 5 deletions(-)
 
 diff --git a/src/core/shutdown.c b/src/core/shutdown.c
-index 71f001ac1..0b0a54a7d 100644
+index 71f001ac13..0b0a54a7de 100644
 --- a/src/core/shutdown.c
 +++ b/src/core/shutdown.c
 @@ -53,6 +53,9 @@

@@ -18,7 +18,7 @@ Resolves: #1225739
  2 files changed, 23 insertions(+), 37 deletions(-)
 
 diff --git a/man/tmpfiles.d.xml b/man/tmpfiles.d.xml
-index fc1fe13ac..fc9db622e 100644
+index fc1fe13aca..fc9db622e5 100644
 --- a/man/tmpfiles.d.xml
 +++ b/man/tmpfiles.d.xml
 @@ -161,6 +161,13 @@
@@ -45,7 +45,7 @@ index fc1fe13ac..fc9db622e 100644
        <literal>-</literal>, no automatic clean-up is
        done.</para>
 diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
-index bda89df5b..df7676b57 100644
+index bda89df5be..df7676b572 100644
 --- a/src/tmpfiles/tmpfiles.c
 +++ b/src/tmpfiles/tmpfiles.c
 @@ -79,6 +79,7 @@ typedef enum ItemType {

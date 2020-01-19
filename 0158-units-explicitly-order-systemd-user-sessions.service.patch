@@ -15,7 +15,7 @@ Resolves: #1222517
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/units/systemd-user-sessions.service.in b/units/systemd-user-sessions.service.in
-index 0869e7399..c09c05d4d 100644
+index 0869e73991..c09c05d4d5 100644
 --- a/units/systemd-user-sessions.service.in
 +++ b/units/systemd-user-sessions.service.in
 @@ -8,7 +8,7 @@

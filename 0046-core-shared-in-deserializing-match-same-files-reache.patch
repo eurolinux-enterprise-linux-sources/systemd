@@ -33,7 +33,7 @@ Fixes: https://bugzilla.redhat.com/show_bug.cgi?id=1186018
  4 files changed, 12 insertions(+), 9 deletions(-)
 
 diff --git a/src/core/socket.c b/src/core/socket.c
-index 48c43a288..88aae4815 100644
+index 48c43a2880..88aae4815b 100644
 --- a/src/core/socket.c
 +++ b/src/core/socket.c
 @@ -2100,7 +2100,7 @@ static int socket_deserialize_item(Unit *u, const char *key, const char *value,
@@ -64,7 +64,7 @@ index 48c43a288..88aae4815 100644
  
                          if (p) {
 diff --git a/src/shared/path-util.c b/src/shared/path-util.c
-index b9db7f104..70bc1caa2 100644
+index b9db7f1047..70bc1caa2a 100644
 --- a/src/shared/path-util.c
 +++ b/src/shared/path-util.c
 @@ -436,6 +436,10 @@ bool path_equal(const char *a, const char *b) {
@@ -79,7 +79,7 @@ index b9db7f104..70bc1caa2 100644
          assert(path);
  
 diff --git a/src/shared/path-util.h b/src/shared/path-util.h
-index bd0d32473..bcf116ed3 100644
+index bd0d32473f..bcf116ed3d 100644
 --- a/src/shared/path-util.h
 +++ b/src/shared/path-util.h
 @@ -45,6 +45,7 @@ int path_make_relative(const char *from_dir, const char *to_path, char **_r);
@@ -91,7 +91,7 @@ index bd0d32473..bcf116ed3 100644
  
  char** path_strv_make_absolute_cwd(char **l);
 diff --git a/src/shared/socket-util.c b/src/shared/socket-util.c
-index c6f64876b..c278d6f9d 100644
+index c6f64876be..c278d6f9d4 100644
 --- a/src/shared/socket-util.c
 +++ b/src/shared/socket-util.c
 @@ -325,9 +325,6 @@ bool socket_address_equal(const SocketAddress *a, const SocketAddress *b) {

@@ -10,7 +10,7 @@ Subject: [PATCH] rules: bring back 80-net-name-slot.rules
  create mode 100644 rules/80-net-name-slot.rules
 
 diff --git a/Makefile.am b/Makefile.am
-index 4933f76bd..bec32c39e 100644
+index 4933f76bdd..bec32c39e5 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -3570,7 +3570,8 @@ dist_udevrules_DATA += \
@@ -25,7 +25,7 @@ index 4933f76bd..bec32c39e 100644
  	rules/99-systemd.rules
 diff --git a/rules/80-net-name-slot.rules b/rules/80-net-name-slot.rules
 new file mode 100644
-index 000000000..c5f1b3885
+index 0000000000..c5f1b3885b
 --- /dev/null
 +++ b/rules/80-net-name-slot.rules
 @@ -0,0 +1,14 @@

@@ -34,7 +34,7 @@ changes to .spec file:
  3 files changed, 10 insertions(+), 17 deletions(-)
 
 diff --git a/src/journal/compress.c b/src/journal/compress.c
-index 4fb09f596..3baf9e4ad 100644
+index 4fb09f5965..3baf9e4ad7 100644
 --- a/src/journal/compress.c
 +++ b/src/journal/compress.c
 @@ -98,7 +98,12 @@ int compress_blob_lz4(const void *src, uint64_t src_size, void *dst, size_t *dst
@@ -70,7 +70,7 @@ index 4fb09f596..3baf9e4ad 100644
                  }
  
 diff --git a/src/journal/compress.h b/src/journal/compress.h
-index 136dda6d3..0f62a58d6 100644
+index 136dda6d39..0f62a58d6e 100644
 --- a/src/journal/compress.h
 +++ b/src/journal/compress.h
 @@ -35,15 +35,9 @@ int compress_blob_lz4(const void *src, uint64_t src_size, void *dst, size_t *dst
@@ -103,7 +103,7 @@ index 136dda6d3..0f62a58d6 100644
  
  int decompress_stream(const char *filename, int fdf, int fdt, off_t max_bytes);
 diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
-index 0fd59ec07..ebc8e6230 100644
+index 0fd59ec073..ebc8e62305 100644
 --- a/src/journal/journal-file.c
 +++ b/src/journal/journal-file.c
 @@ -2615,9 +2615,8 @@ int journal_file_open(

@@ -21,7 +21,7 @@ Resolves: #1222517
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/shared/machine-image.c b/src/shared/machine-image.c
-index 8d61507e8..c02ee814c 100644
+index 8d61507e84..c02ee814c4 100644
 --- a/src/shared/machine-image.c
 +++ b/src/shared/machine-image.c
 @@ -601,7 +601,7 @@ int image_path_lock(const char *path, int operation, LockFile *global, LockFile

@@ -23,7 +23,7 @@ into existence. (The font table is a per-vtcon property.)
  1 file changed, 3 insertions(+), 4 deletions(-)
 
 diff --git a/src/vconsole/90-vconsole.rules.in b/src/vconsole/90-vconsole.rules.in
-index 062009640..35b9ad515 100644
+index 062009640c..35b9ad5151 100644
 --- a/src/vconsole/90-vconsole.rules.in
 +++ b/src/vconsole/90-vconsole.rules.in
 @@ -5,7 +5,6 @@

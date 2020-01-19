@@ -21,7 +21,7 @@ Resolves: #1255129
  3 files changed, 14 insertions(+), 10 deletions(-)
 
 diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
-index 2bc37ba60..1ec350e03 100644
+index 2bc37ba60e..1ec350e034 100644
 --- a/src/core/dbus-manager.c
 +++ b/src/core/dbus-manager.c
 @@ -734,7 +734,7 @@ static int method_start_transient_unit(sd_bus *bus, sd_bus_message *message, voi
@@ -43,7 +43,7 @@ index 2bc37ba60..1ec350e03 100644
                  return r;
  
 diff --git a/src/core/selinux-access.c b/src/core/selinux-access.c
-index ce4f39459..91460b8af 100644
+index ce4f394596..91460b8af9 100644
 --- a/src/core/selinux-access.c
 +++ b/src/core/selinux-access.c
 @@ -175,6 +175,7 @@ void mac_selinux_access_free(void) {
@@ -85,7 +85,7 @@ index ce4f39459..91460b8af 100644
  
          sd_bus_creds_get_cmdline(creds, &cmdline);
 diff --git a/src/core/selinux-access.h b/src/core/selinux-access.h
-index dd1e8bb9d..7dc271b35 100644
+index dd1e8bb9d0..7dc271b35d 100644
 --- a/src/core/selinux-access.h
 +++ b/src/core/selinux-access.h
 @@ -28,21 +28,24 @@

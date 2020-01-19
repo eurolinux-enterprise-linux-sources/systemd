@@ -26,7 +26,7 @@ Related: #1267707
  1 file changed, 78 insertions(+), 80 deletions(-)
 
 diff --git a/src/core/manager.c b/src/core/manager.c
-index 5da836593..c5021993e 100644
+index 5da8365938..c5021993e5 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -1635,9 +1635,33 @@ static void manager_invoke_notify_message(Manager *m, Unit *u, pid_t pid, char *

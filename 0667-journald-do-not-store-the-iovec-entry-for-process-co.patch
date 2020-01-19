@@ -1,4 +1,4 @@
-From 38081a6ddf876345a15b92dc7d5e655b1f28976f Mon Sep 17 00:00:00 2001
+From 78c1a16731f8bec0e854ed570292afc8bf3d8030 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
 Date: Thu, 3 Jan 2019 11:35:22 +0100
 Subject: [PATCH] journald: do not store the iovec entry for process
@@ -23,7 +23,7 @@ Resolves: #1657788
  4 files changed, 98 insertions(+), 128 deletions(-)
 
 diff --git a/src/journal/coredump.c b/src/journal/coredump.c
-index 59ccd46bb..40de86f05 100644
+index 59ccd46bb0..40de86f050 100644
 --- a/src/journal/coredump.c
 +++ b/src/journal/coredump.c
 @@ -526,14 +526,6 @@ static int compose_open_fds(pid_t pid, char **open_fds) {
@@ -301,7 +301,7 @@ index 59ccd46bb..40de86f05 100644
                  log_error_errno(r, "Failed to log coredump: %m");
  
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index 7e67e055e..c35858247 100644
+index 7e67e055e3..c35858247b 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -788,9 +788,9 @@ static void dispatch_message_real(
@@ -332,7 +332,7 @@ index 7e67e055e..c35858247 100644
  #ifdef HAVE_AUDIT
                  r = audit_session_from_pid(object_pid, &audit);
 diff --git a/src/shared/util.c b/src/shared/util.c
-index 78967103a..c71e021cd 100644
+index 78967103a6..c71e021cd7 100644
 --- a/src/shared/util.c
 +++ b/src/shared/util.c
 @@ -2275,6 +2275,23 @@ int flush_fd(int fd) {
@@ -360,7 +360,7 @@ index 78967103a..c71e021cd 100644
                  const char *name,
                  bool fail,
 diff --git a/src/shared/util.h b/src/shared/util.h
-index cf096aa07..8fc237495 100644
+index cf096aa07b..8fc237495a 100644
 --- a/src/shared/util.h
 +++ b/src/shared/util.h
 @@ -1140,3 +1140,10 @@ static inline void block_signals_reset(sigset_t *ss) {

@@ -12,7 +12,7 @@ Resolves: #1268336
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/man/systemd-analyze.xml b/man/systemd-analyze.xml
-index b2e0f42d5..e58d9a74e 100644
+index b2e0f42d50..e58d9a74ef 100644
 --- a/man/systemd-analyze.xml
 +++ b/man/systemd-analyze.xml
 @@ -93,7 +93,7 @@

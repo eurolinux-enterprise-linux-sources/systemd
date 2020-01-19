@@ -8,7 +8,7 @@ Subject: [PATCH] some compilators don't support __INCLUDE_LEVEL__
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/systemd/_sd-common.h b/src/systemd/_sd-common.h
-index 896a027eb..e9426a450 100644
+index 896a027eb5..e9426a450e 100644
 --- a/src/systemd/_sd-common.h
 +++ b/src/systemd/_sd-common.h
 @@ -24,7 +24,7 @@

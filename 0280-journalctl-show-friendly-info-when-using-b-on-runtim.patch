@@ -14,7 +14,7 @@ Resolves: #1082179
  1 file changed, 7 insertions(+)
 
 diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
-index 964f849ee..836d7d214 100644
+index 964f849ee0..836d7d2141 100644
 --- a/src/journal/journalctl.c
 +++ b/src/journal/journalctl.c
 @@ -1905,6 +1905,13 @@ int main(int argc, char *argv[]) {

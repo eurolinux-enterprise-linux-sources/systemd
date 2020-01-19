@@ -24,7 +24,7 @@ Resolves: #1307080
  5 files changed, 74 insertions(+), 55 deletions(-)
 
 diff --git a/src/machine/machinectl.c b/src/machine/machinectl.c
-index cfd3162fb..1a58aeaf1 100644
+index cfd3162fb7..1a58aeaf11 100644
 --- a/src/machine/machinectl.c
 +++ b/src/machine/machinectl.c
 @@ -1427,7 +1427,7 @@ static int login_machine(int argc, char *argv[], void *userdata) {
@@ -37,7 +37,7 @@ index cfd3162fb..1a58aeaf1 100644
                  return log_error_errno(r, "Failed to create PTY forwarder: %m");
  
 diff --git a/src/nspawn/nspawn.c b/src/nspawn/nspawn.c
-index 78bd58483..a37b64094 100644
+index 78bd584834..a37b64094b 100644
 --- a/src/nspawn/nspawn.c
 +++ b/src/nspawn/nspawn.c
 @@ -3581,6 +3581,7 @@ int main(int argc, char *argv[]) {
@@ -138,7 +138,7 @@ index 78bd58483..a37b64094 100644
                                          log_error_errno(r, "Failed to create PTY forwarder: %m");
                                          goto finish;
 diff --git a/src/run/run.c b/src/run/run.c
-index dd1338f3b..468034284 100644
+index dd1338f3b4..4680342846 100644
 --- a/src/run/run.c
 +++ b/src/run/run.c
 @@ -780,7 +780,7 @@ static int start_transient_service(
@@ -151,7 +151,7 @@ index dd1338f3b..468034284 100644
                          return log_error_errno(r, "Failed to create PTY forwarder: %m");
  
 diff --git a/src/shared/ptyfwd.c b/src/shared/ptyfwd.c
-index 88b3f4e3c..4402af123 100644
+index 88b3f4e3c4..4402af123f 100644
 --- a/src/shared/ptyfwd.c
 +++ b/src/shared/ptyfwd.c
 @@ -42,6 +42,8 @@ struct PTYForward {
@@ -279,7 +279,7 @@ index 88b3f4e3c..4402af123 100644
          if (r < 0)
                  return r;
 diff --git a/src/shared/ptyfwd.h b/src/shared/ptyfwd.h
-index d3e229bd7..6208a543d 100644
+index d3e229bd70..6208a543db 100644
 --- a/src/shared/ptyfwd.h
 +++ b/src/shared/ptyfwd.h
 @@ -30,7 +30,7 @@

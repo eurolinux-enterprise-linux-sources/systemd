@@ -14,7 +14,7 @@ https://bugs.freedesktop.org/show_bug.cgi?id=89391
  2 files changed, 21 insertions(+), 14 deletions(-)
 
 diff --git a/src/journal-remote/journal-remote-parse.c b/src/journal-remote/journal-remote-parse.c
-index d9dea8deb..afded7e38 100644
+index d9dea8deb0..afded7e380 100644
 --- a/src/journal-remote/journal-remote-parse.c
 +++ b/src/journal-remote/journal-remote-parse.c
 @@ -344,22 +344,25 @@ int process_data(RemoteSource *source) {
@@ -78,7 +78,7 @@ index d9dea8deb..afded7e38 100644
                  source->state = STATE_DATA_FINISH;
  
 diff --git a/src/journal-remote/journal-remote-parse.h b/src/journal-remote/journal-remote-parse.h
-index 8499f4eb8..22db55091 100644
+index 8499f4eb82..22db550913 100644
 --- a/src/journal-remote/journal-remote-parse.h
 +++ b/src/journal-remote/journal-remote-parse.h
 @@ -42,7 +42,9 @@ typedef struct RemoteSource {

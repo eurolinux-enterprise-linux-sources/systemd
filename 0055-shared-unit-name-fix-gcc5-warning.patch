@@ -17,7 +17,7 @@ src/shared/unit-name.c:102:34: warning: logical not is only applied to the left 
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/shared/unit-name.c b/src/shared/unit-name.c
-index 21b66913c..f728af4a8 100644
+index 21b66913c9..f728af4a81 100644
 --- a/src/shared/unit-name.c
 +++ b/src/shared/unit-name.c
 @@ -100,7 +100,7 @@ bool unit_name_is_valid(const char *n, enum template_valid template_ok) {

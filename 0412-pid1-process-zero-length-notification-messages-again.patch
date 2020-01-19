@@ -19,7 +19,7 @@ Resolves: #1380259
  1 file changed, 6 insertions(+), 9 deletions(-)
 
 diff --git a/src/core/manager.c b/src/core/manager.c
-index ed8105955..0376c4d4b 100644
+index ed81059554..0376c4d4b4 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -1614,13 +1614,12 @@ static int manager_dispatch_cgroups_agent_fd(sd_event_source *source, int fd, ui

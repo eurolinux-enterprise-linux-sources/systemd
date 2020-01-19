@@ -29,7 +29,7 @@ Related: #1364092
  1 file changed, 13 insertions(+), 2 deletions(-)
 
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index 2b7ecd09a..3e9412d57 100644
+index 2b7ecd09ab..3e9412d577 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -923,6 +923,7 @@ static int system_journal_open(Server *s, bool flush_requested) {

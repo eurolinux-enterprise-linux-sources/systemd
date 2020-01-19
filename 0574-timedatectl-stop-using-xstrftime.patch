@@ -34,7 +34,7 @@ Resolves: #1503942
  2 files changed, 26 insertions(+), 25 deletions(-)
 
 diff --git a/src/shared/time-util.h b/src/shared/time-util.h
-index f2789142f..32e90902a 100644
+index f2789142fe..32e90902a8 100644
 --- a/src/shared/time-util.h
 +++ b/src/shared/time-util.h
 @@ -108,5 +108,3 @@ int get_timezones(char ***l);
@@ -44,7 +44,7 @@ index f2789142f..32e90902a 100644
 -
 -#define xstrftime(buf, fmt, tm) assert_se(strftime(buf, ELEMENTSOF(buf), fmt, tm) > 0)
 diff --git a/src/timedate/timedatectl.c b/src/timedate/timedatectl.c
-index 1accccb68..3e9b657bc 100644
+index 1accccb688..3e9b657bc4 100644
 --- a/src/timedate/timedatectl.c
 +++ b/src/timedate/timedatectl.c
 @@ -93,8 +93,8 @@ static const char *jump_str(int delta_minutes, char *s, size_t size) {

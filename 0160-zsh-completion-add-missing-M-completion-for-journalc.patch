@@ -12,7 +12,7 @@ Resolves: #1222517
  1 file changed, 1 insertion(+)
 
 diff --git a/shell-completion/zsh/_journalctl b/shell-completion/zsh/_journalctl
-index a469bbc9a..863348e05 100644
+index a469bbc9a7..863348e050 100644
 --- a/shell-completion/zsh/_journalctl
 +++ b/shell-completion/zsh/_journalctl
 @@ -76,6 +76,7 @@ _arguments -s \

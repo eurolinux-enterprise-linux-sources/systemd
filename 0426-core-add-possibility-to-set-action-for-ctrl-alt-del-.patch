@@ -19,7 +19,7 @@ Resolves: #1353028
  5 files changed, 68 insertions(+), 14 deletions(-)
 
 diff --git a/man/systemd-system.conf.xml b/man/systemd-system.conf.xml
-index 39d19bc71..236c20d5f 100644
+index 39d19bc71a..236c20d5f9 100644
 --- a/man/systemd-system.conf.xml
 +++ b/man/systemd-system.conf.xml
 @@ -101,6 +101,17 @@
@@ -41,7 +41,7 @@ index 39d19bc71..236c20d5f 100644
          <term><varname>CPUAffinity=</varname></term>
  
 diff --git a/src/core/main.c b/src/core/main.c
-index c9d8ce4a4..6ac9c9d44 100644
+index c9d8ce4a40..6ac9c9d44f 100644
 --- a/src/core/main.c
 +++ b/src/core/main.c
 @@ -115,6 +115,7 @@ static FILE* arg_serialization = NULL;
@@ -78,7 +78,7 @@ index c9d8ce4a4..6ac9c9d44 100644
          manager_set_default_rlimits(m, arg_default_rlimit);
          manager_environment_add(m, NULL, arg_default_environment);
 diff --git a/src/core/manager.c b/src/core/manager.c
-index 6d045fdf3..9048dde96 100644
+index 6d045fdf35..9048dde96e 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -1859,6 +1859,35 @@ static int manager_start_target(Manager *m, const char *name, JobMode mode) {
@@ -151,7 +151,7 @@ index 6d045fdf3..9048dde96 100644
 +
 +DEFINE_STRING_TABLE_LOOKUP(cad_burst_action, CADBurstAction);
 diff --git a/src/core/manager.h b/src/core/manager.h
-index 3e855db46..42be1fc43 100644
+index 3e855db466..42be1fc437 100644
 --- a/src/core/manager.h
 +++ b/src/core/manager.h
 @@ -64,6 +64,14 @@ typedef enum ManagerExitCode {
@@ -188,7 +188,7 @@ index 3e855db46..42be1fc43 100644
 +const char *cad_burst_action_to_string(CADBurstAction a) _const_;
 +CADBurstAction cad_burst_action_from_string(const char *s) _pure_;
 diff --git a/src/core/system.conf b/src/core/system.conf
-index 231609033..a11f59903 100644
+index 231609033b..a11f599038 100644
 --- a/src/core/system.conf
 +++ b/src/core/system.conf
 @@ -20,6 +20,7 @@

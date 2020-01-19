@@ -15,7 +15,7 @@ Resolves: #1380175
  1 file changed, 4 insertions(+)
 
 diff --git a/src/core/manager.c b/src/core/manager.c
-index 71dd70c94..689b26615 100644
+index 71dd70c94c..689b266158 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -1678,6 +1678,10 @@ static int manager_dispatch_notify_fd(sd_event_source *source, int fd, uint32_t

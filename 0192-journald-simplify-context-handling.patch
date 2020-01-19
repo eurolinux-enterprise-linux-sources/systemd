@@ -12,7 +12,7 @@ Related: #1230190
  1 file changed, 8 insertions(+), 21 deletions(-)
 
 diff --git a/src/journal/journald-stream.c b/src/journal/journald-stream.c
-index 11b852d39..15a554c34 100644
+index 11b852d39d..15a554c34d 100644
 --- a/src/journal/journald-stream.c
 +++ b/src/journal/journald-stream.c
 @@ -57,10 +57,7 @@ struct StdoutStream {

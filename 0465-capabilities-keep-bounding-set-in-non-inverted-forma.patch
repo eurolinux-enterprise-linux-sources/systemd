@@ -25,7 +25,7 @@ Resolves: #1387398
  13 files changed, 96 insertions(+), 81 deletions(-)
 
 diff --git a/src/core/dbus-execute.c b/src/core/dbus-execute.c
-index da8b10d2b..a564c53fa 100644
+index da8b10d2b3..a564c53fae 100644
 --- a/src/core/dbus-execute.c
 +++ b/src/core/dbus-execute.c
 @@ -324,9 +324,7 @@ static int property_get_capability_bounding_set(
@@ -40,7 +40,7 @@ index da8b10d2b..a564c53fa 100644
  
  static int property_get_capabilities(
 diff --git a/src/core/execute.c b/src/core/execute.c
-index f72b20966..40db11e28 100644
+index f72b20966f..40db11e284 100644
 --- a/src/core/execute.c
 +++ b/src/core/execute.c
 @@ -1733,8 +1733,8 @@ static int exec_child(
@@ -78,7 +78,7 @@ index f72b20966..40db11e28 100644
  
                  fputs("\n", f);
 diff --git a/src/core/execute.h b/src/core/execute.h
-index cadd0e6b4..40f7b794c 100644
+index cadd0e6b47..40f7b794c5 100644
 --- a/src/core/execute.h
 +++ b/src/core/execute.h
 @@ -150,7 +150,7 @@ struct ExecContext {
@@ -91,7 +91,7 @@ index cadd0e6b4..40f7b794c 100644
          cap_t capabilities;
          int secure_bits;
 diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
-index b50fe45b4..e4ce29210 100644
+index b50fe45b47..e4ce292100 100644
 --- a/src/core/load-fragment-gperf.gperf.m4
 +++ b/src/core/load-fragment-gperf.gperf.m4
 @@ -47,7 +47,7 @@ $1.SyslogLevel,                  config_parse_log_level,             0,
@@ -104,7 +104,7 @@ index b50fe45b4..e4ce29210 100644
  $1.NoNewPrivileges,              config_parse_no_new_privileges,     0,                             offsetof($1, exec_context)
  m4_ifdef(`HAVE_SECCOMP',
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index ab3b0c2e9..dbaaf2fee 100644
+index ab3b0c2e92..dbaaf2fee7 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -1015,7 +1015,7 @@ int config_parse_exec_secure_bits(const char *unit,
@@ -169,7 +169,7 @@ index ab3b0c2e9..dbaaf2fee 100644
                  { config_parse_unit_deps,             "UNIT [...]" },
                  { config_parse_exec,                  "PATH [ARGUMENT [...]]" },
 diff --git a/src/core/load-fragment.h b/src/core/load-fragment.h
-index 9dd7d1bda..2059353d3 100644
+index 9dd7d1bda0..2059353d38 100644
 --- a/src/core/load-fragment.h
 +++ b/src/core/load-fragment.h
 @@ -54,7 +54,7 @@ int config_parse_exec_cpu_sched_prio(const char *unit, const char *filename, uns
@@ -182,7 +182,7 @@ index 9dd7d1bda..2059353d3 100644
  int config_parse_bytes_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
  int config_parse_sec_limit(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
 diff --git a/src/core/main.c b/src/core/main.c
-index a0df1e5ce..cba992cea 100644
+index a0df1e5cec..cba992cea2 100644
 --- a/src/core/main.c
 +++ b/src/core/main.c
 @@ -108,7 +108,7 @@ static usec_t arg_runtime_watchdog = 0;
@@ -222,7 +222,7 @@ index a0df1e5ce..cba992cea 100644
                          log_emergency_errno(r, "Failed to drop capability bounding set: %m");
                          error_message = "Failed to drop capability bounding set";
 diff --git a/src/core/unit.c b/src/core/unit.c
-index 4eb0d78f4..103f92084 100644
+index 4eb0d78f44..103f92084c 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -3213,7 +3213,7 @@ int unit_patch_contexts(Unit *u) {
@@ -235,7 +235,7 @@ index 4eb0d78f4..103f92084 100644
  
          cc = unit_get_cgroup_context(u);
 diff --git a/src/import/import-common.c b/src/import/import-common.c
-index f10a453ee..243e657c5 100644
+index f10a453eed..243e657c56 100644
 --- a/src/import/import-common.c
 +++ b/src/import/import-common.c
 @@ -526,7 +526,7 @@ int import_fork_tar(const char *path, pid_t *ret) {
@@ -248,7 +248,7 @@ index f10a453ee..243e657c5 100644
                          log_error_errno(r, "Failed to drop capabilities, ignoring: %m");
  
 diff --git a/src/nspawn/nspawn.c b/src/nspawn/nspawn.c
-index a37b64094..d0003d379 100644
+index a37b64094b..d0003d3790 100644
 --- a/src/nspawn/nspawn.c
 +++ b/src/nspawn/nspawn.c
 @@ -1863,7 +1863,7 @@ static int setup_journal(const char *directory) {
@@ -261,7 +261,7 @@ index a37b64094..d0003d379 100644
  
  static int register_machine(pid_t pid, int local_ifindex) {
 diff --git a/src/shared/capability.c b/src/shared/capability.c
-index 2b963fde3..3ed31df5a 100644
+index 2b963fde3f..3ed31df5ab 100644
 --- a/src/shared/capability.c
 +++ b/src/shared/capability.c
 @@ -98,7 +98,7 @@ unsigned long cap_last_cap(void) {
@@ -328,7 +328,7 @@ index 2b963fde3..3ed31df5a 100644
                  return log_error_errno(r, "Failed to drop capabilities: %m");
  
 diff --git a/src/shared/capability.h b/src/shared/capability.h
-index 6f2f6f997..04cd6e54e 100644
+index 6f2f6f997d..04cd6e54e2 100644
 --- a/src/shared/capability.h
 +++ b/src/shared/capability.h
 @@ -27,10 +27,12 @@
@@ -357,7 +357,7 @@ index 6f2f6f997..04cd6e54e 100644
 +        return (caps & m) == m;
 +}
 diff --git a/src/test/test-unit-file.c b/src/test/test-unit-file.c
-index 0f00a8fff..38ecfe972 100644
+index 0f00a8fff1..38ecfe972e 100644
 --- a/src/test/test-unit-file.c
 +++ b/src/test/test-unit-file.c
 @@ -550,6 +550,53 @@ static uint64_t make_cap(int cap) {

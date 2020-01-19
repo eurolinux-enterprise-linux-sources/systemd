@@ -25,7 +25,7 @@ Related: #1497639
  3 files changed, 21 insertions(+), 11 deletions(-)
 
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index 58e44b89b..0c0fa0f50 100644
+index 58e44b89b2..0c0fa0f506 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -365,7 +365,7 @@ int config_parse_socket_listen(const char *unit,
@@ -38,7 +38,7 @@ index 58e44b89b..0c0fa0f50 100644
                          if (r != -EAFNOSUPPORT)
                                  log_syntax(unit, LOG_ERR, filename, line, -r,
 diff --git a/src/shared/socket-util.c b/src/shared/socket-util.c
-index baab6353e..b14e36817 100644
+index baab6353e1..b14e368176 100644
 --- a/src/shared/socket-util.c
 +++ b/src/shared/socket-util.c
 @@ -55,11 +55,6 @@ int socket_address_parse(SocketAddress *a, const char *s) {
@@ -92,7 +92,7 @@ index baab6353e..b14e36817 100644
          int family;
          unsigned group = 0;
 diff --git a/src/shared/socket-util.h b/src/shared/socket-util.h
-index 6bfb677fb..9200ce882 100644
+index 6bfb677fb5..9200ce8822 100644
 --- a/src/shared/socket-util.h
 +++ b/src/shared/socket-util.h
 @@ -67,6 +67,7 @@ typedef enum SocketAddressBindIPv6Only {

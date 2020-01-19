@@ -25,7 +25,7 @@ Resolves: #1267707
  10 files changed, 10 insertions(+), 10 deletions(-)
 
 diff --git a/units/systemd-hostnamed.service.in b/units/systemd-hostnamed.service.in
-index cc88ecd0d..b7079e4a7 100644
+index cc88ecd0db..b7079e4a7c 100644
 --- a/units/systemd-hostnamed.service.in
 +++ b/units/systemd-hostnamed.service.in
 @@ -14,7 +14,7 @@ Documentation=http://www.freedesktop.org/wiki/Software/systemd/hostnamed
@@ -38,7 +38,7 @@ index cc88ecd0d..b7079e4a7 100644
  PrivateDevices=yes
  PrivateNetwork=yes
 diff --git a/units/systemd-importd.service.in b/units/systemd-importd.service.in
-index 5534a49ed..60e8e9c85 100644
+index 5534a49ede..60e8e9c85f 100644
 --- a/units/systemd-importd.service.in
 +++ b/units/systemd-importd.service.in
 @@ -14,7 +14,7 @@ ExecStart=@rootlibexecdir@/systemd-importd
@@ -51,7 +51,7 @@ index 5534a49ed..60e8e9c85 100644
  ProtectSystem=full
  ProtectHome=yes
 diff --git a/units/systemd-journald.service.in b/units/systemd-journald.service.in
-index 9d4462283..8575912bb 100644
+index 9d44622837..8575912bbd 100644
 --- a/units/systemd-journald.service.in
 +++ b/units/systemd-journald.service.in
 @@ -22,7 +22,7 @@ RestartSec=0
@@ -64,7 +64,7 @@ index 9d4462283..8575912bb 100644
  # Increase the default a bit in order to allow many simultaneous
  # services being run since we keep one fd open per service. Also, when
 diff --git a/units/systemd-localed.service.in b/units/systemd-localed.service.in
-index bfa097844..9b13f901a 100644
+index bfa097844f..9b13f901a3 100644
 --- a/units/systemd-localed.service.in
 +++ b/units/systemd-localed.service.in
 @@ -14,7 +14,7 @@ Documentation=http://www.freedesktop.org/wiki/Software/systemd/localed
@@ -77,7 +77,7 @@ index bfa097844..9b13f901a 100644
  PrivateDevices=yes
  PrivateNetwork=yes
 diff --git a/units/systemd-logind.service.in b/units/systemd-logind.service.in
-index f087e99ce..ff049134e 100644
+index f087e99ce2..ff049134ee 100644
 --- a/units/systemd-logind.service.in
 +++ b/units/systemd-logind.service.in
 @@ -24,7 +24,7 @@ Restart=always
@@ -90,7 +90,7 @@ index f087e99ce..ff049134e 100644
  # Increase the default a bit in order to allow many simultaneous
  # logins since we keep one fd open per session.
 diff --git a/units/systemd-machined.service.in b/units/systemd-machined.service.in
-index 15f34d9db..35cde9869 100644
+index 15f34d9db7..35cde98698 100644
 --- a/units/systemd-machined.service.in
 +++ b/units/systemd-machined.service.in
 @@ -16,7 +16,7 @@ After=machine.slice
@@ -103,7 +103,7 @@ index 15f34d9db..35cde9869 100644
  PrivateDevices=yes
  PrivateNetwork=yes
 diff --git a/units/systemd-networkd.service.in b/units/systemd-networkd.service.in
-index 5a91b8e49..d3808c430 100644
+index 5a91b8e499..d3808c430d 100644
 --- a/units/systemd-networkd.service.in
 +++ b/units/systemd-networkd.service.in
 @@ -25,7 +25,7 @@ ExecStart=@rootlibexecdir@/systemd-networkd
@@ -116,7 +116,7 @@ index 5a91b8e49..d3808c430 100644
  [Install]
  WantedBy=multi-user.target
 diff --git a/units/systemd-resolved.service.m4.in b/units/systemd-resolved.service.m4.in
-index 98ae564af..46864e6a3 100644
+index 98ae564af6..46864e6a33 100644
 --- a/units/systemd-resolved.service.m4.in
 +++ b/units/systemd-resolved.service.m4.in
 @@ -25,7 +25,7 @@ ExecStart=@rootlibexecdir@/systemd-resolved
@@ -129,7 +129,7 @@ index 98ae564af..46864e6a3 100644
  [Install]
  WantedBy=multi-user.target
 diff --git a/units/systemd-timedated.service.in b/units/systemd-timedated.service.in
-index fe5ccb460..0c9599db2 100644
+index fe5ccb4601..0c9599db20 100644
 --- a/units/systemd-timedated.service.in
 +++ b/units/systemd-timedated.service.in
 @@ -14,7 +14,7 @@ Documentation=http://www.freedesktop.org/wiki/Software/systemd/timedated
@@ -142,7 +142,7 @@ index fe5ccb460..0c9599db2 100644
  ProtectSystem=yes
  ProtectHome=yes
 diff --git a/units/systemd-timesyncd.service.in b/units/systemd-timesyncd.service.in
-index 39edafc8d..c7d1d2b4f 100644
+index 39edafc8d2..c7d1d2b4fd 100644
 --- a/units/systemd-timesyncd.service.in
 +++ b/units/systemd-timesyncd.service.in
 @@ -27,7 +27,7 @@ PrivateTmp=yes

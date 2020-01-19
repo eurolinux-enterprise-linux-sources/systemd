@@ -12,7 +12,7 @@ Resolves: #957112
  2 files changed, 28 insertions(+), 7 deletions(-)
 
 diff --git a/rules/60-persistent-storage.rules b/rules/60-persistent-storage.rules
-index 25b44a55c..71ab97484 100644
+index 25b44a55cb..71ab974844 100644
 --- a/rules/60-persistent-storage.rules
 +++ b/rules/60-persistent-storage.rules
 @@ -54,7 +54,9 @@ KERNEL=="mspblk[0-9]p[0-9]", ENV{ID_NAME}=="?*", ENV{ID_SERIAL}=="?*", SYMLINK+=
@@ -26,7 +26,7 @@ index 25b44a55c..71ab97484 100644
  # skip unpartitioned removable media devices from drivers which do not send "change" events
  ENV{DEVTYPE}=="disk", KERNEL!="sd*|sr*", ATTR{removable}=="1", GOTO="persistent_storage_end"
 diff --git a/src/udev/udev-builtin-path_id.c b/src/udev/udev-builtin-path_id.c
-index bb0a6242a..025392df5 100644
+index bb0a6242ac..025392df5b 100644
 --- a/src/udev/udev-builtin-path_id.c
 +++ b/src/udev/udev-builtin-path_id.c
 @@ -154,7 +154,7 @@ out:

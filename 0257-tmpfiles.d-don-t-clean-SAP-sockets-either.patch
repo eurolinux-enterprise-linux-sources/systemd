@@ -11,7 +11,7 @@ Resolves: #1186044
  1 file changed, 9 insertions(+), 3 deletions(-)
 
 diff --git a/tmpfiles.d/sap.conf b/tmpfiles.d/sap.conf
-index 01ace42c4..1cdca5263 100644
+index 01ace42c43..1cdca5263c 100644
 --- a/tmpfiles.d/sap.conf
 +++ b/tmpfiles.d/sap.conf
 @@ -1,3 +1,9 @@

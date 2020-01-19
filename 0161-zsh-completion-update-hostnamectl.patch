@@ -12,7 +12,7 @@ Resolves: #1222517
  1 file changed, 11 insertions(+), 1 deletion(-)
 
 diff --git a/shell-completion/zsh/_hostnamectl b/shell-completion/zsh/_hostnamectl
-index a7217a199..7528e0649 100644
+index a7217a1999..7528e0649d 100644
 --- a/shell-completion/zsh/_hostnamectl
 +++ b/shell-completion/zsh/_hostnamectl
 @@ -33,6 +33,14 @@ _hostnamectl_set-deployment() {

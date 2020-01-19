@@ -16,7 +16,7 @@ Resolves: #1497264
  5 files changed, 23 insertions(+), 2 deletions(-)
 
 diff --git a/man/systemd.mount.xml b/man/systemd.mount.xml
-index dfa437b5d..1590c44ce 100644
+index dfa437b5d2..1590c44cec 100644
 --- a/man/systemd.mount.xml
 +++ b/man/systemd.mount.xml
 @@ -329,6 +329,19 @@
@@ -40,7 +40,7 @@ index dfa437b5d..1590c44ce 100644
          <term><varname>DirectoryMode=</varname></term>
          <listitem><para>Directories of mount points (and any parent
 diff --git a/src/core/dbus-mount.c b/src/core/dbus-mount.c
-index 04beba631..cbb842f70 100644
+index 04beba631b..cbb842f706 100644
 --- a/src/core/dbus-mount.c
 +++ b/src/core/dbus-mount.c
 @@ -110,6 +110,7 @@ const sd_bus_vtable bus_mount_vtable[] = {
@@ -52,7 +52,7 @@ index 04beba631..cbb842f70 100644
          BUS_EXEC_COMMAND_VTABLE("ExecMount", offsetof(Mount, exec_command[MOUNT_EXEC_MOUNT]), SD_BUS_VTABLE_PROPERTY_EMITS_INVALIDATION),
          BUS_EXEC_COMMAND_VTABLE("ExecUnmount", offsetof(Mount, exec_command[MOUNT_EXEC_UNMOUNT]), SD_BUS_VTABLE_PROPERTY_EMITS_INVALIDATION),
 diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
-index b2fe627af..664bba0ef 100644
+index b2fe627af3..664bba0ef6 100644
 --- a/src/core/load-fragment-gperf.gperf.m4
 +++ b/src/core/load-fragment-gperf.gperf.m4
 @@ -316,6 +316,7 @@ Mount.Type,                      config_parse_string,                0,
@@ -64,7 +64,7 @@ index b2fe627af..664bba0ef 100644
  CGROUP_CONTEXT_CONFIG_ITEMS(Mount)m4_dnl
  KILL_CONTEXT_CONFIG_ITEMS(Mount)m4_dnl
 diff --git a/src/core/mount.c b/src/core/mount.c
-index 0dc67dde6..5fd7a86dd 100644
+index 0dc67dde69..5fd7a86ddd 100644
 --- a/src/core/mount.c
 +++ b/src/core/mount.c
 @@ -690,7 +690,8 @@ static void mount_dump(Unit *u, FILE *f, const char *prefix) {
@@ -97,7 +97,7 @@ index 0dc67dde6..5fd7a86dd 100644
                  goto fail;
  
 diff --git a/src/core/mount.h b/src/core/mount.h
-index 353222000..4e870299c 100644
+index 353222000f..4e870299cb 100644
 --- a/src/core/mount.h
 +++ b/src/core/mount.h
 @@ -90,6 +90,8 @@ struct Mount {

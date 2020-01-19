@@ -28,7 +28,7 @@ Resolves: #1222517
  1 file changed, 35 insertions(+)
 
 diff --git a/man/os-release.xml b/man/os-release.xml
-index 4f57323d4..4ca2e5970 100644
+index 4f57323d49..4ca2e59706 100644
 --- a/man/os-release.xml
 +++ b/man/os-release.xml
 @@ -273,6 +273,41 @@

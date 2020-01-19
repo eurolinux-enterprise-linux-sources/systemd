@@ -12,7 +12,7 @@ Resolves: #1377055
  1 file changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index 411475024..58e44b89b 100644
+index 4114750244..58e44b89b2 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -367,8 +367,9 @@ int config_parse_socket_listen(const char *unit,

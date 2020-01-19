@@ -15,7 +15,7 @@ Conflicts:
  2 files changed, 11 insertions(+), 5 deletions(-)
 
 diff --git a/README b/README
-index c72209262..5f5783a68 100644
+index c72209262e..5f5783a684 100644
 --- a/README
 +++ b/README
 @@ -135,7 +135,8 @@ REQUIREMENTS:
@@ -29,7 +29,7 @@ index c72209262..5f5783a68 100644
          dracut (optional)
          PolicyKit (optional)
 diff --git a/src/fsck/fsck.c b/src/fsck/fsck.c
-index 78ceeb6fa..d8976809d 100644
+index 78ceeb6fab..d8976809d1 100644
 --- a/src/fsck/fsck.c
 +++ b/src/fsck/fsck.c
 @@ -323,11 +323,16 @@ int main(int argc, char *argv[]) {

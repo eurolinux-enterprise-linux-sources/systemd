@@ -11,7 +11,7 @@ Subject: [PATCH] journal: remove audit socket unit-files
  delete mode 100644 units/systemd-journald-audit.socket
 
 diff --git a/Makefile.am b/Makefile.am
-index bec32c39e..6d6b650f2 100644
+index bec32c39e5..6d6b650f24 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -4518,8 +4518,7 @@ bin_PROGRAMS += \
@@ -36,7 +36,7 @@ index bec32c39e..6d6b650f2 100644
  	systemd-journald.service \
 diff --git a/units/systemd-journald-audit.socket b/units/systemd-journald-audit.socket
 deleted file mode 100644
-index 35397aaeb..000000000
+index 35397aaeb8..0000000000
 --- a/units/systemd-journald-audit.socket
 +++ /dev/null
 @@ -1,19 +0,0 @@
@@ -60,7 +60,7 @@ index 35397aaeb..000000000
 -ListenNetlink=audit 1
 -PassCredentials=yes
 diff --git a/units/systemd-journald.service.in b/units/systemd-journald.service.in
-index 87704bb9c..1bcc290ec 100644
+index 87704bb9c1..1bcc290ec4 100644
 --- a/units/systemd-journald.service.in
 +++ b/units/systemd-journald.service.in
 @@ -10,12 +10,12 @@ Description=Journal Service

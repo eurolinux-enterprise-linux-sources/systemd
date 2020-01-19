@@ -22,7 +22,7 @@ System Information
  1 file changed, 1 insertion(+), 2 deletions(-)
 
 diff --git a/hwdb/60-keyboard.hwdb b/hwdb/60-keyboard.hwdb
-index 1b7d87101..2cb976923 100644
+index 1b7d87101a..2cb976923d 100644
 --- a/hwdb/60-keyboard.hwdb
 +++ b/hwdb/60-keyboard.hwdb
 @@ -586,7 +586,6 @@ keyboard:dmi:bvn*:bvr*:bd*:svnLENOVO*:pnS10-*:pvr*

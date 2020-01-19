@@ -11,7 +11,7 @@ Resolves: #1411199
  1 file changed, 2 insertions(+)
 
 diff --git a/tmpfiles.d/systemd.conf.m4 b/tmpfiles.d/systemd.conf.m4
-index fcd6ec026..0575408db 100644
+index fcd6ec0269..0575408dbe 100644
 --- a/tmpfiles.d/systemd.conf.m4
 +++ b/tmpfiles.d/systemd.conf.m4
 @@ -33,11 +33,13 @@ A+ /run/log/journal/%m - - - - group:adm:r-x,group:wheel:r-x

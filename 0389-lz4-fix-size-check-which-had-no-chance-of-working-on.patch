@@ -11,7 +11,7 @@ Related: #1318994
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/journal/compress.c b/src/journal/compress.c
-index c9a3399cc..4fb09f596 100644
+index c9a3399cca..4fb09f5965 100644
 --- a/src/journal/compress.c
 +++ b/src/journal/compress.c
 @@ -190,7 +190,7 @@ int decompress_blob_lz4(const void *src, uint64_t src_size,

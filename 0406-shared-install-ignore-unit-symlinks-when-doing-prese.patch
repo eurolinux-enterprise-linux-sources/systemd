@@ -47,7 +47,7 @@ Related: #1375097
  1 file changed, 10 insertions(+), 2 deletions(-)
 
 diff --git a/src/shared/install.c b/src/shared/install.c
-index b0a29ddd7..f01a21262 100644
+index b0a29ddd7e..f01a212620 100644
 --- a/src/shared/install.c
 +++ b/src/shared/install.c
 @@ -2270,12 +2270,20 @@ static int preset_prepare_one(

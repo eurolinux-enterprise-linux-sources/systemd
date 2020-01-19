@@ -12,7 +12,7 @@ Resolves: #1601794
  1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/man/systemd.kill.xml b/man/systemd.kill.xml
-index e57f0e724..1292f4f51 100644
+index e57f0e7242..1292f4f513 100644
 --- a/man/systemd.kill.xml
 +++ b/man/systemd.kill.xml
 @@ -136,7 +136,13 @@

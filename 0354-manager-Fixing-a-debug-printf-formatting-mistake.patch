@@ -13,7 +13,7 @@ Related: #1342173
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/manager.c b/src/core/manager.c
-index 63693b93a..d168777d2 100644
+index 63693b93a6..d168777d26 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -1764,7 +1764,8 @@ static void invoke_sigchld_event(Manager *m, Unit *u, siginfo_t *si) {

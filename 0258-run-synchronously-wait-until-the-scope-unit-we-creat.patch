@@ -19,7 +19,7 @@ Resolves: #1272368
  3 files changed, 46 insertions(+), 7 deletions(-)
 
 diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
-index e48abf55a..6d5615082 100644
+index e48abf55a3..6d56150825 100644
 --- a/src/libsystemd/sd-bus/bus-util.c
 +++ b/src/libsystemd/sd-bus/bus-util.c
 @@ -1854,6 +1854,16 @@ int bus_wait_for_jobs_add(BusWaitForJobs *d, const char *path) {
@@ -40,7 +40,7 @@ index e48abf55a..6d5615082 100644
          const char *type, *path, *source;
          int r;
 diff --git a/src/libsystemd/sd-bus/bus-util.h b/src/libsystemd/sd-bus/bus-util.h
-index 21db98228..8c8846c6e 100644
+index 21db982280..8c8846c6ee 100644
 --- a/src/libsystemd/sd-bus/bus-util.h
 +++ b/src/libsystemd/sd-bus/bus-util.h
 @@ -209,6 +209,7 @@ int bus_wait_for_jobs_new(sd_bus *bus, BusWaitForJobs **ret);
@@ -52,7 +52,7 @@ index 21db98228..8c8846c6e 100644
  DEFINE_TRIVIAL_CLEANUP_FUNC(BusWaitForJobs*, bus_wait_for_jobs_free);
  
 diff --git a/src/run/run.c b/src/run/run.c
-index 0e5bde23d..dd1338f3b 100644
+index 0e5bde23d2..dd1338f3b4 100644
 --- a/src/run/run.c
 +++ b/src/run/run.c
 @@ -806,14 +806,20 @@ static int start_transient_scope(

@@ -20,7 +20,7 @@ Resolves: #1344556
  1 file changed, 15 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/manager.c b/src/core/manager.c
-index 370c8cbbe..e5226a8a6 100644
+index 370c8cbbed..e5226a8a6f 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -838,6 +838,19 @@ enum {

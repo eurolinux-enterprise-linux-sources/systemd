@@ -14,7 +14,7 @@ Also specify AUTH as facility... This seems to be the closest match
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/src/journal/journald-audit.c b/src/journal/journald-audit.c
-index 151097a6e..77abe2e63 100644
+index 151097a6e6..77abe2e63c 100644
 --- a/src/journal/journald-audit.c
 +++ b/src/journal/journald-audit.c
 @@ -373,7 +373,7 @@ static void process_audit_string(Server *s, int type, const char *data, size_t s

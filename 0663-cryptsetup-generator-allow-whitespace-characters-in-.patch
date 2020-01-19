@@ -14,7 +14,7 @@ Related: #1619743
  1 file changed, 15 insertions(+), 6 deletions(-)
 
 diff --git a/src/cryptsetup/cryptsetup-generator.c b/src/cryptsetup/cryptsetup-generator.c
-index a9598180c..7b90d2615 100644
+index a9598180c6..7b90d26156 100644
 --- a/src/cryptsetup/cryptsetup-generator.c
 +++ b/src/cryptsetup/cryptsetup-generator.c
 @@ -421,27 +421,36 @@ static int parse_proc_cmdline_item(const char *key, const char *value) {

@@ -16,7 +16,7 @@ Resolves: #1341154
  7 files changed, 107 insertions(+), 28 deletions(-)
 
 diff --git a/TODO b/TODO
-index d96d2bf0e..498d82c21 100644
+index d96d2bf0ee..498d82c212 100644
 --- a/TODO
 +++ b/TODO
 @@ -185,8 +185,6 @@ Features:
@@ -29,7 +29,7 @@ index d96d2bf0e..498d82c21 100644
  
  * in systemctl list-unit-files: show the install value the presets would suggest for a service in a third column
 diff --git a/man/systemd.socket.xml b/man/systemd.socket.xml
-index 2f541937f..350a95648 100644
+index 2f541937f8..350a95648a 100644
 --- a/man/systemd.socket.xml
 +++ b/man/systemd.socket.xml
 @@ -357,7 +357,12 @@
@@ -47,7 +47,7 @@ index 2f541937f..350a95648 100644
  
        <varlistentry>
 diff --git a/src/core/service.c b/src/core/service.c
-index ae5e61000..c76713b1c 100644
+index ae5e610008..c76713b1ce 100644
 --- a/src/core/service.c
 +++ b/src/core/service.c
 @@ -1094,7 +1094,7 @@ static int service_spawn(
@@ -107,7 +107,7 @@ index ae5e61000..c76713b1c 100644
          if (!final_env) {
                  r = -ENOMEM;
 diff --git a/src/libsystemd/sd-resolve/test-resolve.c b/src/libsystemd/sd-resolve/test-resolve.c
-index d08e1b5a0..a14b6de19 100644
+index d08e1b5a05..a14b6de19f 100644
 --- a/src/libsystemd/sd-resolve/test-resolve.c
 +++ b/src/libsystemd/sd-resolve/test-resolve.c
 @@ -49,7 +49,7 @@ static int getaddrinfo_handler(sd_resolve_query *q, int ret, const struct addrin
@@ -120,7 +120,7 @@ index d08e1b5a0..a14b6de19 100644
          }
  
 diff --git a/src/shared/socket-util.c b/src/shared/socket-util.c
-index 407d0afee..a21251014 100644
+index 407d0afee3..a212510146 100644
 --- a/src/shared/socket-util.c
 +++ b/src/shared/socket-util.c
 @@ -302,7 +302,7 @@ int socket_address_print(const SocketAddress *a, char **ret) {
@@ -252,7 +252,7 @@ index 407d0afee..a21251014 100644
                          return log_error_errno(r, "sockadd_pretty() failed: %m");
  
 diff --git a/src/shared/socket-util.h b/src/shared/socket-util.h
-index 07d0aff72..6bfb677fb 100644
+index 07d0aff72b..6bfb677fb5 100644
 --- a/src/shared/socket-util.h
 +++ b/src/shared/socket-util.h
 @@ -98,7 +98,9 @@ const char* socket_address_get_path(const SocketAddress *a);
@@ -267,7 +267,7 @@ index 07d0aff72..6bfb677fb 100644
  int getsockname_pretty(int fd, char **ret);
  
 diff --git a/src/timesync/timesyncd-server.h b/src/timesync/timesyncd-server.h
-index 243b44a0e..18c44445e 100644
+index 243b44a0eb..18c44445e1 100644
 --- a/src/timesync/timesyncd-server.h
 +++ b/src/timesync/timesyncd-server.h
 @@ -59,7 +59,7 @@ struct ServerName {

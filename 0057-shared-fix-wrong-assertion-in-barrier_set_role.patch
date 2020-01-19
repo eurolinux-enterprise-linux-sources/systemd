@@ -15,7 +15,7 @@ Test the same condition twice, pretty sure we mean
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/shared/barrier.c b/src/shared/barrier.c
-index f65363a67..b7dca7509 100644
+index f65363a67b..b7dca75097 100644
 --- a/src/shared/barrier.c
 +++ b/src/shared/barrier.c
 @@ -178,7 +178,7 @@ void barrier_set_role(Barrier *b, unsigned int role) {

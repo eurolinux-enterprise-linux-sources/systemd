@@ -21,7 +21,7 @@ Related: #1230190
  4 files changed, 13 insertions(+), 3 deletions(-)
 
 diff --git a/src/libsystemd/sd-bus/bus-control.c b/src/libsystemd/sd-bus/bus-control.c
-index 06e5b4fd9..8b84b9496 100644
+index 06e5b4fd9a..8b84b9496f 100644
 --- a/src/libsystemd/sd-bus/bus-control.c
 +++ b/src/libsystemd/sd-bus/bus-control.c
 @@ -945,8 +945,10 @@ static int bus_get_owner_creds_dbus1(sd_bus *bus, uint64_t mask, sd_bus_creds **
@@ -46,7 +46,7 @@ index 06e5b4fd9..8b84b9496 100644
                  if (!c->label)
                          return -ENOMEM;
 diff --git a/src/libsystemd/sd-bus/bus-internal.h b/src/libsystemd/sd-bus/bus-internal.h
-index e9f1a816a..071b3da79 100644
+index e9f1a816aa..071b3da790 100644
 --- a/src/libsystemd/sd-bus/bus-internal.h
 +++ b/src/libsystemd/sd-bus/bus-internal.h
 @@ -262,7 +262,7 @@ struct sd_bus {
@@ -59,7 +59,7 @@ index e9f1a816a..071b3da79 100644
          uint64_t creds_mask;
  
 diff --git a/src/libsystemd/sd-bus/bus-socket.c b/src/libsystemd/sd-bus/bus-socket.c
-index abd9ece01..d00cd014e 100644
+index abd9ece016..d00cd014eb 100644
 --- a/src/libsystemd/sd-bus/bus-socket.c
 +++ b/src/libsystemd/sd-bus/bus-socket.c
 @@ -600,10 +600,17 @@ void bus_socket_setup(sd_bus *b) {
@@ -81,7 +81,7 @@ index abd9ece01..d00cd014e 100644
  
  static int bus_socket_start_auth_client(sd_bus *b) {
 diff --git a/src/libsystemd/sd-bus/sd-bus.c b/src/libsystemd/sd-bus/sd-bus.c
-index cac9b6560..b0a323792 100644
+index cac9b65601..b0a323792b 100644
 --- a/src/libsystemd/sd-bus/sd-bus.c
 +++ b/src/libsystemd/sd-bus/sd-bus.c
 @@ -121,6 +121,7 @@ static void bus_free(sd_bus *b) {

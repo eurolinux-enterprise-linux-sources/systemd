@@ -9,7 +9,7 @@ Resolves: rhbz#1500119
  1 file changed, 400 insertions(+), 7 deletions(-)
 
 diff --git a/hwdb/60-evdev.hwdb b/hwdb/60-evdev.hwdb
-index ad2d09e72..f688ef269 100644
+index ad2d09e721..f688ef269f 100644
 --- a/hwdb/60-evdev.hwdb
 +++ b/hwdb/60-evdev.hwdb
 @@ -15,17 +15,17 @@

@@ -18,7 +18,7 @@ Resolves: #1305279
  4 files changed, 11 insertions(+), 11 deletions(-)
 
 diff --git a/man/systemd.timer.xml b/man/systemd.timer.xml
-index bdd14d888..ab83b2c9c 100644
+index bdd14d8883..ab83b2c9cf 100644
 --- a/man/systemd.timer.xml
 +++ b/man/systemd.timer.xml
 @@ -195,7 +195,7 @@
@@ -51,7 +51,7 @@ index bdd14d888..ab83b2c9c 100644
        </varlistentry>
  
 diff --git a/src/core/dbus-timer.c b/src/core/dbus-timer.c
-index cd7bf44ba..478905acc 100644
+index cd7bf44baa..478905accb 100644
 --- a/src/core/dbus-timer.c
 +++ b/src/core/dbus-timer.c
 @@ -181,7 +181,7 @@ const sd_bus_vtable bus_timer_vtable[] = {
@@ -82,7 +82,7 @@ index cd7bf44ba..478905acc 100644
  
                  return 1;
 diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
-index 5106a98ee..85d979751 100644
+index 5106a98eec..85d9797514 100644
 --- a/src/core/load-fragment-gperf.gperf.m4
 +++ b/src/core/load-fragment-gperf.gperf.m4
 @@ -336,7 +336,7 @@ Timer.OnUnitInactiveSec,         config_parse_timer,                 0,
@@ -95,7 +95,7 @@ index 5106a98ee..85d979751 100644
  m4_dnl
  Path.PathExists,                 config_parse_path_spec,             0,                             0
 diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
-index 5ecb3bea4..3a918361b 100644
+index 5ecb3bea42..3a918361b5 100644
 --- a/src/libsystemd/sd-bus/bus-util.c
 +++ b/src/libsystemd/sd-bus/bus-util.c
 @@ -1364,14 +1364,14 @@ int bus_append_unit_property_assignment(sd_bus_message *m, const char *assignmen

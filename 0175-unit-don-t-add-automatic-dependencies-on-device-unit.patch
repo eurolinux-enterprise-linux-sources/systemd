@@ -14,7 +14,7 @@ Resolves: #1222517
  1 file changed, 7 insertions(+), 3 deletions(-)
 
 diff --git a/src/core/unit.c b/src/core/unit.c
-index 565455bd6..b9e1f13ea 100644
+index 565455bd63..b9e1f13eaf 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -2830,14 +2830,18 @@ int unit_add_node_link(Unit *u, const char *what, bool wants) {

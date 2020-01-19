@@ -12,7 +12,7 @@ Resolves: #1379852
  3 files changed, 15 insertions(+)
 
 diff --git a/src/shared/env-util.c b/src/shared/env-util.c
-index 038246d21..e8da4c978 100644
+index 038246d21b..e8da4c978a 100644
 --- a/src/shared/env-util.c
 +++ b/src/shared/env-util.c
 @@ -449,3 +449,13 @@ char **strv_env_clean_with_callback(char **e, void (*invalid_callback)(const cha
@@ -30,7 +30,7 @@ index 038246d21..e8da4c978 100644
 +        return parse_boolean(e);
 +}
 diff --git a/src/shared/env-util.h b/src/shared/env-util.h
-index 618441a65..252d87be1 100644
+index 618441a655..252d87be1f 100644
 --- a/src/shared/env-util.h
 +++ b/src/shared/env-util.h
 @@ -45,3 +45,5 @@ char **strv_env_unset_many(char **l, ...) _sentinel_;
@@ -40,7 +40,7 @@ index 618441a65..252d87be1 100644
 +
 +int getenv_bool(const char *p);
 diff --git a/src/shared/util.c b/src/shared/util.c
-index 357fbfe7d..eab5ab816 100644
+index 357fbfe7dc..eab5ab8169 100644
 --- a/src/shared/util.c
 +++ b/src/shared/util.c
 @@ -3776,6 +3776,9 @@ int files_same(const char *filea, const char *fileb) {

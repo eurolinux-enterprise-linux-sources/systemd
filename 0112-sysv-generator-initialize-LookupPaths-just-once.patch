@@ -19,7 +19,7 @@ and constify it everywhere.
  5 files changed, 53 insertions(+), 31 deletions(-)
 
 diff --git a/src/shared/install.c b/src/shared/install.c
-index 65f1c245c..92b8d6e8e 100644
+index 65f1c245c6..92b8d6e8ef 100644
 --- a/src/shared/install.c
 +++ b/src/shared/install.c
 @@ -1084,7 +1084,7 @@ static int unit_file_load(
@@ -159,7 +159,7 @@ index 65f1c245c..92b8d6e8e 100644
          _cleanup_strv_free_ char **files = NULL;
          char **p;
 diff --git a/src/shared/install.h b/src/shared/install.h
-index 357be0f92..3ca39397e 100644
+index 357be0f92d..3ca39397e6 100644
 --- a/src/shared/install.h
 +++ b/src/shared/install.h
 @@ -23,6 +23,7 @@
@@ -188,7 +188,7 @@ index 357be0f92..3ca39397e 100644
  int unit_file_get_list(UnitFileScope scope, const char *root_dir, Hashmap *h);
  
 diff --git a/src/shared/path-lookup.c b/src/shared/path-lookup.c
-index 291a2f405..812730be1 100644
+index 291a2f4054..812730be1c 100644
 --- a/src/shared/path-lookup.c
 +++ b/src/shared/path-lookup.c
 @@ -31,6 +31,7 @@
@@ -200,7 +200,7 @@ index 291a2f405..812730be1 100644
  int user_config_home(char **config_home) {
          const char *e;
 diff --git a/src/shared/path-lookup.h b/src/shared/path-lookup.h
-index 2ec888da8..f1925eef6 100644
+index 2ec888da81..f1925eef69 100644
 --- a/src/shared/path-lookup.h
 +++ b/src/shared/path-lookup.h
 @@ -22,7 +22,8 @@
@@ -214,7 +214,7 @@ index 2ec888da8..f1925eef6 100644
  typedef struct LookupPaths {
          char **unit_path;
 diff --git a/src/sysv-generator/sysv-generator.c b/src/sysv-generator/sysv-generator.c
-index 6e39b449e..0125ca27d 100644
+index 6e39b449eb..0125ca27d9 100644
 --- a/src/sysv-generator/sysv-generator.c
 +++ b/src/sysv-generator/sysv-generator.c
 @@ -723,10 +723,10 @@ static int fix_order(SysvStub *s, Hashmap *all_services) {

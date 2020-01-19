@@ -12,7 +12,7 @@ Resolves: #1222517
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/man/tmpfiles.d.xml b/man/tmpfiles.d.xml
-index 4bd0fcf75..9b4e11c1b 100644
+index 4bd0fcf751..9b4e11c1b9 100644
 --- a/man/tmpfiles.d.xml
 +++ b/man/tmpfiles.d.xml
 @@ -504,15 +504,15 @@

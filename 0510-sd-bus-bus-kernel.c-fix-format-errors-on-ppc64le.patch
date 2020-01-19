@@ -11,7 +11,7 @@ Related: #1447937
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/src/libsystemd/sd-bus/bus-kernel.c b/src/libsystemd/sd-bus/bus-kernel.c
-index e90ee449d..d1c90858e 100644
+index e90ee449d9..d1c90858ee 100644
 --- a/src/libsystemd/sd-bus/bus-kernel.c
 +++ b/src/libsystemd/sd-bus/bus-kernel.c
 @@ -763,7 +763,7 @@ static int bus_kernel_make_message(sd_bus *bus, struct kdbus_msg *k) {

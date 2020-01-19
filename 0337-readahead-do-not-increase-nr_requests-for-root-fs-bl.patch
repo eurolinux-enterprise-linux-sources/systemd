@@ -22,7 +22,7 @@ Resolves: #1314559
  3 files changed, 68 deletions(-)
 
 diff --git a/src/readahead/readahead-common.c b/src/readahead/readahead-common.c
-index 3ca48a725..6cf33f7cf 100644
+index 3ca48a7257..6cf33f7cfe 100644
 --- a/src/readahead/readahead-common.c
 +++ b/src/readahead/readahead-common.c
 @@ -253,70 +253,6 @@ ReadaheadShared *shared_get(void) {
@@ -97,7 +97,7 @@ index 3ca48a725..6cf33f7cf 100644
          struct stat st;
          char *ap = NULL, *line = NULL;
 diff --git a/src/readahead/readahead-common.h b/src/readahead/readahead-common.h
-index b34f3aadd..cc2ea81a9 100644
+index b34f3aadd7..cc2ea81a9d 100644
 --- a/src/readahead/readahead-common.h
 +++ b/src/readahead/readahead-common.h
 @@ -51,8 +51,6 @@ typedef struct ReadaheadShared {
@@ -110,7 +110,7 @@ index b34f3aadd..cc2ea81a9 100644
  int block_set_readahead(const char *p, uint64_t bytes);
  
 diff --git a/src/readahead/readahead-replay.c b/src/readahead/readahead-replay.c
-index f81e0fe55..c2e281687 100644
+index f81e0fe55d..c2e281687a 100644
 --- a/src/readahead/readahead-replay.c
 +++ b/src/readahead/readahead-replay.c
 @@ -134,8 +134,6 @@ static int replay(const char *root) {

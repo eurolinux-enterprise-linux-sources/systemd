@@ -11,7 +11,7 @@ Resolves: #1413477
  1 file changed, 2 insertions(+)
 
 diff --git a/hwdb/60-keyboard.hwdb b/hwdb/60-keyboard.hwdb
-index 88906655e..a7ae2f867 100644
+index 88906655ef..a7ae2f8673 100644
 --- a/hwdb/60-keyboard.hwdb
 +++ b/hwdb/60-keyboard.hwdb
 @@ -263,6 +263,8 @@ keyboard:dmi:bvn*:bvr*:bd*:svnDell*:pnXPS12-9Q33*:pvr*

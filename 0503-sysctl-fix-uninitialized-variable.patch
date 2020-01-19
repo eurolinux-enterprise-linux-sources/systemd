@@ -13,7 +13,7 @@ Resolves: #1485121
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/sysctl/sysctl.c b/src/sysctl/sysctl.c
-index bb2bea7cd..7fb016cee 100644
+index bb2bea7cdf..7fb016ceea 100644
 --- a/src/sysctl/sysctl.c
 +++ b/src/sysctl/sysctl.c
 @@ -91,7 +91,7 @@ static int apply_sysctl(const char *property, const char *value) {

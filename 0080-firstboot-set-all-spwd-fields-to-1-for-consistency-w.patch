@@ -10,7 +10,7 @@ Subject: [PATCH] firstboot: set all spwd fields to -1 for consistency with
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/src/firstboot/firstboot.c b/src/firstboot/firstboot.c
-index a765d6d21..a37ca170f 100644
+index a765d6d219..a37ca170fb 100644
 --- a/src/firstboot/firstboot.c
 +++ b/src/firstboot/firstboot.c
 @@ -525,9 +525,9 @@ static int process_root_password(void) {

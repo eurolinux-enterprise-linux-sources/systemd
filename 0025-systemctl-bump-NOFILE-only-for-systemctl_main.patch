@@ -12,7 +12,7 @@ https://bugzilla.redhat.com/show_bug.cgi?id=1184712
  1 file changed, 5 insertions(+), 5 deletions(-)
 
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index 21cb898b9..6b93ec844 100644
+index 21cb898b9a..6b93ec8446 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -7204,6 +7204,11 @@ found:

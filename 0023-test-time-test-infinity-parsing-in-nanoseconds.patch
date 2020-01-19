@@ -9,7 +9,7 @@ Subject: [PATCH] test-time: test "infinity" parsing in nanoseconds
  1 file changed, 6 insertions(+)
 
 diff --git a/src/test/test-time.c b/src/test/test-time.c
-index 8cfc4cc4f..3840fff06 100644
+index 8cfc4cc4fe..3840fff061 100644
 --- a/src/test/test-time.c
 +++ b/src/test/test-time.c
 @@ -78,12 +78,18 @@ static void test_parse_nsec(void) {

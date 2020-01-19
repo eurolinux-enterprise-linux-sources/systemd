@@ -11,7 +11,7 @@ Related: #1266934
  1 file changed, 3 insertions(+), 24 deletions(-)
 
 diff --git a/src/udev/udev-builtin-path_id.c b/src/udev/udev-builtin-path_id.c
-index 695ac7fc1..9ca608468 100644
+index 695ac7fc1f..9ca608468c 100644
 --- a/src/udev/udev-builtin-path_id.c
 +++ b/src/udev/udev-builtin-path_id.c
 @@ -92,9 +92,6 @@ static struct udev_device *skip_subsystem(struct udev_device *dev, const char *s

@@ -11,7 +11,7 @@ Related: #1292447
  2 files changed, 6 insertions(+), 5 deletions(-)
 
 diff --git a/src/journal/compress.c b/src/journal/compress.c
-index 6923753f8..c9a3399cc 100644
+index 6923753f89..c9a3399cca 100644
 --- a/src/journal/compress.c
 +++ b/src/journal/compress.c
 @@ -51,10 +51,11 @@ int compress_blob_xz(const void *src, uint64_t src_size, void *dst, size_t *dst_
@@ -31,7 +31,7 @@ index 6923753f8..c9a3399cc 100644
          lzma_ret ret;
          size_t out_pos = 0;
 diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
-index a8f92e23a..892fe4734 100644
+index a8f92e23a9..892fe47340 100644
 --- a/src/journal/journal-file.c
 +++ b/src/journal/journal-file.c
 @@ -1032,7 +1032,7 @@ static int journal_file_append_data(

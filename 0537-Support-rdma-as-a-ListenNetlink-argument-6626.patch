@@ -13,7 +13,7 @@ Resolves: #1494610
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/src/shared/socket-util.c b/src/shared/socket-util.c
-index 79d1582d4..baab6353e 100644
+index 79d1582d49..baab6353e1 100644
 --- a/src/shared/socket-util.c
 +++ b/src/shared/socket-util.c
 @@ -725,7 +725,8 @@ static const char* const netlink_family_table[] = {

@@ -30,7 +30,7 @@ Related: #1351415
  6 files changed, 67 insertions(+), 19 deletions(-)
 
 diff --git a/man/systemd-system.conf.xml b/man/systemd-system.conf.xml
-index ca25c93a1..b7d9cdee0 100644
+index ca25c93a1f..b7d9cdee05 100644
 --- a/man/systemd-system.conf.xml
 +++ b/man/systemd-system.conf.xml
 @@ -327,8 +327,10 @@
@@ -47,7 +47,7 @@ index ca25c93a1..b7d9cdee0 100644
          defaults for units, they are not applied to PID 1
          itself.</para></listitem>
 diff --git a/man/systemd.exec.xml b/man/systemd.exec.xml
-index 6af7c7ae5..25aea1655 100644
+index 6af7c7ae5d..25aea16553 100644
 --- a/man/systemd.exec.xml
 +++ b/man/systemd.exec.xml
 @@ -559,7 +559,9 @@
@@ -62,7 +62,7 @@ index 6af7c7ae5..25aea1655 100644
          <table>
            <title>Limit directives and their equivalent with ulimit</title>
 diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
-index 85d979751..c3461a0a6 100644
+index 85d9797514..c3461a0a69 100644
 --- a/src/core/load-fragment-gperf.gperf.m4
 +++ b/src/core/load-fragment-gperf.gperf.m4
 @@ -59,18 +59,18 @@ $1.SystemCallArchitectures,      config_parse_warn_compat,           DISABLED_CO
@@ -93,7 +93,7 @@ index 85d979751..c3461a0a6 100644
  $1.LimitRTPRIO,                  config_parse_limit,                 RLIMIT_RTPRIO,                 offsetof($1, exec_context.rlimit)
  $1.LimitRTTIME,                  config_parse_limit,                 RLIMIT_RTTIME,                 offsetof($1, exec_context.rlimit)
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index b188ec99d..dbb45b20f 100644
+index b188ec99d9..dbb45b20f3 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -1119,6 +1119,49 @@ int config_parse_limit(const char *unit,
@@ -147,7 +147,7 @@ index b188ec99d..dbb45b20f 100644
  int config_parse_sysv_priority(const char *unit,
                                 const char *filename,
 diff --git a/src/core/load-fragment.h b/src/core/load-fragment.h
-index ce10d03c3..2d509d0cb 100644
+index ce10d03c3f..2d509d0cb4 100644
 --- a/src/core/load-fragment.h
 +++ b/src/core/load-fragment.h
 @@ -56,6 +56,7 @@ int config_parse_exec_capabilities(const char *unit, const char *filename, unsig
@@ -159,7 +159,7 @@ index ce10d03c3..2d509d0cb 100644
  int config_parse_kill_signal(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
  int config_parse_exec_mount_flags(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
 diff --git a/src/core/main.c b/src/core/main.c
-index 2aec40b0b..60ea36c3c 100644
+index 2aec40b0bb..60ea36c3cb 100644
 --- a/src/core/main.c
 +++ b/src/core/main.c
 @@ -655,18 +655,18 @@ static int parse_config_file(void) {

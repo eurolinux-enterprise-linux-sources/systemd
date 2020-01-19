@@ -14,7 +14,7 @@ of debug output during boot and are rather useless.
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/libudev/libudev-device.c b/src/libudev/libudev-device.c
-index 9863901a3..e40894222 100644
+index 9863901a33..e408942221 100644
 --- a/src/libudev/libudev-device.c
 +++ b/src/libudev/libudev-device.c
 @@ -613,7 +613,7 @@ int udev_device_read_db(struct udev_device *udev_device, const char *dbfile)

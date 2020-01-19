@@ -65,7 +65,7 @@ Resolves: #1317518
  delete mode 100644 units/user/systemd-bus-proxyd.socket
 
 diff --git a/.gitignore b/.gitignore
-index 0360f7c6b..5ac188bfb 100644
+index 0360f7c6bd..5ac188bfb4 100644
 --- a/.gitignore
 +++ b/.gitignore
 @@ -56,7 +56,6 @@
@@ -77,7 +77,7 @@ index 0360f7c6b..5ac188bfb 100644
  /systemd-cgls
  /systemd-cgroups-agent
 diff --git a/Makefile-man.am b/Makefile-man.am
-index 7ec709c8b..734c80598 100644
+index 7ec709c8b8..734c805983 100644
 --- a/Makefile-man.am
 +++ b/Makefile-man.am
 @@ -1762,8 +1762,6 @@ EXTRA_DIST += \
@@ -90,7 +90,7 @@ index 7ec709c8b..734c80598 100644
  	man/systemd-cgls.xml \
  	man/systemd-cgtop.xml \
 diff --git a/Makefile.am b/Makefile.am
-index b347aed7d..924b34b69 100644
+index b347aed7db..924b34b699 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -397,7 +397,6 @@ rootlibexec_PROGRAMS = \
@@ -218,7 +218,7 @@ index b347aed7d..924b34b69 100644
  systemd_tty_ask_password_agent_SOURCES = \
  	src/tty-ask-password-agent/tty-ask-password-agent.c
 diff --git a/README b/README
-index ffc2cf9f2..bf75909f8 100644
+index ffc2cf9f20..bf75909f85 100644
 --- a/README
 +++ b/README
 @@ -198,9 +198,6 @@ USERS AND GROUPS:
@@ -232,7 +232,7 @@ index ffc2cf9f2..bf75909f8 100644
          systemd ships with three NSS modules:
  
 diff --git a/TODO b/TODO
-index 498d82c21..99473078a 100644
+index 498d82c212..99473078ac 100644
 --- a/TODO
 +++ b/TODO
 @@ -431,10 +431,6 @@ Features:
@@ -247,7 +247,7 @@ index 498d82c21..99473078a 100644
    - kdbus: add counter for refused unicast messages that is passed out via the RECV ioctl. SImilar to the counter for dropped multicast messages we already have.
  
 diff --git a/man/busctl.xml b/man/busctl.xml
-index 0635280ea..c68fe236c 100644
+index 0635280ead..c68fe236c1 100644
 --- a/man/busctl.xml
 +++ b/man/busctl.xml
 @@ -468,7 +468,6 @@ o "/org/freedesktop/systemd1/job/42684"</programlisting>
@@ -260,7 +260,7 @@ index 0635280ea..c68fe236c 100644
      </para>
 diff --git a/man/systemd-bus-proxyd.xml b/man/systemd-bus-proxyd.xml
 deleted file mode 100644
-index e0efe9985..000000000
+index e0efe99854..0000000000
 --- a/man/systemd-bus-proxyd.xml
 +++ /dev/null
 @@ -1,109 +0,0 @@
@@ -375,7 +375,7 @@ index e0efe9985..000000000
 -</refentry>
 diff --git a/man/systemd-bus-proxyd@.service.xml b/man/systemd-bus-proxyd@.service.xml
 deleted file mode 100644
-index dc4f07ff1..000000000
+index dc4f07ff1b..0000000000
 --- a/man/systemd-bus-proxyd@.service.xml
 +++ /dev/null
 @@ -1,81 +0,0 @@
@@ -462,7 +462,7 @@ index dc4f07ff1..000000000
 -</refentry>
 diff --git a/src/bus-proxyd/Makefile b/src/bus-proxyd/Makefile
 deleted file mode 120000
-index d0b0e8e00..000000000
+index d0b0e8e008..0000000000
 --- a/src/bus-proxyd/Makefile
 +++ /dev/null
 @@ -1 +0,0 @@
@@ -470,7 +470,7 @@ index d0b0e8e00..000000000
 \ No newline at end of file
 diff --git a/src/bus-proxyd/bus-proxyd.c b/src/bus-proxyd/bus-proxyd.c
 deleted file mode 100644
-index b6550ed3c..000000000
+index b6550ed3cf..0000000000
 --- a/src/bus-proxyd/bus-proxyd.c
 +++ /dev/null
 @@ -1,346 +0,0 @@
@@ -822,7 +822,7 @@ index b6550ed3c..000000000
 -}
 diff --git a/src/bus-proxyd/bus-xml-policy.c b/src/bus-proxyd/bus-xml-policy.c
 deleted file mode 100644
-index f6ac0c009..000000000
+index f6ac0c0093..0000000000
 --- a/src/bus-proxyd/bus-xml-policy.c
 +++ /dev/null
 @@ -1,1325 +0,0 @@
@@ -2153,7 +2153,7 @@ index f6ac0c009..000000000
 -DEFINE_STRING_TABLE_LOOKUP(policy_item_class, PolicyItemClass);
 diff --git a/src/bus-proxyd/bus-xml-policy.h b/src/bus-proxyd/bus-xml-policy.h
 deleted file mode 100644
-index f2ec1bbea..000000000
+index f2ec1bbea4..0000000000
 --- a/src/bus-proxyd/bus-xml-policy.h
 +++ /dev/null
 @@ -1,151 +0,0 @@
@@ -2310,7 +2310,7 @@ index f2ec1bbea..000000000
 -DEFINE_TRIVIAL_CLEANUP_FUNC(SharedPolicy*, shared_policy_free);
 diff --git a/src/bus-proxyd/driver.c b/src/bus-proxyd/driver.c
 deleted file mode 100644
-index bc2c0c86f..000000000
+index bc2c0c86f3..0000000000
 --- a/src/bus-proxyd/driver.c
 +++ /dev/null
 @@ -1,608 +0,0 @@
@@ -2924,7 +2924,7 @@ index bc2c0c86f..000000000
 -}
 diff --git a/src/bus-proxyd/driver.h b/src/bus-proxyd/driver.h
 deleted file mode 100644
-index b8cedf5ce..000000000
+index b8cedf5ce5..0000000000
 --- a/src/bus-proxyd/driver.h
 +++ /dev/null
 @@ -1,27 +0,0 @@
@@ -2957,7 +2957,7 @@ index b8cedf5ce..000000000
 -int bus_proxy_process_driver(sd_bus *a, sd_bus *b, sd_bus_message *m, SharedPolicy *sp, const struct ucred *ucred, Set *owned_names);
 diff --git a/src/bus-proxyd/proxy.c b/src/bus-proxyd/proxy.c
 deleted file mode 100644
-index e13cf5e2e..000000000
+index e13cf5e2ea..0000000000
 --- a/src/bus-proxyd/proxy.c
 +++ /dev/null
 @@ -1,864 +0,0 @@
@@ -3827,7 +3827,7 @@ index e13cf5e2e..000000000
 -}
 diff --git a/src/bus-proxyd/proxy.h b/src/bus-proxyd/proxy.h
 deleted file mode 100644
-index 782c4e60b..000000000
+index 782c4e60b3..0000000000
 --- a/src/bus-proxyd/proxy.h
 +++ /dev/null
 @@ -1,53 +0,0 @@
@@ -3886,7 +3886,7 @@ index 782c4e60b..000000000
 -DEFINE_TRIVIAL_CLEANUP_FUNC(Proxy*, proxy_free);
 diff --git a/src/bus-proxyd/stdio-bridge.c b/src/bus-proxyd/stdio-bridge.c
 deleted file mode 100644
-index 9fb3e9fc4..000000000
+index 9fb3e9fc49..0000000000
 --- a/src/bus-proxyd/stdio-bridge.c
 +++ /dev/null
 @@ -1,263 +0,0 @@
@@ -4155,7 +4155,7 @@ index 9fb3e9fc4..000000000
 -}
 diff --git a/src/bus-proxyd/synthesize.c b/src/bus-proxyd/synthesize.c
 deleted file mode 100644
-index e1b0fd353..000000000
+index e1b0fd3535..0000000000
 --- a/src/bus-proxyd/synthesize.c
 +++ /dev/null
 @@ -1,228 +0,0 @@
@@ -4389,7 +4389,7 @@ index e1b0fd353..000000000
 -}
 diff --git a/src/bus-proxyd/synthesize.h b/src/bus-proxyd/synthesize.h
 deleted file mode 100644
-index a55f171cb..000000000
+index a55f171cb2..0000000000
 --- a/src/bus-proxyd/synthesize.h
 +++ /dev/null
 @@ -1,34 +0,0 @@
@@ -4429,7 +4429,7 @@ index a55f171cb..000000000
 -int synthesize_name_acquired(sd_bus *a, sd_bus *b, sd_bus_message *m);
 diff --git a/src/bus-proxyd/test-bus-xml-policy.c b/src/bus-proxyd/test-bus-xml-policy.c
 deleted file mode 100644
-index 421487e03..000000000
+index 421487e038..0000000000
 --- a/src/bus-proxyd/test-bus-xml-policy.c
 +++ /dev/null
 @@ -1,182 +0,0 @@
@@ -4617,7 +4617,7 @@ index 421487e03..000000000
 -}
 diff --git a/src/stdio-bridge/stdio-bridge.c b/src/stdio-bridge/stdio-bridge.c
 new file mode 100644
-index 000000000..791e545ab
+index 0000000000..791e545aba
 --- /dev/null
 +++ b/src/stdio-bridge/stdio-bridge.c
 @@ -0,0 +1,303 @@
@@ -4925,7 +4925,7 @@ index 000000000..791e545ab
 +        return r < 0 ? EXIT_FAILURE : EXIT_SUCCESS;
 +}
 diff --git a/src/test/test-tables.c b/src/test/test-tables.c
-index e4097903c..afd4ab7fb 100644
+index e4097903c4..afd4ab7fb3 100644
 --- a/src/test/test-tables.c
 +++ b/src/test/test-tables.c
 @@ -46,7 +46,6 @@
@@ -4946,7 +4946,7 @@ index e4097903c..afd4ab7fb 100644
          test_table(protect_system, PROTECT_SYSTEM);
          test_table(rlimit, RLIMIT);
 diff --git a/sysusers.d/systemd.conf.m4 b/sysusers.d/systemd.conf.m4
-index 23175de1f..3d3e2374e 100644
+index 23175de1f5..3d3e2374ef 100644
 --- a/sysusers.d/systemd.conf.m4
 +++ b/sysusers.d/systemd.conf.m4
 @@ -6,9 +6,6 @@
@@ -4960,7 +4960,7 @@ index 23175de1f..3d3e2374e 100644
  u systemd-network   - "systemd Network Management"
  )m4_dnl
 diff --git a/units/.gitignore b/units/.gitignore
-index 7f3e0d093..48c8f7217 100644
+index 7f3e0d093c..48c8f72174 100644
 --- a/units/.gitignore
 +++ b/units/.gitignore
 @@ -1,4 +1,3 @@
@@ -4978,7 +4978,7 @@ index 7f3e0d093..48c8f7217 100644
  /systemd-fsck@.service
 diff --git a/units/systemd-bus-proxyd.service.m4.in b/units/systemd-bus-proxyd.service.m4.in
 deleted file mode 100644
-index ffaf0bdc8..000000000
+index ffaf0bdc87..0000000000
 --- a/units/systemd-bus-proxyd.service.m4.in
 +++ /dev/null
 @@ -1,19 +0,0 @@
@@ -5003,7 +5003,7 @@ index ffaf0bdc8..000000000
 -ProtectHome=yes
 diff --git a/units/systemd-bus-proxyd.socket b/units/systemd-bus-proxyd.socket
 deleted file mode 100644
-index 3f80a1d54..000000000
+index 3f80a1d547..0000000000
 --- a/units/systemd-bus-proxyd.socket
 +++ /dev/null
 @@ -1,12 +0,0 @@
@@ -5020,7 +5020,7 @@ index 3f80a1d54..000000000
 -[Socket]
 -ListenStream=/var/run/dbus/system_bus_socket
 diff --git a/units/user/.gitignore b/units/user/.gitignore
-index 6111b10cc..41a74f546 100644
+index 6111b10ccf..41a74f5461 100644
 --- a/units/user/.gitignore
 +++ b/units/user/.gitignore
 @@ -1,3 +1 @@
@@ -5029,7 +5029,7 @@ index 6111b10cc..41a74f546 100644
 -/systemd-consoled.service
 diff --git a/units/user/systemd-bus-proxyd.service.in b/units/user/systemd-bus-proxyd.service.in
 deleted file mode 100644
-index e1e399dc3..000000000
+index e1e399dc32..0000000000
 --- a/units/user/systemd-bus-proxyd.service.in
 +++ /dev/null
 @@ -1,13 +0,0 @@
@@ -5048,7 +5048,7 @@ index e1e399dc3..000000000
 -NotifyAccess=main
 diff --git a/units/user/systemd-bus-proxyd.socket b/units/user/systemd-bus-proxyd.socket
 deleted file mode 100644
-index b9efc0e7c..000000000
+index b9efc0e7ce..0000000000
 --- a/units/user/systemd-bus-proxyd.socket
 +++ /dev/null
 @@ -1,12 +0,0 @@

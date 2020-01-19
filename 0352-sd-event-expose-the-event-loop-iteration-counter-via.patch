@@ -20,7 +20,7 @@ Related: #1342173
  2 files changed, 12 insertions(+), 3 deletions(-)
 
 diff --git a/src/libsystemd/sd-event/sd-event.c b/src/libsystemd/sd-event/sd-event.c
-index 1f1e6fe91..9d48e5a49 100644
+index 1f1e6fe917..9d48e5a490 100644
 --- a/src/libsystemd/sd-event/sd-event.c
 +++ b/src/libsystemd/sd-event/sd-event.c
 @@ -76,8 +76,8 @@ struct sd_event_source {
@@ -56,7 +56,7 @@ index 1f1e6fe91..9d48e5a49 100644
 +        return 0;
 +}
 diff --git a/src/systemd/sd-event.h b/src/systemd/sd-event.h
-index 25a10f99a..4957f3a32 100644
+index 25a10f99ab..4957f3a327 100644
 --- a/src/systemd/sd-event.h
 +++ b/src/systemd/sd-event.h
 @@ -101,6 +101,7 @@ int sd_event_get_tid(sd_event *e, pid_t *tid);

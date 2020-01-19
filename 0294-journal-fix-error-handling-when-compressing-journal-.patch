@@ -18,7 +18,7 @@ Resolves: #1292447
  2 files changed, 12 insertions(+), 5 deletions(-)
 
 diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
-index f500568fe..a8f92e23a 100644
+index f500568fec..a8f92e23a9 100644
 --- a/src/journal/journal-file.c
 +++ b/src/journal/journal-file.c
 @@ -1051,23 +1051,25 @@ static int journal_file_append_data(
@@ -53,7 +53,7 @@ index f500568fe..a8f92e23a 100644
  
          r = journal_file_link_data(f, o, p, hash);
 diff --git a/src/journal/journal-file.h b/src/journal/journal-file.h
-index 403c8f760..0f29b092b 100644
+index 403c8f760c..0f29b092b7 100644
 --- a/src/journal/journal-file.h
 +++ b/src/journal/journal-file.h
 @@ -229,3 +229,8 @@ int journal_file_get_cutoff_realtime_usec(JournalFile *f, usec_t *from, usec_t *

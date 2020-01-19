@@ -17,7 +17,7 @@ Aborted (core dumped)
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/cgtop/cgtop.c b/src/cgtop/cgtop.c
-index 3c7ad4060..f951c37cb 100644
+index 3c7ad40605..f951c37cbc 100644
 --- a/src/cgtop/cgtop.c
 +++ b/src/cgtop/cgtop.c
 @@ -447,7 +447,7 @@ static int display(Hashmap *a) {

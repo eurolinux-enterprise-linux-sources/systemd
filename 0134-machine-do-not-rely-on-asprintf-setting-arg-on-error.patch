@@ -12,7 +12,7 @@ We use the return value not the arg everywhere, and should we do here.
  1 file changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/src/machine/machine-dbus.c b/src/machine/machine-dbus.c
-index b0f0f66e0..624a99f4e 100644
+index b0f0f66e09..624a99f4e9 100644
 --- a/src/machine/machine-dbus.c
 +++ b/src/machine/machine-dbus.c
 @@ -438,6 +438,7 @@ int bus_machine_method_open_login(sd_bus *bus, sd_bus_message *message, void *us

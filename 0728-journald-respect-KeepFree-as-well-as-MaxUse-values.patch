@@ -1,0 +1,43 @@
+From 467f1b0cec3d48ddbf61aaa000757af82394609e Mon Sep 17 00:00:00 2001
+From: Jan Synacek <jsynacek@redhat.com>
+Date: Mon, 22 Oct 2018 12:15:07 +0200
+Subject: [PATCH] journald: respect KeepFree= as well as MaxUse= values
+
+Resolves: #1361893
+---
+ src/journal/journald-server.c | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
+index 88cf0b2d53..2e1e07eb0e 100644
+--- a/src/journal/journald-server.c
++++ b/src/journal/journald-server.c
+@@ -557,6 +557,8 @@ static void do_vacuum(
+                 const char* path,
+                 JournalMetrics *metrics) {
+ 
++        uint64_t total, limit = metrics->max_use;
++        struct statvfs st;
+         const char *p;
+         int r;
+ 
+@@ -564,7 +566,18 @@ static void do_vacuum(
+                 return;
+ 
+         p = strjoina(path, id);
+-        r = journal_directory_vacuum(p, metrics->max_use, s->max_retention_usec, &s->oldest_file_usec, false);
++
++        r = statvfs(p, &st);
++        if (r < 0) {
++                log_error_errno(r, "Failed to statvfs: %s", p);
++                return;
++        }
++
++        total = st.f_bsize * st.f_blocks;
++        if (total - metrics->keep_free < limit)
++                limit = total - metrics->keep_free;
++
++        r = journal_directory_vacuum(p, limit, s->max_retention_usec, &s->oldest_file_usec, false);
+         if (r < 0 && r != -ENOENT)
+                 log_error_errno(r, "Failed to vacuum %s: %m", p);
+ }

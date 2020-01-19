@@ -12,7 +12,7 @@ Resolves: #1337922
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/src/libsystemd/sd-bus/bus-util.c b/src/libsystemd/sd-bus/bus-util.c
-index 3a918361b..9d70798cd 100644
+index 3a918361b5..9d70798cda 100644
 --- a/src/libsystemd/sd-bus/bus-util.c
 +++ b/src/libsystemd/sd-bus/bus-util.c
 @@ -1388,7 +1388,8 @@ int bus_append_unit_property_assignment(sd_bus_message *m, const char *assignmen

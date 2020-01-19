@@ -12,7 +12,7 @@ Resolves: #1222517
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/mount.c b/src/core/mount.c
-index 335922025..fd4fb6f1b 100644
+index 3359220251..fd4fb6f1b2 100644
 --- a/src/core/mount.c
 +++ b/src/core/mount.c
 @@ -108,7 +108,7 @@ static bool needs_quota(const MountParameters *p) {

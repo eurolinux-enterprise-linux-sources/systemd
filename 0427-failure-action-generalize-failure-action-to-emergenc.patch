@@ -26,7 +26,7 @@ Resolves: #1353028
  rename src/core/{failure-action.h => emergency-action.h} (58%)
 
 diff --git a/Makefile.am b/Makefile.am
-index 3848338a2..b347aed7d 100644
+index 3848338a23..b347aed7db 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -1182,8 +1182,8 @@ libsystemd_core_la_SOURCES = \
@@ -41,7 +41,7 @@ index 3848338a2..b347aed7d 100644
  nodist_libsystemd_core_la_SOURCES = \
  	src/core/load-fragment-gperf.c \
 diff --git a/src/core/dbus-service.c b/src/core/dbus-service.c
-index 6d4713bab..325ed13f5 100644
+index 6d4713babc..325ed13f58 100644
 --- a/src/core/dbus-service.c
 +++ b/src/core/dbus-service.c
 @@ -34,7 +34,7 @@ static BUS_DEFINE_PROPERTY_GET_ENUM(property_get_type, service_type, ServiceType
@@ -66,7 +66,7 @@ index 6d4713bab..325ed13f5 100644
          SD_BUS_PROPERTY("RootDirectoryStartOnly", "b", bus_property_get_bool, offsetof(Service, root_directory_start_only), SD_BUS_VTABLE_PROPERTY_CONST),
          SD_BUS_PROPERTY("RemainAfterExit", "b", bus_property_get_bool, offsetof(Service, remain_after_exit), SD_BUS_VTABLE_PROPERTY_CONST),
 diff --git a/src/core/dbus-unit.c b/src/core/dbus-unit.c
-index c3654db9e..89b00e94c 100644
+index c3654db9ea..89b00e94c6 100644
 --- a/src/core/dbus-unit.c
 +++ b/src/core/dbus-unit.c
 @@ -33,7 +33,7 @@
@@ -91,7 +91,7 @@ diff --git a/src/core/failure-action.c b/src/core/emergency-action.c
 similarity index 63%
 rename from src/core/failure-action.c
 rename to src/core/emergency-action.c
-index ce522a4e4..f07b1257a 100644
+index ce522a4e4f..f07b1257a0 100644
 --- a/src/core/failure-action.c
 +++ b/src/core/emergency-action.c
 @@ -27,44 +27,45 @@
@@ -237,7 +237,7 @@ diff --git a/src/core/failure-action.h b/src/core/emergency-action.h
 similarity index 58%
 rename from src/core/failure-action.h
 rename to src/core/emergency-action.h
-index 1af4dd987..d3ac0f31c 100644
+index 1af4dd987b..d3ac0f31c9 100644
 --- a/src/core/failure-action.h
 +++ b/src/core/emergency-action.h
 @@ -22,22 +22,22 @@
@@ -278,7 +278,7 @@ index 1af4dd987..d3ac0f31c 100644
 +const char* emergency_action_to_string(EmergencyAction i) _const_;
 +EmergencyAction emergency_action_from_string(const char *s) _pure_;
 diff --git a/src/core/job.c b/src/core/job.c
-index c2876dec1..703286496 100644
+index c2876dec18..703286496f 100644
 --- a/src/core/job.c
 +++ b/src/core/job.c
 @@ -916,7 +916,7 @@ static int job_dispatch_timer(sd_event_source *s, uint64_t monotonic, void *user
@@ -291,7 +291,7 @@ index c2876dec1..703286496 100644
          return 0;
  }
 diff --git a/src/core/load-fragment-gperf.gperf.m4 b/src/core/load-fragment-gperf.gperf.m4
-index ce1397c7e..45d1ead45 100644
+index ce1397c7e8..45d1ead45b 100644
 --- a/src/core/load-fragment-gperf.gperf.m4
 +++ b/src/core/load-fragment-gperf.gperf.m4
 @@ -156,7 +156,7 @@ Unit.OnFailureIsolate,           config_parse_job_mode_isolate,      0,
@@ -316,7 +316,7 @@ index ce1397c7e..45d1ead45 100644
  Service.Restart,                 config_parse_service_restart,       0,                             offsetof(Service, restart)
  Service.PermissionsStartOnly,    config_parse_bool,                  0,                             offsetof(Service, permissions_start_only)
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index 83b6e7efc..4fecb8314 100644
+index 83b6e7efca..4fecb83142 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -2382,7 +2382,7 @@ int config_parse_unit_condition_null(
@@ -338,7 +338,7 @@ index 83b6e7efc..4fecb8314 100644
                  { config_parse_service_sockets,       "SOCKETS" },
                  { config_parse_environ,               "ENVIRON" },
 diff --git a/src/core/load-fragment.h b/src/core/load-fragment.h
-index 359794d0a..611479612 100644
+index 359794d0ac..6114796126 100644
 --- a/src/core/load-fragment.h
 +++ b/src/core/load-fragment.h
 @@ -78,7 +78,7 @@ int config_parse_unit_condition_string(const char *unit, const char *filename, u
@@ -351,7 +351,7 @@ index 359794d0a..611479612 100644
  int config_parse_syscall_filter(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
  int config_parse_syscall_archs(const char *unit, const char *filename, unsigned line, const char *section, unsigned section_line, const char *lvalue, int ltype, const char *rvalue, void *data, void *userdata);
 diff --git a/src/core/manager.h b/src/core/manager.h
-index 42be1fc43..59913f489 100644
+index 42be1fc437..59913f4896 100644
 --- a/src/core/manager.h
 +++ b/src/core/manager.h
 @@ -85,7 +85,7 @@ typedef enum StatusType {
@@ -364,7 +364,7 @@ index 42be1fc43..59913f489 100644
  struct Manager {
          /* Note that the set of units we know of is allowed to be
 diff --git a/src/core/service.c b/src/core/service.c
-index babd3c52a..6e7baa76c 100644
+index babd3c52ae..6e7baa76c6 100644
 --- a/src/core/service.c
 +++ b/src/core/service.c
 @@ -1280,7 +1280,7 @@ static void service_enter_dead(Service *s, ServiceResult f, bool allow_restart)
@@ -386,7 +386,7 @@ index babd3c52a..6e7baa76c 100644
  
  static int service_start(Unit *u) {
 diff --git a/src/core/service.h b/src/core/service.h
-index dfeee6a68..1f937dfe5 100644
+index dfeee6a68c..1f937dfe57 100644
 --- a/src/core/service.h
 +++ b/src/core/service.h
 @@ -29,7 +29,7 @@ typedef struct ServiceFDStore ServiceFDStore;
@@ -410,7 +410,7 @@ index dfeee6a68..1f937dfe5 100644
  
          UnitRef accept_socket;
 diff --git a/src/core/unit.c b/src/core/unit.c
-index a7d6d2f45..4eb0d78f4 100644
+index a7d6d2f45b..4eb0d78f44 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -937,8 +937,8 @@ void unit_dump(Unit *u, FILE *f, const char *prefix) {
@@ -425,7 +425,7 @@ index a7d6d2f45..4eb0d78f4 100644
          if (u->job_timeout_reboot_arg)
                  fprintf(f, "%s\tJob Timeout Reboot Argument: %s\n", prefix, u->job_timeout_reboot_arg);
 diff --git a/src/core/unit.h b/src/core/unit.h
-index 35287a5b7..85f52df18 100644
+index 35287a5b75..85f52df187 100644
 --- a/src/core/unit.h
 +++ b/src/core/unit.h
 @@ -41,7 +41,7 @@ typedef struct UnitStatusMessageFormats UnitStatusMessageFormats;
@@ -447,7 +447,7 @@ index 35287a5b7..85f52df18 100644
  
          /* References to this */
 diff --git a/src/test/test-tables.c b/src/test/test-tables.c
-index bda224bec..e4097903c 100644
+index bda224bec6..e4097903c4 100644
 --- a/src/test/test-tables.c
 +++ b/src/test/test-tables.c
 @@ -67,7 +67,7 @@ int main(int argc, char **argv) {

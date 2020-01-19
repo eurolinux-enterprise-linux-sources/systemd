@@ -14,7 +14,7 @@ Resolves: #1384014
  1 file changed, 15 insertions(+)
 
 diff --git a/man/systemd.mount.xml b/man/systemd.mount.xml
-index 04ed1e1cf..dfa437b5d 100644
+index 04ed1e1cf4..dfa437b5d2 100644
 --- a/man/systemd.mount.xml
 +++ b/man/systemd.mount.xml
 @@ -202,6 +202,21 @@

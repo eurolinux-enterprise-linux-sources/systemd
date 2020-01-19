@@ -13,7 +13,7 @@ instead of <0, which will not be detected as error by sysview-core.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/console/consoled-manager.c b/src/console/consoled-manager.c
-index 9dd62f04a..25de0a218 100644
+index 9dd62f04a0..25de0a218f 100644
 --- a/src/console/consoled-manager.c
 +++ b/src/console/consoled-manager.c
 @@ -228,7 +228,7 @@ static int manager_sysview_session_control(Manager *m, sysview_event *event) {

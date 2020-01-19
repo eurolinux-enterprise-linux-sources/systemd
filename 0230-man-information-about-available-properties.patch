@@ -13,7 +13,7 @@ Resolves: #1222517
  1 file changed, 23 insertions(+), 5 deletions(-)
 
 diff --git a/man/systemctl.xml b/man/systemctl.xml
-index 44ec0d7bc..6b29b8cd0 100644
+index 44ec0d7bcf..6b29b8cd03 100644
 --- a/man/systemctl.xml
 +++ b/man/systemctl.xml
 @@ -111,12 +111,30 @@

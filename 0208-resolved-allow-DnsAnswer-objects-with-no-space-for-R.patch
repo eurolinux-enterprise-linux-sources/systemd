@@ -16,7 +16,7 @@ Resolves: #1222517
  1 file changed, 2 deletions(-)
 
 diff --git a/src/resolve/resolved-dns-answer.c b/src/resolve/resolved-dns-answer.c
-index 7c4ab18b5..e08eb667c 100644
+index 7c4ab18b58..e08eb667cc 100644
 --- a/src/resolve/resolved-dns-answer.c
 +++ b/src/resolve/resolved-dns-answer.c
 @@ -25,8 +25,6 @@

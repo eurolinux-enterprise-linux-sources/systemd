@@ -9,7 +9,7 @@ Subject: [PATCH] units: there is no systemd-udev-hwdb-update.service
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/units/systemd-udevd.service.in b/units/systemd-udevd.service.in
-index f6acd6fe4..2791f73ac 100644
+index f6acd6fe4c..2791f73ac3 100644
 --- a/units/systemd-udevd.service.in
 +++ b/units/systemd-udevd.service.in
 @@ -10,7 +10,7 @@ Description=udev Kernel Device Manager

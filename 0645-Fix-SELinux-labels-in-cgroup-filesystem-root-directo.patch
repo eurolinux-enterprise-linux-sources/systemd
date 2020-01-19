@@ -23,7 +23,7 @@ and remounted back read-only.
  1 file changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/mount-setup.c b/src/core/mount-setup.c
-index 521545e5c..7a2cae4a3 100644
+index 521545e5ce..7a2cae4a39 100644
 --- a/src/core/mount-setup.c
 +++ b/src/core/mount-setup.c
 @@ -363,14 +363,22 @@ int mount_setup(bool loaded_policy) {

@@ -15,7 +15,7 @@ Resolves: #1245293
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/src/udev/udevd.c b/src/udev/udevd.c
-index 21e7e7f9a..82c7a5425 100644
+index 21e7e7f9a9..82c7a5425a 100644
 --- a/src/udev/udevd.c
 +++ b/src/udev/udevd.c
 @@ -990,7 +990,10 @@ static void kernel_cmdline_options(struct udev *udev) {

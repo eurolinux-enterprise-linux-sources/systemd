@@ -18,7 +18,7 @@ Related: #1465759
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
-index ebc8e6230..2bb3a9757 100644
+index ebc8e62305..2bb3a97574 100644
 --- a/src/journal/journal-file.c
 +++ b/src/journal/journal-file.c
 @@ -2693,7 +2693,7 @@ int journal_file_open(

@@ -9,7 +9,7 @@ Subject: [PATCH] factory: we don't want that
  2 files changed, 8 insertions(+), 10 deletions(-)
 
 diff --git a/Makefile.am b/Makefile.am
-index 6d6b650f2..8474b2912 100644
+index 6d6b650f24..8474b29129 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -2288,14 +2288,14 @@ INSTALL_DIRS += \
@@ -36,7 +36,7 @@ index 6d6b650f2..8474b2912 100644
  # ------------------------------------------------------------------------------
  if ENABLE_FIRSTBOOT
 diff --git a/tmpfiles.d/etc.conf.m4 b/tmpfiles.d/etc.conf.m4
-index 125d6e0a1..4937719bd 100644
+index 125d6e0a17..4937719bd6 100644
 --- a/tmpfiles.d/etc.conf.m4
 +++ b/tmpfiles.d/etc.conf.m4
 @@ -10,5 +10,3 @@

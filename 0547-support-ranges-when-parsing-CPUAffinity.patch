@@ -19,7 +19,7 @@ Resolves: #1493976
  5 files changed, 417 insertions(+), 76 deletions(-)
 
 diff --git a/src/core/load-fragment.c b/src/core/load-fragment.c
-index 0c0fa0f50..a10e1903a 100644
+index 0c0fa0f506..a10e1903a4 100644
 --- a/src/core/load-fragment.c
 +++ b/src/core/load-fragment.c
 @@ -884,50 +884,29 @@ int config_parse_exec_cpu_affinity(const char *unit,
@@ -88,7 +88,7 @@ index 0c0fa0f50..a10e1903a 100644
          return 0;
  }
 diff --git a/src/core/main.c b/src/core/main.c
-index 66393ed6a..5554ef468 100644
+index 66393ed6ad..5554ef468d 100644
 --- a/src/core/main.c
 +++ b/src/core/main.c
 @@ -438,49 +438,15 @@ static int config_parse_cpu_affinity2(
@@ -149,7 +149,7 @@ index 66393ed6a..5554ef468 100644
          return 0;
  }
 diff --git a/src/shared/util.c b/src/shared/util.c
-index bbb457759..39359fcc8 100644
+index bbb4577590..39359fcc8a 100644
 --- a/src/shared/util.c
 +++ b/src/shared/util.c
 @@ -2727,6 +2727,43 @@ int parse_size(const char *t, off_t base, off_t *size) {
@@ -258,7 +258,7 @@ index bbb457759..39359fcc8 100644
          static const char status_indent[] = "         "; /* "[" STATUS "] " */
          _cleanup_free_ char *s = NULL;
 diff --git a/src/shared/util.h b/src/shared/util.h
-index 80ad18c0a..526a6fe84 100644
+index 80ad18c0ad..526a6fe848 100644
 --- a/src/shared/util.h
 +++ b/src/shared/util.h
 @@ -136,6 +136,11 @@ bool streq_ptr(const char *a, const char *b) _pure_;
@@ -306,7 +306,7 @@ index 80ad18c0a..526a6fe84 100644
  _malloc_  _alloc_(1, 2) static inline void *malloc_multiply(size_t a, size_t b) {
          if (_unlikely_(b != 0 && a > ((size_t) -1) / b))
 diff --git a/src/test/test-util.c b/src/test/test-util.c
-index 971f97d7c..fcf5416c0 100644
+index 971f97d7c3..fcf5416c02 100644
 --- a/src/test/test-util.c
 +++ b/src/test/test-util.c
 @@ -689,6 +689,300 @@ static void test_parse_size(void) {

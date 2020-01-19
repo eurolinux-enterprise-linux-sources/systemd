@@ -16,7 +16,7 @@ Conflicts:
  create mode 100644 rules/40-redhat.rules
 
 diff --git a/Makefile.am b/Makefile.am
-index 75459f74d..a734e9c48 100644
+index 75459f74d3..a734e9c486 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -3564,7 +3564,8 @@ dist_udevrules_DATA += \
@@ -31,7 +31,7 @@ index 75459f74d..a734e9c48 100644
  	rules/99-systemd.rules
 diff --git a/rules/40-redhat.rules b/rules/40-redhat.rules
 new file mode 100644
-index 000000000..2b494e57c
+index 0000000000..2b494e57cf
 --- /dev/null
 +++ b/rules/40-redhat.rules
 @@ -0,0 +1,3 @@

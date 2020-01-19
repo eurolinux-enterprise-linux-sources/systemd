@@ -28,7 +28,7 @@ will fail with -EBUSY.
  1 file changed, 5 insertions(+)
 
 diff --git a/src/libsystemd/sd-rtnl/sd-rtnl.c b/src/libsystemd/sd-rtnl/sd-rtnl.c
-index ae49c77e0..7cdcc5d96 100644
+index ae49c77e01..7cdcc5d96a 100644
 --- a/src/libsystemd/sd-rtnl/sd-rtnl.c
 +++ b/src/libsystemd/sd-rtnl/sd-rtnl.c
 @@ -61,6 +61,11 @@ static int sd_rtnl_new(sd_rtnl **ret) {

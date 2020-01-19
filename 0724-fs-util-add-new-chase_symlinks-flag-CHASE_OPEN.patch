@@ -1,0 +1,163 @@
+From c211b650ee5cb9934067dbba40718a4a33063e06 Mon Sep 17 00:00:00 2001
+From: David Tardon <dtardon@redhat.com>
+Date: Thu, 3 Jan 2019 14:44:36 +0100
+Subject: [PATCH] fs-util: add new chase_symlinks() flag CHASE_OPEN
+
+The new flag returns the O_PATH fd of the final component, which may be
+converted into a proper fd by open()ing it again through the
+/proc/self/fd/xyz path.
+
+Together with O_SAFE this provides us with a somewhat safe way to open()
+files in directories potentially owned by unprivileged code, where we
+want to refuse operation if any symlink tricks are played pointing to
+privileged files.
+
+(cherry picked from commit 1ed34d75d4f21d2335c5625261954c848d176ae6)
+
+Related: #1663143
+---
+ Makefile.am          |  1 +
+ src/shared/util.c    | 17 +++++++++++++
+ src/shared/util.h    |  1 +
+ src/test/test-util.c | 59 +++++++++++++++++++++++++++++++++++++++++++-
+ 4 files changed, 77 insertions(+), 1 deletion(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index 995c421b8b..648f54b957 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -1675,6 +1675,7 @@ test_util_SOURCES = \
+ 	src/test/test-util.c
+ 
+ test_util_LDADD = \
++	libsystemd-internal.la \
+ 	libsystemd-shared.la
+ 
+ test_path_lookup_SOURCES = \
+diff --git a/src/shared/util.c b/src/shared/util.c
+index fc4887920f..354d15ff18 100644
+--- a/src/shared/util.c
++++ b/src/shared/util.c
+@@ -9225,6 +9225,10 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags,
+ 
+         assert(path);
+ 
++        /* Either the file may be missing, or we return an fd to the final object, but both make no sense */
++        if ((flags & (CHASE_NONEXISTENT|CHASE_OPEN)) == (CHASE_NONEXISTENT|CHASE_OPEN))
++                return -EINVAL;
++
+         /* This is a lot like canonicalize_file_name(), but takes an additional "root" parameter, that allows following
+          * symlinks relative to a root directory, instead of the root of the host.
+          *
+@@ -9476,5 +9480,18 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags,
+                 done = NULL;
+         }
+ 
++        if (flags & CHASE_OPEN) {
++                int q;
++
++                /* Return the O_PATH fd we currently are looking to the caller. It can translate it to a proper fd by
++                 * opening /proc/self/fd/xyz. */
++
++                assert(fd >= 0);
++                q = fd;
++                fd = -1;
++
++                return q;
++        }
++
+         return exists;
+ }
+diff --git a/src/shared/util.h b/src/shared/util.h
+index fa3e2e3009..d89f0d34a1 100644
+--- a/src/shared/util.h
++++ b/src/shared/util.h
+@@ -1161,6 +1161,7 @@ enum {
+         CHASE_NONEXISTENT = 1U << 1,   /* If set, it's OK if the path doesn't actually exist. */
+         CHASE_NO_AUTOFS   = 1U << 2,   /* If set, return -EREMOTE if autofs mount point found */
+         CHASE_SAFE        = 1U << 3,   /* If set, return EPERM if we ever traverse from unprivileged to privileged files or directories */
++        CHASE_OPEN        = 1U << 4,   /* If set, return an O_PATH object to the final component */
+ };
+ 
+ int chase_symlinks(const char *path_with_prefix, const char *root, unsigned flags, char **ret);
+diff --git a/src/test/test-util.c b/src/test/test-util.c
+index e5a646ec20..8ef3850e10 100644
+--- a/src/test/test-util.c
++++ b/src/test/test-util.c
+@@ -1910,11 +1910,45 @@ static void test_acquire_data_fd(void) {
+         test_acquire_data_fd_one(ACQUIRE_NO_DEV_NULL|ACQUIRE_NO_MEMFD|ACQUIRE_NO_PIPE|ACQUIRE_NO_TMPFILE);
+ }
+ 
++static int id128_read_fd(int fd, sd_id128_t *ret) {
++        char buf[33];
++        ssize_t k;
++        unsigned j;
++        sd_id128_t t;
++
++        assert_return(fd >= 0, -EINVAL);
++
++        k = loop_read(fd, buf, 33, false);
++        if (k < 0)
++                return (int) k;
++
++        if (k != 33)
++                return -EIO;
++
++        if (buf[32] !='\n')
++                return -EIO;
++
++        for (j = 0; j < 16; j++) {
++                int a, b;
++
++                a = unhexchar(buf[j*2]);
++                b = unhexchar(buf[j*2+1]);
++
++                if (a < 0 || b < 0)
++                        return -EIO;
++
++                t.bytes[j] = a << 4 | b;
++        }
++
++        *ret = t;
++        return 0;
++}
++
+ static void test_chase_symlinks(void) {
+         _cleanup_free_ char *result = NULL;
+         char temp[] = "/tmp/test-chase.XXXXXX";
+         const char *top, *p, *pslash, *q, *qslash;
+-        int r;
++        int r, pfd;
+ 
+         assert_se(mkdtemp(temp));
+ 
+@@ -2139,6 +2173,29 @@ static void test_chase_symlinks(void) {
+                 assert_se(chase_symlinks(q, NULL, CHASE_SAFE, NULL) >= 0);
+         }
+ 
++        p = strjoina(temp, "/machine-id-test");
++        assert_se(symlink("/usr/../etc/./machine-id", p) >= 0);
++
++        pfd = chase_symlinks(p, NULL, CHASE_OPEN, NULL);
++        if (pfd != -ENOENT) {
++                char procfs[sizeof("/proc/self/fd/") - 1 + DECIMAL_STR_MAX(pfd) + 1];
++                _cleanup_close_ int fd = -1;
++                sd_id128_t a, b;
++
++                assert_se(pfd >= 0);
++
++                xsprintf(procfs, "/proc/self/fd/%i", pfd);
++
++                fd = open(procfs, O_RDONLY|O_CLOEXEC);
++                assert_se(fd >= 0);
++
++                safe_close(pfd);
++
++                assert_se(id128_read_fd(fd, &a) >= 0);
++                assert_se(sd_id128_get_machine(&b) >= 0);
++                assert_se(sd_id128_equal(a, b));
++        }
++
+         assert_se(rm_rf_dangerous(temp, false, true, false) >= 0);
+ }
+ 

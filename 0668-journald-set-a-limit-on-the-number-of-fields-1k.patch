@@ -1,4 +1,4 @@
-From 94809b687fbb1c43b07ed8aa966070079cdcb063 Mon Sep 17 00:00:00 2001
+From 9dbac61cf123a57c1f39a2f134389f1a5877dc29 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
 Date: Thu, 3 Jan 2019 16:09:05 +0100
 Subject: [PATCH] journald: set a limit on the number of fields (1k)
@@ -22,7 +22,7 @@ Resolves: #1657792
  2 files changed, 7 insertions(+)
 
 diff --git a/src/journal/journal-file.h b/src/journal/journal-file.h
-index dd8ef52d2..37749c445 100644
+index dd8ef52d2a..37749c4459 100644
 --- a/src/journal/journal-file.h
 +++ b/src/journal/journal-file.h
 @@ -158,6 +158,9 @@ int journal_file_open_reliably(
@@ -36,7 +36,7 @@ index dd8ef52d2..37749c445 100644
          /* This considers timestamps until the year 3112 valid. That should be plenty room... */
          return u > 0 && u < (1ULL << 55);
 diff --git a/src/journal/journald-native.c b/src/journal/journald-native.c
-index cf3349393..0c451274f 100644
+index cf3349393f..0c451274f7 100644
 --- a/src/journal/journald-native.c
 +++ b/src/journal/journald-native.c
 @@ -134,6 +134,10 @@ void server_process_native_message(

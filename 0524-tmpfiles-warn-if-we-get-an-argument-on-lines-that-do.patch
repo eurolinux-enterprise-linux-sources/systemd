@@ -12,7 +12,7 @@ Related: #1299714
  1 file changed, 7 insertions(+), 2 deletions(-)
 
 diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
-index 800e620bc..70e0cc2fa 100644
+index 800e620bcf..70e0cc2fa3 100644
 --- a/src/tmpfiles/tmpfiles.c
 +++ b/src/tmpfiles/tmpfiles.c
 @@ -1788,8 +1788,6 @@ static int parse_line(const char *fname, unsigned line, const char *buffer) {

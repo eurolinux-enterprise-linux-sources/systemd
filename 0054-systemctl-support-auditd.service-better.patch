@@ -17,7 +17,7 @@ a file.
  1 file changed, 23 insertions(+), 23 deletions(-)
 
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index 3da4d3d4f..4ec0cff21 100644
+index 3da4d3d4f1..4ec0cff21d 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -4555,6 +4555,23 @@ static int init_home_and_lookup_paths(char **user_home, char **user_runtime, Loo

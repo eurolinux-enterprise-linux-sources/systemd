@@ -10,7 +10,7 @@ Conflicts:
  1 file changed, 3 deletions(-)
 
 diff --git a/tmpfiles.d/etc.conf.m4 b/tmpfiles.d/etc.conf.m4
-index 9b0e080e6..125d6e0a1 100644
+index 9b0e080e6f..125d6e0a17 100644
 --- a/tmpfiles.d/etc.conf.m4
 +++ b/tmpfiles.d/etc.conf.m4
 @@ -10,8 +10,5 @@

@@ -24,7 +24,7 @@ Resolves: #1436021
  4 files changed, 24 insertions(+), 19 deletions(-)
 
 diff --git a/src/core/job.c b/src/core/job.c
-index 703286496..1617e24c0 100644
+index 703286496f..1617e24c03 100644
 --- a/src/core/job.c
 +++ b/src/core/job.c
 @@ -392,38 +392,38 @@ bool job_type_is_redundant(JobType a, UnitActiveState b) {
@@ -81,7 +81,7 @@ index 703286496..1617e24c0 100644
  }
  
 diff --git a/src/core/job.h b/src/core/job.h
-index e4191ee77..ce81607de 100644
+index e4191ee775..ce81607de8 100644
 --- a/src/core/job.h
 +++ b/src/core/job.h
 @@ -210,7 +210,7 @@ bool job_type_is_redundant(JobType a, UnitActiveState b) _pure_;
@@ -94,7 +94,7 @@ index e4191ee77..ce81607de 100644
  int job_type_merge_and_collapse(JobType *a, JobType b, Unit *u);
  
 diff --git a/src/core/manager.c b/src/core/manager.c
-index 8bd80e687..287cf6a74 100644
+index 8bd80e6875..287cf6a741 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -1303,7 +1303,7 @@ int manager_add_job(Manager *m, JobType type, Unit *unit, JobMode mode, bool ove
@@ -107,7 +107,7 @@ index 8bd80e687..287cf6a74 100644
          tr = transaction_new(mode == JOB_REPLACE_IRREVERSIBLY);
          if (!tr)
 diff --git a/src/core/transaction.c b/src/core/transaction.c
-index 428b7671b..34df15718 100644
+index 428b7671b3..34df15718b 100644
 --- a/src/core/transaction.c
 +++ b/src/core/transaction.c
 @@ -855,8 +855,7 @@ int transaction_add_job_and_dependencies(

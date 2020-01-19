@@ -15,7 +15,7 @@ Related: #1506256
  1 file changed, 15 insertions(+), 11 deletions(-)
 
 diff --git a/src/core/job.c b/src/core/job.c
-index f371f914d..5e582b3d3 100644
+index f371f914d4..5e582b3d3c 100644
 --- a/src/core/job.c
 +++ b/src/core/job.c
 @@ -692,13 +692,6 @@ static void job_print_status_message(Unit *u, JobType t, JobResult result) {

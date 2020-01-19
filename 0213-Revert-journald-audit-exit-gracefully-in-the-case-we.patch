@@ -13,7 +13,7 @@ Resolves: #1222517
  1 file changed, 2 insertions(+), 4 deletions(-)
 
 diff --git a/src/journal/journald-audit.c b/src/journal/journald-audit.c
-index 77abe2e63..46eb82fa3 100644
+index 77abe2e63c..46eb82fa34 100644
 --- a/src/journal/journald-audit.c
 +++ b/src/journal/journald-audit.c
 @@ -533,10 +533,8 @@ int server_open_audit(Server *s) {

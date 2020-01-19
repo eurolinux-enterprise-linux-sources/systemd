@@ -26,7 +26,7 @@ Resolves: #1342173
  8 files changed, 90 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/busname.c b/src/core/busname.c
-index 43d7607a3..f626ba96d 100644
+index 43d7607a30..f626ba96d0 100644
 --- a/src/core/busname.c
 +++ b/src/core/busname.c
 @@ -997,6 +997,14 @@ static const char* const busname_state_table[_BUSNAME_STATE_MAX] = {
@@ -54,7 +54,7 @@ index 43d7607a3..f626ba96d 100644
          .bus_vtable = bus_busname_vtable,
  
 diff --git a/src/core/manager.c b/src/core/manager.c
-index d168777d2..5da836593 100644
+index d168777d26..5da8365938 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -1760,7 +1760,10 @@ static void invoke_sigchld_event(Manager *m, Unit *u, siginfo_t *si) {
@@ -70,7 +70,7 @@ index d168777d2..5da836593 100644
                          u->sigchldgen = iteration;
                  } else
 diff --git a/src/core/mount.c b/src/core/mount.c
-index fe967bc03..3fbdb7daf 100644
+index fe967bc039..3fbdb7dafb 100644
 --- a/src/core/mount.c
 +++ b/src/core/mount.c
 @@ -1877,6 +1877,14 @@ static const char* const mount_state_table[_MOUNT_STATE_MAX] = {
@@ -98,7 +98,7 @@ index fe967bc03..3fbdb7daf 100644
          .bus_vtable = bus_mount_vtable,
          .bus_set_property = bus_mount_set_property,
 diff --git a/src/core/service.c b/src/core/service.c
-index c76713b1c..babd3c52a 100644
+index c76713b1ce..babd3c52ae 100644
 --- a/src/core/service.c
 +++ b/src/core/service.c
 @@ -3068,6 +3068,22 @@ static const char* const service_state_table[_SERVICE_STATE_MAX] = {
@@ -135,7 +135,7 @@ index c76713b1c..babd3c52a 100644
  
          .bus_interface = "org.freedesktop.systemd1.Service",
 diff --git a/src/core/socket.c b/src/core/socket.c
-index bc677a20f..771af0d24 100644
+index bc677a20f8..771af0d241 100644
 --- a/src/core/socket.c
 +++ b/src/core/socket.c
 @@ -2648,6 +2648,14 @@ static const char* const socket_state_table[_SOCKET_STATE_MAX] = {
@@ -163,7 +163,7 @@ index bc677a20f..771af0d24 100644
          .bus_vtable = bus_socket_vtable,
          .bus_set_property = bus_socket_set_property,
 diff --git a/src/core/swap.c b/src/core/swap.c
-index 34a2c406d..42f995990 100644
+index 34a2c406d8..42f995990c 100644
 --- a/src/core/swap.c
 +++ b/src/core/swap.c
 @@ -1426,6 +1426,14 @@ static const char* const swap_state_table[_SWAP_STATE_MAX] = {
@@ -191,7 +191,7 @@ index 34a2c406d..42f995990 100644
          .bus_vtable = bus_swap_vtable,
          .bus_set_property = bus_swap_set_property,
 diff --git a/src/core/unit.c b/src/core/unit.c
-index d62135d87..0e90d130a 100644
+index d62135d878..0e90d130a4 100644
 --- a/src/core/unit.c
 +++ b/src/core/unit.c
 @@ -3674,6 +3674,24 @@ int unit_setup_exec_runtime(Unit *u) {
@@ -220,7 +220,7 @@ index d62135d87..0e90d130a 100644
          [UNIT_ACTIVE] = "active",
          [UNIT_RELOADING] = "reloading",
 diff --git a/src/core/unit.h b/src/core/unit.h
-index d93645777..35287a5b7 100644
+index d936457776..35287a5b75 100644
 --- a/src/core/unit.h
 +++ b/src/core/unit.h
 @@ -399,6 +399,12 @@ struct UnitVTable {

@@ -18,7 +18,7 @@ Resolves: #1500119
  1 file changed, 18 insertions(+), 27 deletions(-)
 
 diff --git a/src/udev/udev-builtin-keyboard.c b/src/udev/udev-builtin-keyboard.c
-index bde7bf07f..515edd45c 100644
+index bde7bf07fb..515edd45ce 100644
 --- a/src/udev/udev-builtin-keyboard.c
 +++ b/src/udev/udev-builtin-keyboard.c
 @@ -71,10 +71,10 @@ static int builtin_keyboard(struct udev_device *dev, int argc, char *argv[], boo

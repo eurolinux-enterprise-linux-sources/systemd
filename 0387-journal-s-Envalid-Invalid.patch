@@ -10,7 +10,7 @@ Related: #1318994
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/journal/journal-verify.c b/src/journal/journal-verify.c
-index 8a66ac7f0..250d4c758 100644
+index 8a66ac7f08..250d4c7586 100644
 --- a/src/journal/journal-verify.c
 +++ b/src/journal/journal-verify.c
 @@ -899,7 +899,7 @@ int journal_file_verify(

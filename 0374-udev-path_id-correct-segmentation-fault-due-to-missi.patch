@@ -17,7 +17,7 @@ Resolves: #1365556
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/udev/udev-builtin-path_id.c b/src/udev/udev-builtin-path_id.c
-index 8359e236a..a3b019bfc 100644
+index 8359e236a1..a3b019bfc5 100644
 --- a/src/udev/udev-builtin-path_id.c
 +++ b/src/udev/udev-builtin-path_id.c
 @@ -729,7 +729,7 @@ restart:

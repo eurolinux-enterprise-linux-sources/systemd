@@ -15,7 +15,7 @@ possibly confuse gcc5 on armv7hl to segfault during compilation.
  1 file changed, 1 insertion(+)
 
 diff --git a/src/journal-remote/microhttpd-util.c b/src/journal-remote/microhttpd-util.c
-index 34d93379d..de9c6ab32 100644
+index 34d93379da..de9c6ab32d 100644
 --- a/src/journal-remote/microhttpd-util.c
 +++ b/src/journal-remote/microhttpd-util.c
 @@ -179,6 +179,7 @@ static int verify_cert_authorized(gnutls_session_t session) {

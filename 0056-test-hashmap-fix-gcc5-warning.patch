@@ -18,7 +18,7 @@ src/test/test-hashmap.c:76:79: warning: logical not is only applied to the left 
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/test/test-hashmap.c b/src/test/test-hashmap.c
-index 6900da9e8..351563b96 100644
+index 6900da9e89..351563b967 100644
 --- a/src/test/test-hashmap.c
 +++ b/src/test/test-hashmap.c
 @@ -75,7 +75,7 @@ static void test_trivial_compare_func(void) {

@@ -26,7 +26,7 @@ Related: #1571098
  5 files changed, 168 insertions(+), 24 deletions(-)
 
 diff --git a/src/core/umount.c b/src/core/umount.c
-index 91d67c06c..bd3896612 100644
+index 91d67c06ca..bd38966124 100644
 --- a/src/core/umount.c
 +++ b/src/core/umount.c
 @@ -363,7 +363,84 @@ static int delete_dm(dev_t devnum) {
@@ -179,7 +179,7 @@ index 91d67c06c..bd3896612 100644
          mount_points_list_free(&mp_list_head);
  
 diff --git a/src/shared/def.h b/src/shared/def.h
-index 9e008a6d2..f193ab1f9 100644
+index 9e008a6d2d..f193ab1f9f 100644
 --- a/src/shared/def.h
 +++ b/src/shared/def.h
 @@ -21,8 +21,6 @@
@@ -192,7 +192,7 @@ index 9e008a6d2..f193ab1f9 100644
  #define DEFAULT_RESTART_USEC (100*USEC_PER_MSEC)
  #define DEFAULT_CONFIRM_USEC (30*USEC_PER_SEC)
 diff --git a/src/shared/login-shared.c b/src/shared/login-shared.c
-index 054c77503..5da0f0583 100644
+index 054c77503b..5da0f05838 100644
 --- a/src/shared/login-shared.c
 +++ b/src/shared/login-shared.c
 @@ -21,6 +21,7 @@
@@ -204,7 +204,7 @@ index 054c77503..5da0f0583 100644
  bool session_id_valid(const char *id) {
          assert(id);
 diff --git a/src/shared/util.c b/src/shared/util.c
-index 982f5e044..3216f004a 100644
+index 982f5e044f..3216f004ad 100644
 --- a/src/shared/util.c
 +++ b/src/shared/util.c
 @@ -9049,3 +9049,64 @@ try_dev_shm_without_o_tmpfile:
@@ -273,7 +273,7 @@ index 982f5e044..3216f004a 100644
 +        return -EPROTO;
 +}
 diff --git a/src/shared/util.h b/src/shared/util.h
-index 9c4be0256..998f882bb 100644
+index 9c4be02566..998f882bbb 100644
 --- a/src/shared/util.h
 +++ b/src/shared/util.h
 @@ -22,6 +22,7 @@

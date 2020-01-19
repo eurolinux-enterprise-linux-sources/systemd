@@ -22,7 +22,7 @@ Resolves: #1222517
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/journal/journald-server.c b/src/journal/journald-server.c
-index 04839c950..d692c06ef 100644
+index 04839c950c..d692c06ef7 100644
 --- a/src/journal/journald-server.c
 +++ b/src/journal/journald-server.c
 @@ -942,7 +942,7 @@ static int system_journal_open(Server *s, bool flush_requested) {

@@ -15,7 +15,7 @@ Resolves: #1259015
  1 file changed, 8 insertions(+)
 
 diff --git a/src/udev/udev-builtin-net_id.c b/src/udev/udev-builtin-net_id.c
-index dd2886caf..ddd83d4f1 100644
+index dd2886caf2..ddd83d4f1b 100644
 --- a/src/udev/udev-builtin-net_id.c
 +++ b/src/udev/udev-builtin-net_id.c
 @@ -283,8 +283,16 @@ static int names_pci(struct udev_device *dev, struct netnames *names) {

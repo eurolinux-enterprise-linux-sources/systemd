@@ -54,7 +54,7 @@ Related: #1318994
  26 files changed, 36 insertions(+), 36 deletions(-)
 
 diff --git a/src/import/import-job.c b/src/import/import-job.c
-index 5f9cfd366..d826f493f 100644
+index 5f9cfd366d..d826f493f8 100644
 --- a/src/import/import-job.c
 +++ b/src/import/import-job.c
 @@ -80,7 +80,7 @@ void import_job_curl_on_finished(CurlGlue *g, CURL *curl, CURLcode result) {
@@ -67,7 +67,7 @@ index 5f9cfd366..d826f493f 100644
  
          if (!j || j->state == IMPORT_JOB_DONE || j->state == IMPORT_JOB_FAILED)
 diff --git a/src/journal-remote/journal-gatewayd.c b/src/journal-remote/journal-gatewayd.c
-index 576f7cae7..d1f0ce3da 100644
+index 576f7cae7d..d1f0ce3da3 100644
 --- a/src/journal-remote/journal-gatewayd.c
 +++ b/src/journal-remote/journal-gatewayd.c
 @@ -736,7 +736,7 @@ static int request_handler_machine(
@@ -80,7 +80,7 @@ index 576f7cae7..d1f0ce3da 100644
          sd_id128_t mid, bid;
          _cleanup_free_ char *v = NULL;
 diff --git a/src/journal-remote/journal-remote-parse.c b/src/journal-remote/journal-remote-parse.c
-index 7e6295435..64089da19 100644
+index 7e62954351..64089da19b 100644
 --- a/src/journal-remote/journal-remote-parse.c
 +++ b/src/journal-remote/journal-remote-parse.c
 @@ -316,7 +316,7 @@ int process_data(RemoteSource *source) {
@@ -93,7 +93,7 @@ index 7e6295435..64089da19 100644
                  assert(source->data_size == 0);
  
 diff --git a/src/journal-remote/journal-remote.c b/src/journal-remote/journal-remote.c
-index 9c515f9c8..4fac55cc9 100644
+index 9c515f9c8f..4fac55cc9a 100644
 --- a/src/journal-remote/journal-remote.c
 +++ b/src/journal-remote/journal-remote.c
 @@ -353,7 +353,7 @@ static int remove_source(RemoteServer *s, int fd) {
@@ -115,7 +115,7 @@ index 9c515f9c8..4fac55cc9 100644
          fd2 = accept_connection("raw", fd, &addr, &hostname);
          if (fd2 < 0)
 diff --git a/src/journal/catalog.c b/src/journal/catalog.c
-index f17023284..a9c40c6d4 100644
+index f170232841..a9c40c6d4f 100644
 --- a/src/journal/catalog.c
 +++ b/src/journal/catalog.c
 @@ -559,7 +559,7 @@ static const char *find_id(void *p, sd_id128_t id) {
@@ -128,7 +128,7 @@ index f17023284..a9c40c6d4 100644
          int r;
          const char *s;
 diff --git a/src/journal/coredump.c b/src/journal/coredump.c
-index f7ba0191e..59ccd46bb 100644
+index f7ba0191e1..59ccd46bb0 100644
 --- a/src/journal/coredump.c
 +++ b/src/journal/coredump.c
 @@ -244,7 +244,7 @@ static int maybe_remove_external_coredump(const char *filename, off_t size) {
@@ -150,7 +150,7 @@ index f7ba0191e..59ccd46bb 100644
                  /* Store the coredump itself in the journal */
  
 diff --git a/src/journal/journal-file.c b/src/journal/journal-file.c
-index ef1849787..2a93460d4 100644
+index ef18497879..2a93460d4e 100644
 --- a/src/journal/journal-file.c
 +++ b/src/journal/journal-file.c
 @@ -911,7 +911,7 @@ int journal_file_find_data_object_with_hash(
@@ -181,7 +181,7 @@ index ef1849787..2a93460d4 100644
                          r = decompress_blob(o->object.flags & OBJECT_COMPRESSION_MASK,
                                              o->data.payload, l, &from->compress_buffer, &from->compress_buffer_size, &rsize, 0);
 diff --git a/src/journal/journal-vacuum.c b/src/journal/journal-vacuum.c
-index 832c327b3..856d11e4e 100644
+index 832c327b31..856d11e4ed 100644
 --- a/src/journal/journal-vacuum.c
 +++ b/src/journal/journal-vacuum.c
 @@ -76,7 +76,7 @@ static void patch_realtime(
@@ -194,7 +194,7 @@ index 832c327b3..856d11e4e 100644
          /* The timestamp was determined by the file name, but let's
           * see if the file might actually be older than the file name
 diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
-index a38ce4b8f..6ba884779 100644
+index a38ce4b8fd..6ba8847798 100644
 --- a/src/journal/journalctl.c
 +++ b/src/journal/journalctl.c
 @@ -1644,7 +1644,7 @@ static int verify(sd_journal *j) {
@@ -207,7 +207,7 @@ index a38ce4b8f..6ba884779 100644
  #ifdef HAVE_GCRYPT
                  if (!arg_verify_key && JOURNAL_HEADER_SEALED(f->header))
 diff --git a/src/journal/test-journal-stream.c b/src/journal/test-journal-stream.c
-index 3996e778e..b8caeb3d4 100644
+index 3996e778e6..b8caeb3d41 100644
 --- a/src/journal/test-journal-stream.c
 +++ b/src/journal/test-journal-stream.c
 @@ -42,7 +42,7 @@ static void verify_contents(sd_journal *j, unsigned skip) {
@@ -220,7 +220,7 @@ index 3996e778e..b8caeb3d4 100644
                  assert_se(sd_journal_get_cursor(j, &k) >= 0);
                  printf("cursor: %s\n", k);
 diff --git a/src/libsystemd-network/lldp-tlv.c b/src/libsystemd-network/lldp-tlv.c
-index e43d70d3c..e32783f3e 100644
+index e43d70d3cf..e32783f3eb 100644
 --- a/src/libsystemd-network/lldp-tlv.c
 +++ b/src/libsystemd-network/lldp-tlv.c
 @@ -156,7 +156,7 @@ static inline int tlv_packet_read_internal(tlv_section *m, void **data) {
@@ -260,7 +260,7 @@ index e43d70d3c..e32783f3e 100644
  
          assert_return(m, -EINVAL);
 diff --git a/src/libsystemd-network/sd-dhcp-server.c b/src/libsystemd-network/sd-dhcp-server.c
-index 3f89f344d..0f284eb6a 100644
+index 3f89f344d7..0f284eb6a1 100644
 --- a/src/libsystemd-network/sd-dhcp-server.c
 +++ b/src/libsystemd-network/sd-dhcp-server.c
 @@ -776,7 +776,7 @@ int dhcp_server_handle_message(sd_dhcp_server *server, DHCPMessage *message,
@@ -273,7 +273,7 @@ index 3f89f344d..0f284eb6a 100644
                          if (!existing_lease) {
                                  lease = new0(DHCPLease, 1);
 diff --git a/src/libsystemd-network/sd-pppoe.c b/src/libsystemd-network/sd-pppoe.c
-index 4f49b799e..83e58a3db 100644
+index 4f49b799ec..83e58a3db3 100644
 --- a/src/libsystemd-network/sd-pppoe.c
 +++ b/src/libsystemd-network/sd-pppoe.c
 @@ -340,7 +340,7 @@ static int pppoe_timeout(sd_event_source *s, uint64_t usec, void *userdata);
@@ -286,7 +286,7 @@ index 4f49b799e..83e58a3db 100644
  
          assert(ppp);
 diff --git a/src/libsystemd/sd-login/sd-login.c b/src/libsystemd/sd-login/sd-login.c
-index f71749f72..cc0677bdf 100644
+index f71749f72d..cc0677bdf2 100644
 --- a/src/libsystemd/sd-login/sd-login.c
 +++ b/src/libsystemd/sd-login/sd-login.c
 @@ -82,7 +82,7 @@ _public_ int sd_pid_get_owner_uid(pid_t pid, uid_t *uid) {
@@ -299,7 +299,7 @@ index f71749f72..cc0677bdf 100644
  
          assert_return(fd >= 0, -EINVAL);
 diff --git a/src/network/networkctl.c b/src/network/networkctl.c
-index aa83f32f5..778670b73 100644
+index aa83f32f53..778670b733 100644
 --- a/src/network/networkctl.c
 +++ b/src/network/networkctl.c
 @@ -964,7 +964,7 @@ static int link_lldp_status(int argc, char *argv[], void *userdata) {
@@ -312,7 +312,7 @@ index aa83f32f5..778670b73 100644
  
                                          r = safe_atollu(b, &x);
 diff --git a/src/resolve/resolved-dns-transaction.c b/src/resolve/resolved-dns-transaction.c
-index 74b063414..bc1a90db1 100644
+index 74b0634142..bc1a90db1b 100644
 --- a/src/resolve/resolved-dns-transaction.c
 +++ b/src/resolve/resolved-dns-transaction.c
 @@ -252,7 +252,7 @@ static int dns_transaction_open_tcp(DnsTransaction *t) {
@@ -325,7 +325,7 @@ index 74b063414..bc1a90db1 100644
                          /* Otherwise, try to talk to the owner of a
                           * the IP address, in case this is a reverse
 diff --git a/src/resolve/test-dns-domain.c b/src/resolve/test-dns-domain.c
-index ebc8d98fc..4963a9c6a 100644
+index ebc8d98fce..4963a9c6a5 100644
 --- a/src/resolve/test-dns-domain.c
 +++ b/src/resolve/test-dns-domain.c
 @@ -162,7 +162,7 @@ static void test_dns_name_single_label(void) {
@@ -338,7 +338,7 @@ index ebc8d98fc..4963a9c6a 100644
  
          assert_se(in_addr_from_string_auto(address, &familya, &a) >= 0);
 diff --git a/src/shared/base-filesystem.c b/src/shared/base-filesystem.c
-index 73907c635..20a69bdbf 100644
+index 73907c6354..20a69bdbff 100644
 --- a/src/shared/base-filesystem.c
 +++ b/src/shared/base-filesystem.c
 @@ -55,7 +55,7 @@ static const BaseFilesystem table[] = {
@@ -351,7 +351,7 @@ index 73907c635..20a69bdbf 100644
          fd = open(root, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
          if (fd < 0)
 diff --git a/src/shared/capability.c b/src/shared/capability.c
-index 915ceb9d9..2b963fde3 100644
+index 915ceb9d9b..2b963fde3f 100644
 --- a/src/shared/capability.c
 +++ b/src/shared/capability.c
 @@ -55,7 +55,7 @@ unsigned long cap_last_cap(void) {
@@ -364,7 +364,7 @@ index 915ceb9d9..2b963fde3 100644
  
          if (valid)
 diff --git a/src/shared/copy.c b/src/shared/copy.c
-index 0239a5806..2a0cb2808 100644
+index 0239a58066..2a0cb28080 100644
 --- a/src/shared/copy.c
 +++ b/src/shared/copy.c
 @@ -360,7 +360,7 @@ int copy_file_fd(const char *from, int fdt, bool try_reflink) {
@@ -395,7 +395,7 @@ index 0239a5806..2a0cb2808 100644
          assert(fdf >= 0);
          assert(fdt >= 0);
 diff --git a/src/shared/install.c b/src/shared/install.c
-index 9962508b1..61aaafe7b 100644
+index 9962508b1a..61aaafe7bc 100644
 --- a/src/shared/install.c
 +++ b/src/shared/install.c
 @@ -2046,7 +2046,7 @@ UnitFileState unit_file_lookup_state(
@@ -408,7 +408,7 @@ index 9962508b1..61aaafe7b 100644
          assert(paths);
          assert(name);
 diff --git a/src/shared/logs-show.c b/src/shared/logs-show.c
-index 8c374116a..a572be94b 100644
+index 8c374116ad..a572be94b4 100644
 --- a/src/shared/logs-show.c
 +++ b/src/shared/logs-show.c
 @@ -993,7 +993,7 @@ static int show_journal(FILE *f,
@@ -421,7 +421,7 @@ index 8c374116a..a572be94b 100644
                          /* Check whether the cutoff line is too early */
  
 diff --git a/src/shared/util.c b/src/shared/util.c
-index 303026152..4c441a544 100644
+index 3030261524..4c441a5448 100644
 --- a/src/shared/util.c
 +++ b/src/shared/util.c
 @@ -3073,7 +3073,7 @@ int getttyname_malloc(int fd, char **ret) {
@@ -443,7 +443,7 @@ index 303026152..4c441a544 100644
  
                          e = strv_env_get(env, *i+1);
 diff --git a/src/test/test-path.c b/src/test/test-path.c
-index 4f9f5c134..a3295aa99 100644
+index 4f9f5c1344..a3295aa997 100644
 --- a/src/test/test-path.c
 +++ b/src/test/test-path.c
 @@ -33,7 +33,7 @@ static int setup_test(Manager **m) {
@@ -456,7 +456,7 @@ index 4f9f5c134..a3295aa99 100644
  
          assert_se(m);
 diff --git a/src/test/test-pty.c b/src/test/test-pty.c
-index cab569a9d..67c125a4c 100644
+index cab569a9da..67c125a4c0 100644
 --- a/src/test/test-pty.c
 +++ b/src/test/test-pty.c
 @@ -97,7 +97,7 @@ static void run_parent(Pty *pty) {
@@ -469,7 +469,7 @@ index cab569a9d..67c125a4c 100644
          rcvsiz = 0;
          zero(rcvbuf);
 diff --git a/src/udev/net/link-config.c b/src/udev/net/link-config.c
-index 489593f4f..ad6a82e50 100644
+index 489593f4fd..ad6a82e506 100644
 --- a/src/udev/net/link-config.c
 +++ b/src/udev/net/link-config.c
 @@ -474,7 +474,7 @@ int link_config_apply(link_config_ctx *ctx, link_config *config,

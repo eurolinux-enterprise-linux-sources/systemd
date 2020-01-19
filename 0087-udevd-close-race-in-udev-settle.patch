@@ -33,7 +33,7 @@ Reported-by: Daniel Drake <drake@endlessm.com>
  1 file changed, 17 insertions(+), 9 deletions(-)
 
 diff --git a/src/udev/udevd.c b/src/udev/udevd.c
-index 99d4c8983..e98c1fd6d 100644
+index 99d4c8983a..e98c1fd6da 100644
 --- a/src/udev/udevd.c
 +++ b/src/udev/udevd.c
 @@ -909,6 +909,17 @@ static void handle_signal(struct udev *udev, int signo) {

@@ -16,7 +16,7 @@ Conflicts:
  2 files changed, 170 insertions(+), 91 deletions(-)
 
 diff --git a/Makefile.am b/Makefile.am
-index 9e64d6f98..bf65b2406 100644
+index 9e64d6f988..bf65b24060 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -111,6 +111,7 @@ catalogdir=$(prefix)/lib/systemd/catalog
@@ -50,7 +50,7 @@ index 9e64d6f98..bf65b2406 100644
  
  # ------------------------------------------------------------------------------
 diff --git a/src/timedate/timedated.c b/src/timedate/timedated.c
-index 753c3d1d6..66097ef74 100644
+index 753c3d1d65..66097ef741 100644
 --- a/src/timedate/timedated.c
 +++ b/src/timedate/timedated.c
 @@ -186,141 +186,211 @@ static int context_write_data_local_rtc(Context *c) {

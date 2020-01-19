@@ -27,7 +27,7 @@ Resolves: #1413041
  6 files changed, 145 insertions(+), 17 deletions(-)
 
 diff --git a/man/systemctl.xml b/man/systemctl.xml
-index bb21f3a88..4a1aff227 100644
+index bb21f3a887..4a1aff2273 100644
 --- a/man/systemctl.xml
 +++ b/man/systemctl.xml
 @@ -223,6 +223,8 @@
@@ -48,7 +48,7 @@ index bb21f3a88..4a1aff227 100644
  
              <table>
 diff --git a/src/core/dbus-manager.c b/src/core/dbus-manager.c
-index 5b40aa20f..7ba1b519e 100644
+index 5b40aa20f0..7ba1b519ea 100644
 --- a/src/core/dbus-manager.c
 +++ b/src/core/dbus-manager.c
 @@ -1958,6 +1958,49 @@ static int method_add_dependency_unit_files(sd_bus *bus, sd_bus_message *message
@@ -110,7 +110,7 @@ index 5b40aa20f..7ba1b519e 100644
          SD_BUS_SIGNAL("UnitNew", "so", 0),
          SD_BUS_SIGNAL("UnitRemoved", "so", 0),
 diff --git a/src/core/org.freedesktop.systemd1.conf b/src/core/org.freedesktop.systemd1.conf
-index 6a7a37ee9..3997dd0b4 100644
+index 6a7a37ee92..3997dd0b4e 100644
 --- a/src/core/org.freedesktop.systemd1.conf
 +++ b/src/core/org.freedesktop.systemd1.conf
 @@ -76,6 +76,10 @@
@@ -125,7 +125,7 @@ index 6a7a37ee9..3997dd0b4 100644
                         send_interface="org.freedesktop.systemd1.Manager"
                         send_member="ListJobs"/>
 diff --git a/src/shared/install.c b/src/shared/install.c
-index b3df6b35c..bdfd7b96a 100644
+index b3df6b35c9..bdfd7b96a2 100644
 --- a/src/shared/install.c
 +++ b/src/shared/install.c
 @@ -340,6 +340,7 @@ static int remove_marked_symlinks_fd(
@@ -248,7 +248,7 @@ index b3df6b35c..bdfd7b96a 100644
                  r = 0;
  
 diff --git a/src/shared/install.h b/src/shared/install.h
-index c961b53d0..c236dcfd8 100644
+index c961b53d08..c236dcfd8e 100644
 --- a/src/shared/install.h
 +++ b/src/shared/install.h
 @@ -68,7 +68,8 @@ typedef enum UnitFileChangeType {
@@ -262,7 +262,7 @@ index c961b53d0..c236dcfd8 100644
  
  static inline bool unit_file_change_is_modification(UnitFileChangeType type) {
 diff --git a/src/systemctl/systemctl.c b/src/systemctl/systemctl.c
-index e0dbf0fda..ff8b4e978 100644
+index e0dbf0fda9..ff8b4e9782 100644
 --- a/src/systemctl/systemctl.c
 +++ b/src/systemctl/systemctl.c
 @@ -5722,6 +5722,63 @@ finish:

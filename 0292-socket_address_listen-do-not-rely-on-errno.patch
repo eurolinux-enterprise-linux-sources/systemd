@@ -20,7 +20,7 @@ Resolves: #1316452
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/shared/socket-label.c b/src/shared/socket-label.c
-index a6289eb50..713e71ba3 100644
+index a6289eb50f..713e71ba3c 100644
 --- a/src/shared/socket-label.c
 +++ b/src/shared/socket-label.c
 @@ -119,7 +119,7 @@ int socket_address_listen(

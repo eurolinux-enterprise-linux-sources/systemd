@@ -13,7 +13,7 @@ Resolves: #1381743
  1 file changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/src/libsystemd/sd-daemon/sd-daemon.c b/src/libsystemd/sd-daemon/sd-daemon.c
-index 1474321c9..2c4dd9d22 100644
+index 1474321c95..2c4dd9d225 100644
 --- a/src/libsystemd/sd-daemon/sd-daemon.c
 +++ b/src/libsystemd/sd-daemon/sd-daemon.c
 @@ -397,8 +397,9 @@ _public_ int sd_pid_notify_with_fds(pid_t pid, int unset_environment, const char

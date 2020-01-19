@@ -11,7 +11,7 @@ Resolves: #1436021
  1 file changed, 6 insertions(+), 1 deletion(-)
 
 diff --git a/src/core/transaction.c b/src/core/transaction.c
-index 34df15718..66bbb6066 100644
+index 34df15718b..66bbb60665 100644
 --- a/src/core/transaction.c
 +++ b/src/core/transaction.c
 @@ -1023,8 +1023,13 @@ int transaction_add_job_and_dependencies(

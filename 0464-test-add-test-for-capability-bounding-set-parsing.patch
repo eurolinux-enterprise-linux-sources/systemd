@@ -10,7 +10,7 @@ Resolves: #1387398
  1 file changed, 45 insertions(+)
 
 diff --git a/src/test/test-unit-file.c b/src/test/test-unit-file.c
-index 038430505..0f00a8fff 100644
+index 0384305051..0f00a8fff1 100644
 --- a/src/test/test-unit-file.c
 +++ b/src/test/test-unit-file.c
 @@ -24,6 +24,7 @@

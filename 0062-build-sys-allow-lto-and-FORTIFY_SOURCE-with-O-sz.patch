@@ -10,7 +10,7 @@ https://bugs.freedesktop.org/show_bug.cgi?id=89382
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index 9c25c3c6f..3201428c4 100644
+index 9c25c3c6fc..3201428c44 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -208,13 +208,13 @@ AS_CASE([$CC], [*clang*],

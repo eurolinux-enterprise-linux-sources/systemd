@@ -14,7 +14,7 @@ Resolves: #1284974
  1 file changed, 18 insertions(+), 3 deletions(-)
 
 diff --git a/src/import/import-common.c b/src/import/import-common.c
-index 2acf380f9..f10a453ee 100644
+index 2acf380f99..f10a453eed 100644
 --- a/src/import/import-common.c
 +++ b/src/import/import-common.c
 @@ -281,8 +281,9 @@ int import_verify(

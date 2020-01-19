@@ -10,7 +10,7 @@ Related: #1380259
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/manager.c b/src/core/manager.c
-index 27f032b9d..6d045fdf3 100644
+index 27f032b9d9..6d045fdf35 100644
 --- a/src/core/manager.c
 +++ b/src/core/manager.c
 @@ -1637,7 +1637,7 @@ static void manager_invoke_notify_message(Manager *m, Unit *u, pid_t pid, const

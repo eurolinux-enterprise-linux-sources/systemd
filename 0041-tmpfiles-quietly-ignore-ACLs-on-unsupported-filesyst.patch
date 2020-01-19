@@ -12,7 +12,7 @@ than -ENOSYS. For -ENOSYS, debug log is printed.
  1 file changed, 20 insertions(+), 16 deletions(-)
 
 diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
-index 88ba7e46a..187997e1f 100644
+index 88ba7e46a2..187997e1f4 100644
 --- a/src/tmpfiles/tmpfiles.c
 +++ b/src/tmpfiles/tmpfiles.c
 @@ -704,6 +704,9 @@ static int path_set_acl(const char *path, acl_type_t type, acl_t acl, bool modif

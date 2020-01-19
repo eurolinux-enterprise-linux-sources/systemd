@@ -12,7 +12,7 @@ Resolves: #1396312
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/core/timer.c b/src/core/timer.c
-index 972dd73df..f318dc6f4 100644
+index 972dd73dfb..f318dc6f44 100644
 --- a/src/core/timer.c
 +++ b/src/core/timer.c
 @@ -321,7 +321,7 @@ static void add_random(Timer *t, usec_t *v) {

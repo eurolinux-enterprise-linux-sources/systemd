@@ -37,7 +37,7 @@ Resolves: #1541061
  1 file changed, 17 insertions(+), 29 deletions(-)
 
 diff --git a/src/core/dbus.c b/src/core/dbus.c
-index 0061211fa..d551eab01 100644
+index 0061211faa..d551eab016 100644
 --- a/src/core/dbus.c
 +++ b/src/core/dbus.c
 @@ -811,27 +811,21 @@ static int bus_init_api(Manager *m) {

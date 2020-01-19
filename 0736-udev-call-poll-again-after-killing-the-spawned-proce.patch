@@ -1,0 +1,31 @@
+From c34ec3588a40e595bb837f3c12e44808c7cd20fd Mon Sep 17 00:00:00 2001
+From: Michal Sekletar <msekleta@redhat.com>
+Date: Wed, 1 May 2019 15:52:42 +0200
+Subject: [PATCH] udev: call poll() again after killing the spawned process
+
+Later we check .revents of pfd. Hence we need to initialize it properly
+and to do that we need to call poll() once again because previously it
+exited twice with timeout and hence left pfd uninitialized. For the
+third time it should return immediately since we killed the spawned
+process with SIGKILL.
+
+Related: #1697909
+---
+ src/udev/udev-event.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/udev/udev-event.c b/src/udev/udev-event.c
+index 7fe64f04a4..07b82d093e 100644
+--- a/src/udev/udev-event.c
++++ b/src/udev/udev-event.c
+@@ -593,6 +593,10 @@ static int spawn_wait(struct udev_event *event,
+                         if (fdcount == 0) {
+                                 log_error("timeout: killing '%s' ["PID_FMT"]", cmd, pid);
+                                 kill(pid, SIGKILL);
++
++                                fdcount = poll(pfd, 1, 1000);
++                                if (fdcount <= 0)
++                                        continue;
+                         }
+                 }
+ 
