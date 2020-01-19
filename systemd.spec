@@ -7,7 +7,7 @@
 Name:           systemd
 Url:            http://www.freedesktop.org/wiki/Software/systemd
 Version:        219
-Release:        67%{?dist}.2
+Release:        62%{?dist}.7
 # For a breakdown of the licensing, see README
 License:        LGPLv2+ and MIT and GPLv2+
 Summary:        A System and Service Manager
@@ -704,100 +704,15 @@ Patch0662: 0662-cryptsetup-generator-don-t-return-error-if-target-di.patch
 Patch0663: 0663-cryptsetup-generator-allow-whitespace-characters-in-.patch
 Patch0664: 0664-Make-sure-the-mount-units-pulled-by-RequiresMountsFo.patch
 Patch0665: 0665-dhcp6-make-sure-we-have-enough-space-for-the-DHCP6-o.patch
-Patch0666: 0666-test-functions-fix-dbus-1-installation.patch
-Patch0667: 0667-journald-do-not-store-the-iovec-entry-for-process-co.patch
-Patch0668: 0668-journald-set-a-limit-on-the-number-of-fields-1k.patch
-Patch0669: 0669-journal-remote-set-a-limit-on-the-number-of-fields-i.patch
-Patch0670: 0670-journald-free-cmdline-buffers-owned-by-iovec.patch
-Patch0671: 0671-test-01-basic-mask-some-services-that-currently-don-.patch
-Patch0672: 0672-tests-drop-the-precondition-check-for-inherited-flag.patch
-Patch0673: 0673-mount-point-honour-AT_SYMLINK_FOLLOW-correctly.patch
-Patch0674: 0674-copy-only-check-for-traversing-mount-points-on-direc.patch
-Patch0675: 0675-travis-enable-Travis-CI-on-CentOS-7.patch
-Patch0676: 0676-travis-RHEL8-support.patch
-Patch0677: 0677-travis-drop-the-SELinux-Fedora-workaround.patch
-Patch0678: 0678-travis-fix-syntax-error-in-.travis.yml.patch
-Patch0679: 0679-travis-temporarily-skip-test_path_changed.patch
-Patch0680: 0680-travis-reboot-the-container-before-running-tests.patch
-Patch0681: 0681-travis-drop-the-test_path_changed-workaround.patch
-Patch0682: 0682-detect-virt-do-not-try-to-read-all-of-proc-cpuinfo.patch
-Patch0683: 0683-core-disable-the-effect-of-Restart-if-there-s-a-stop.patch
-Patch0684: 0684-networkd-respect-DHCP-UseRoutes-option.patch
-Patch0685: 0685-networkd-fix-dhcp4-link-without-routes-not-being-con.patch
-Patch0686: 0686-networkd-dont-crash-when-mtu-changes-6594.patch
-Patch0687: 0687-tmpfiles-e-takes-globs.patch
-Patch0688: 0688-tmpfiles-e-is-supposed-to-operate-on-directory-only.patch
-Patch0689: 0689-tmpfiles-e-is-supposed-to-accept-shell-style-globs.patch
-Patch0690: 0690-bus-message-do-not-crash-on-message-with-a-string-of.patch
-Patch0691: 0691-Revert-bus-when-dumping-string-property-values-escap.patch
-Patch0692: 0692-set-automount-state-to-waiting-when-the-mount-is-sto.patch
-Patch0693: 0693-core-when-deserializing-state-always-use-read_line-L.patch
-Patch0694: 0694-core-enforce-a-limit-on-STATUS-texts-recvd-from-serv.patch
-Patch0695: 0695-shorten-hostname-before-checking-for-trailing-dot.patch
-Patch0696: 0696-journald-fixed-assertion-failure-when-system-journal.patch
-Patch0697: 0697-local-addresses-handle-gracefully-if-routes-lack-an-.patch
-Patch0698: 0698-rules-fix-memory-hotplug-rule-so-systemd-detect-virt.patch
-Patch0699: 0699-6647-use-path_startswith-dev-in-cryptsetup-6732.patch
-Patch0700: 0700-core-mount-setup-handle-non-existing-mountpoints-gra.patch
-Patch0701: 0701-units-rescue.service.in-fix-announcement-message.patch
-Patch0702: 0702-systemctl-Allow-edit-and-cat-on-unloaded-units.patch
-Patch0703: 0703-main-improve-RLIMIT_NOFILE-handling-5795.patch
-Patch0704: 0704-shared-sleep-config-exclude-zram-devices-from-hibern.patch
-Patch0705: 0705-journalctl-allow-file-directory-with-boot-or-list-bo.patch
-Patch0706: 0706-journalct-allow-boot-0-to-DTRT-with-file-directory.patch
-Patch0707: 0707-journal-remote-show-error-message-if-output-file-nam.patch
-Patch0708: 0708-artificially-serialize-building-of-.policy-files.patch
-Patch0709: 0709-tests-run-udevadm-settle-after-fdisk.patch
-Patch0710: 0710-cryptsetup-add-support-for-sector-size-option-9936.patch
-Patch0711: 0711-cryptsetup-do-not-define-arg_sector_size-if-libgcryp.patch
-Patch0712: 0712-journal-fix-syslog_parse_identifier.patch
-Patch0713: 0713-journal-do-not-remove-multiple-spaces-after-identifi.patch
-Patch0714: 0714-build-sys-add-check-for-gperf-lookup-function-signat.patch
-Patch0715: 0715-lgtm-add-explicit-configuration-for-C-extraction.patch
-Patch0716: 0716-tmpfiles-change-ownership-of-symlinks-too.patch
-Patch0717: 0717-tmpfiles-fix-check-for-figuring-out-whether-to-call-.patch
-Patch0718: 0718-travis-drop-the-RHEL-8-manager-from-the-RHEL-7-branc.patch
-Patch0719: 0719-travis-support-SMP-if-available.patch
-Patch0720: 0720-shared-install-allow-enable-on-linked-unit-files.patch
-Patch0721: 0721-backport-fd_is_fs_type.patch
-Patch0722: 0722-backport-chase_symlinks.patch
-Patch0723: 0723-fs-util-add-new-CHASE_SAFE-flag-to-chase_symlinks.patch
-Patch0724: 0724-fs-util-add-new-chase_symlinks-flag-CHASE_OPEN.patch
-Patch0725: 0725-sd-dameon-also-sent-ucred-when-our-UID-differs-from-.patch
-Patch0726: 0726-notify-add-new-uid-command.patch
-Patch0727: 0727-core-be-stricter-when-handling-PID-files-and-MAINPID.patch
-Patch0728: 0728-journald-respect-KeepFree-as-well-as-MaxUse-values.patch
-Patch0729: 0729-shutdown-in_container-was-used-before-its-definition.patch
-Patch0730: 0730-core-Fix-edge-case-when-processing-proc-self-mountin.patch
-Patch0731: 0731-sd-bus-deal-with-cookie-overruns.patch
-Patch0732: 0732-Refuse-dbus-message-paths-longer-than-BUS_PATH_SIZE_.patch
-Patch0733: 0733-Allocate-temporary-strings-to-hold-dbus-paths-on-the.patch
-Patch0734: 0734-sd-bus-if-we-receive-an-invalid-dbus-message-ignore-.patch
-Patch0735: 0735-udev-check-if-the-spawned-PID-didn-t-exit-after-reap.patch
-Patch0736: 0736-udev-call-poll-again-after-killing-the-spawned-proce.patch
-Patch0737: 0737-udev-check-age-against-both-timeouts-to-prevent-inte.patch
-Patch0738: 0738-avoid-possible-hang-if-our-child-process-hangs.patch
-Patch0739: 0739-missing-when-adding-syscall-replacements-use-differe.patch
-Patch0740: 0740-include-sys-sysmacros.h-in-more-places.patch
-Patch0741: 0741-sd-bus-unify-three-code-paths-which-free-struct-bus_.patch
-Patch0742: 0742-hashmap-don-t-use-mempool.patch
-Patch0743: 0743-man-be-more-explicit-about-thread-safety-of-sd_journ.patch
-Patch0744: 0744-selinux-don-t-log-SELINUX_INFO-and-SELINUX_WARNING-m.patch
-Patch0745: 0745-fix-mis-merge.patch
-Patch0746: 0746-fs-util-chase_symlinks-prevent-double-free.patch
-Patch0747: 0747-return-error-value-on-failure.patch
-Patch0748: 0748-revert-local-changes-made-during-backport-of-the-tes.patch
-Patch0749: 0749-core-timer-Prevent-timer-looping-when-unit-cannot-st.patch
-Patch0750: 0750-core-add-a-Requires-dependency-between-units-and-the.patch
-Patch0751: 0751-core-rerun-GC-logic-for-a-unit-that-loses-a-referenc.patch
-Patch0752: 0752-pid1-rename-unit_check_gc-to-unit_may_gc.patch
-Patch0753: 0753-pid1-include-the-source-unit-in-UnitRef.patch
-Patch0754: 0754-pid1-fix-collection-of-cycles-of-units-which-referen.patch
-Patch0755: 0755-pid1-free-basic-unit-information-at-the-very-end-bef.patch
-Patch0756: 0756-pid1-properly-remove-references-to-the-unit-from-gc-.patch
-Patch0757: 0757-service-relax-PID-file-symlink-chain-checks-a-bit-81.patch
-Patch0758: 0758-path-util-fix-more-path_is_mount-e792e890f-fallout.patch
-Patch0759: 0759-core-exclude-.slice-units-from-systemctl-isolate.patch
+Patch0666: 0666-journald-do-not-store-the-iovec-entry-for-process-co.patch
+Patch0667: 0667-journald-set-a-limit-on-the-number-of-fields-1k.patch
+Patch0668: 0668-journal-remote-set-a-limit-on-the-number-of-fields-i.patch
+Patch0669: 0669-journald-free-cmdline-buffers-owned-by-iovec.patch
+Patch0670: 0670-Refuse-dbus-message-paths-longer-than-BUS_PATH_SIZE_.patch
+Patch0671: 0671-Allocate-temporary-strings-to-hold-dbus-paths-on-the.patch
+Patch0672: 0672-sd-bus-if-we-receive-an-invalid-dbus-message-ignore-.patch
+Patch0673: 0673-Revert-bus-when-dumping-string-property-values-escap.patch
+Patch0674: 0674-rules-fix-memory-hotplug-rule-so-systemd-detect-virt.patch
 
 %global num_patches %{lua: c=0; for i,p in ipairs(patches) do c=c+1; end; print(c);}
 
@@ -1774,96 +1689,29 @@ fi
 %{_mandir}/man8/systemd-resolved.*
 
 %changelog
-* Thu Sep 19 2019 David Tardon <dtardon@redhat.com> - 219-67.2
-- core: exclude .slice units from "systemctl isolate" (#1751130)
+* Wed Apr 24 2019 Lukas Nykryn <lnykryn@redhat.com> - 219-62.7
+- rules: fix memory hotplug rule so systemd-detect-virt does not run too often (#1701230)
 
-* Fri Jul 12 2019 Lukas Nykryn <lnykryn@redhat.com> - 219-67.1
-- return error value on failure (#1729226)
-- revert local changes made during backport of the test (#1729226)
-- core/timer: Prevent timer looping when unit cannot start (#1729230)
-- core: add a "Requires=" dependency between units and the slices they are located in (#1729228)
-- core: rerun GC logic for a unit that loses a reference (#1729228)
-- pid1: rename unit_check_gc to unit_may_gc (#1729228)
-- pid1: include the source unit in UnitRef (#1729228)
-- pid1: fix collection of cycles of units which reference one another (#1729228)
-- pid1: free basic unit information at the very end, before freeing the unit (#1729228)
-- pid1: properly remove references to the unit from gc queue during final cleanup (#1729228)
-- service: relax PID file symlink chain checks a bit (#8133) (#1729414)
-- path-util: fix more path_is_mount e792e890f fallout (#1279231)
-
-* Wed Jun 19 2019 Michal Sekletár <msekleta@redhat.com> - 219-67
-- fix mis-merge (#1714503)
-- fs-util: chase_symlinks(): prevent double fre (#1714782)
-
-* Tue May 14 2019 Lukas Nykryn <lnykryn@redhat.com> - 219-66
-- sd-bus: unify three code-paths which free struct bus_container (#1643394)
-- hashmap: don't use mempool (#1609349)
-- man: be more explicit about thread safety of sd_journal (#1609349)
-- selinux: don't log SELINUX_INFO and SELINUX_WARNING messages to audit (#1240730)
-
-* Thu May 02 2019 Lukas Nykryn <lnykryn@redhat.com> - 219-65
-- backport fd_is_fs_type (#1663143)
-- backport chase_symlinks (#1663143)
-- fs-util: add new CHASE_SAFE flag to chase_symlinks() (#1663143)
-- fs-util: add new chase_symlinks() flag CHASE_OPEN (#1663143)
-- sd-dameon: also sent ucred when our UID differs from EUID (#1663143)
-- notify: add new --uid= command (#1663143)
-- core: be stricter when handling PID files and MAINPID sd_notify() messages (#1663143)
-- journald: respect KeepFree= as well as MaxUse= values (#1361893)
-- shutdown: in_container was used before its definition (#1693716)
-- core: Fix edge case when processing /proc/self/mountinfo (#1691511)
-- sd-bus: deal with cookie overruns (#1693559)
-- Refuse dbus message paths longer than BUS_PATH_SIZE_MAX limit. (#1667871)
-- Allocate temporary strings to hold dbus paths on the heap (#1667871)
-- sd-bus: if we receive an invalid dbus message, ignore and proceeed (#1667871)
-- udev: check if the spawned PID didn't exit after reaping unexpected PID (#1697909)
-- udev: call poll() again after killing the spawned process (#1697909)
-- udev: check age against both timeouts to prevent integer wraparound (#1697909)
-- avoid possible hang if our child process hangs (#1697909)
-- missing: when adding syscall replacements, use different names (#1694605)
-- include sys/sysmacros.h in more places (#1694605)
-
-* Wed Mar 27 2019 Lukas Nykryn <lnykryn@redhat.com> - 219-64
-- detect-virt: do not try to read all of /proc/cpuinfo (#1631531)
-- core: disable the effect of Restart= if there's a stop job pending for a service (#6581) (#1626382)
-- networkd: respect DHCP UseRoutes option (#1663365)
-- networkd: fix dhcp4 link without routes not being considered ready (#8728) (#1663365)
-- networkd: dont crash when mtu changes (#6594) (#1663365)
-- tmpfiles: "e" takes globs (#1641764)
-- tmpfiles: 'e' is supposed to operate on directory only (#1641764)
-- tmpfiles: 'e' is supposed to accept shell-style globs (#1641764)
-- bus-message: do not crash on message with a string of zero length (#1643396)
+* Thu Mar 21 2019 Lukas Nykryn <lnykryn@redhat.com> - 219-62.6
 - Revert "bus: when dumping string property values escape the chars we use as end-of-line and end-of-item marks" (#1643172)
-- set automount state to waiting when the mount is stopped (#1651257)
-- core: when deserializing state always use read_line(…, LONG_LINE_MAX, …) (CVE-2018-15686)
-- shorten hostname before checking for trailing dot (#1631625)
-- journald: fixed assertion failure when system journal rotation fails (#9893) (#1619543)
-- local-addresses: handle gracefully if routes lack an RTA_OIF attribute (#1627750)
-- rules: fix memory hotplug rule so systemd-detect-virt does not run too often (#1666612)
-- 6647 - use path_startswith("/dev") in cryptsetup (#6732) (#1664695)
-- core: mount-setup: handle non-existing mountpoints gracefully (#1585411)
-- units/rescue.service.in: fix announcement message (#1660422)
-- systemctl: Allow 'edit' and 'cat' on unloaded units (#1649518)
-- main: improve RLIMIT_NOFILE handling (#5795) (#1585913)
-- shared/sleep-config: exclude zram devices from hibernation candidates (#1609816)
-- journalctl: allow --file/--directory with --boot or --list-boots (#1463678)
-- journalct: allow --boot=0 to DTRT with --file/--directory (#1463678)
-- journal-remote: show error message if output file name does not end with .journal (bz#1267552)
-- artificially serialize building of .policy files (#1272485)
-- cryptsetup: add support for sector-size= option (#9936) (#1571801)
-- cryptsetup: do not define arg_sector_size if libgcrypt is v1.x (#9990) (#1571801)
-- journal: fix syslog_parse_identifier() (#1657794)
-- journal: do not remove multiple spaces after identifier in syslog message (#1657794)
-- tmpfiles: change ownership of symlinks too (#1620110)
-- tmpfiles: fix check for figuring out whether to call chmod() (#1620110)
-- shared/install: allow "enable" on linked unit files (#1628575)
 
-* Thu Jan 17 2019 Lukas Nykryn <lnykryn@redhat.com> - 219-63
-- dhcp6: make sure we have enough space for the DHCP6 option header (CVE-2018-15688)
+* Thu Feb 14 2019 Lukas Nykryn <lnykryn@redhat.com> - 219-62.5
+- sd-bus: if we receive an invalid dbus message, ignore and proceeed (#1667871)
+
+* Thu Feb 07 2019 Lukas Nykryn <lnykryn@redhat.com> - 219-62.4
+- Refuse dbus message paths longer than BUS_PATH_SIZE_MAX limit. (#1667870)
+- Allocate temporary strings to hold dbus paths on the heap (#1667870)
+
+* Wed Jan 16 2019 Lukas Nykryn <lnykryn@redhat.com> - 219-62.3
+- journald: free cmdline buffers owned by iovec (#1666646)
+
+* Mon Jan 07 2019 Lukas Nykryn <lnykryn@redhat.com> - 219-62.2
 - journald: do not store the iovec entry for process commandline on stack (#1657788)
 - journald: set a limit on the number of fields (1k) (#1657792)
 - journal-remote: set a limit on the number of fields in a message (#1657792)
-- journald: free cmdline buffers owned by iovec (#1666646)
+
+* Mon Nov 26 2018 Lukas Nykryn <lnykryn@redhat.com> - 219-62.1
+- dhcp6: make sure we have enough space for the DHCP6 option header (CVE-2018-15688)
 
 * Fri Sep 07 2018 Lukas Nykryn <lnykryn@redhat.com> - 219-62
 - cryptsetup-generator: introduce basic keydev support (#1619743)
